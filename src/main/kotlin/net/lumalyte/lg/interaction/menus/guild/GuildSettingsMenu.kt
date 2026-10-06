@@ -49,6 +49,7 @@ class GuildSettingsMenu(
 ): Menu, KoinComponent {
 
     private val lang: LangService by inject()
+    private val themeAccess: net.lumalyte.lg.application.services.GuildCosmeticUnlockService by inject()
 
     override fun open() {
         // Refresh guild data from database to ensure we have latest changes
@@ -502,48 +503,64 @@ class GuildSettingsMenu(
     }
 
     /**
-     * Opens a small sub-menu showing all available GUI themes.
-     * The player clicks one to apply it; the settings menu then reopens
-     * with the new theme applied.
+     * Opens a sub-menu listing every GUI theme. Holiday themes the guild has not
+     * earned (REQ-094) are shown locked with an unlock hint and cannot be applied.
+     * The settings menu reopens with the new theme applied.
      */
     private fun openThemeSelector() {
-        val gui = ChestGui(1, MenuTitleBuilder.build(guild.guiTheme, 1, lang.guiTitle("menu.guild_settings.title", "guild" to guild.name)))
-        val pane = StaticPane(0, 0, 9, 1)
+        val themes = net.lumalyte.lg.utils.GuiTheme.entries
+        // One slot per theme plus the back button, in as many rows as needed.
+        val rows = (themes.size / 9) + 1
+        val gui = ChestGui(rows, MenuTitleBuilder.build(guild.guiTheme, rows, lang.guiTitle("menu.guild_settings.title", "guild" to guild.name)))
+        val pane = StaticPane(0, 0, 9, rows)
         gui.setOnGlobalClick { it.isCancelled = true }
         gui.addPane(pane)
 
-        val themes = net.lumalyte.lg.utils.GuiTheme.entries
-        // Place up to 6 themes in a single row; each takes 1 slot
-        // with a gap between them for visual clarity.
         themes.forEachIndexed { index, theme ->
             val isCurrent = theme == guild.guiTheme
-            val slot = index * 1 + index  // 0, 2, 4, 6, 8, 10 — but max 6 in 9 slots
-            // Recalculate: 9 slots, 6 themes, spread evenly
-            val pos = if (themes.size <= 9) index else index * 9 / themes.size
-
+            val unlocked = themeAccess.isThemeAvailable(guild.id, theme)
+            val themeName = themeAccess.themeDisplayName(guild.id, theme)
             val item = ItemStack.of(
                 when {
                     isCurrent -> Material.GREEN_STAINED_GLASS_PANE
+                    !unlocked -> Material.BLACK_STAINED_GLASS_PANE
+                    theme.requiresUnlock -> Material.ORANGE_STAINED_GLASS_PANE
                     else -> Material.GRAY_STAINED_GLASS_PANE
                 }
+            ).name(
+                when {
+                    isCurrent -> lang.gui("menu.guild_settings.item.theme_option.name.current", "theme" to themeName)
+                    !unlocked -> lang.gui("menu.guild_settings.item.theme_option.name.locked", "theme" to themeName)
+                    else -> lang.gui("menu.guild_settings.item.theme_option.name.available", "theme" to themeName)
+                }
             )
-                .name(if (isCurrent) lang.gui("menu.guild_settings.item.theme_option.name.current", "theme" to theme.displayName) else lang.gui("menu.guild_settings.item.theme_option.name.available", "theme" to theme.displayName))
-                .lore(if (isCurrent) lang.gui("menu.guild_settings.item.theme_option.lore.current") else lang.gui("menu.guild_settings.item.theme_option.lore.apply"))
+            if (theme.requiresUnlock) item.lore(lang.gui("menu.guild_settings.item.theme_option.lore.holiday"))
+            when {
+                isCurrent -> item.lore(lang.gui("menu.guild_settings.item.theme_option.lore.current"))
+                !unlocked -> item
+                    .lore(lang.gui("menu.guild_settings.item.theme_option.lore.locked"))
+                    .lore(lang.gui("menu.guild_settings.item.theme_option.lore.locked_hint"))
+                else -> item.lore(lang.gui("menu.guild_settings.item.theme_option.lore.apply"))
+            }
 
             pane.addItem(GuiItem(item) {
-                if (!isCurrent) {
-                    guildService.setGuiTheme(guild.id, theme, player.uniqueId)
-                    guild = guild.copy(guiTheme = theme)
-                    player.sendMessage(lang.msg("menu.guild_settings.feedback.theme_changed", "theme" to theme.displayName))
-                    open()
+                when {
+                    isCurrent -> Unit
+                    !unlocked -> player.sendMessage(lang.msg("menu.guild_settings.feedback.theme_locked", "theme" to themeName))
+                    guildService.setGuiTheme(guild.id, theme, player.uniqueId) -> {
+                        guild = guild.copy(guiTheme = theme)
+                        player.sendMessage(lang.msg("menu.guild_settings.feedback.theme_changed", "theme" to themeName))
+                        open()
+                    }
+                    else -> player.sendMessage(lang.msg("menu.guild_settings.feedback.theme_change_failed"))
                 }
-            }, pos, 0)
+            }, index % 9, index / 9)
         }
 
-        // Back button at the last slot
+        // Back button in the last slot
         val backItem = ItemStack.of(Material.BARRIER)
             .name(lang.gui("menu.guild_settings.item.back.name"))
-        pane.addItem(GuiItem(backItem) { open() }, 8, 0)
+        pane.addItem(GuiItem(backItem) { open() }, 8, rows - 1)
 
         gui.show(player)
     }

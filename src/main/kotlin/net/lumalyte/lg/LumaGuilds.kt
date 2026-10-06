@@ -114,6 +114,17 @@ class LumaGuilds : JavaPlugin() {
         )
         logColored("✓ GuildVisualLookup registered in ServicesManager for cross-plugin integration")
 
+        // REQ-094: EnthusiaHolidays grants holiday menu themes through this API.
+        Bukkit.getServicesManager().register(
+            net.lumalyte.lg.api.GuildCosmeticUnlocks::class.java,
+            net.lumalyte.lg.api.GuildCosmeticUnlocksImpl(
+                get().get<net.lumalyte.lg.application.services.GuildCosmeticUnlockService>()
+            ),
+            this,
+            ServicePriority.Normal
+        )
+        logColored("✓ GuildCosmeticUnlocks registered in ServicesManager for cross-plugin integration")
+
         // Initialize Apollo AFTER Koin is started (requires Koin DI)
         initialiseApolloIntegration()
 

@@ -587,6 +587,32 @@ PR grouping: tasks under each `## PR-n` header ship together in one pull request
 - [x] **Claims-disabled vault startup regression (REQ-015):** Vault claim lookup is optional; claims-enabled placement remains fail-closed. Both real startup graphs pass, and the full test suite plus shadowJar build pass.
 - [x] **Withdrawal fee messaging (REQ-015):** Quick withdrawal buttons preview actual capped fees and total deduction; successful physical and personal-account withdrawals report destination, fee and total. Regression test and full suite pass; shadowJar rebuilt.
 
+## PR-17 — Holiday guild menu themes (EnthusiaHolidays)
+
+- [x] **LG-1801** Cosmetic unlock ledger — `GuildCosmeticUnlock` entity, `GuildCosmeticUnlockRepository` port, SQLite/MariaDB repository with preload cache
+  - Tag: `TDD`
+  - References: REQ-094
+  - Evidence: `GuildCosmeticUnlockRepositorySQLiteTest` (4): restart persistence, idempotent save keeps the original record, idempotent delete, per-guild isolation. SQLite exercised; MariaDB DDL/`INSERT IGNORE` mirrors existing ledgers but was not run against MariaDB in this session.
+  - Files: `domain/entities/GuildCosmeticUnlock.kt`, `application/persistence/GuildCosmeticUnlockRepository.kt`, `infrastructure/persistence/guilds/GuildCosmeticUnlockRepositorySQLite.kt`
+- [x] **LG-1802** Theme gate — `GuiTheme.requiresUnlock`, `HAUNTED_HALL`/`WINTER_LODGE`, `GuildCosmeticUnlockService` (unlock/revoke/availability, revoke resets equipped theme), `setGuiTheme` rejects locked themes
+  - Tag: `TDD`
+  - References: REQ-094
+  - Evidence: `GuildCosmeticUnlockServiceTest` (8) and `GuildServiceThemeUnlockTest` (3): locked until unlocked, normalisation, unknown keys stored, missing guild/invalid input rejected, revoke resets only an equipped holiday theme, persistence failure reported, `setGuiTheme` rejects locked themes and fails closed without a ledger.
+  - Files: `utils/GuiTheme.kt`, `application/services/GuildCosmeticUnlockService.kt`, `infrastructure/services/GuildServiceBukkit.kt`
+- [x] **LG-1803** Public API — `net.lumalyte.lg.api.GuildCosmeticUnlocks` + impl registered in ServicesManager
+  - Tag: `TDD`
+  - References: REQ-094
+  - Evidence: `GuildCosmeticUnlocksImplTest` (2): delegation and no exceptions across the plugin boundary. Registered next to `GuildVisualLookup` in `LumaGuilds.onEnable`.
+  - Files: `api/GuildCosmeticUnlocks.kt`, `api/GuildCosmeticUnlocksImpl.kt`, `LumaGuilds.kt`, `di/Modules.kt`
+- [x] **LG-1804** Theme selector — locked holiday themes shown with unlock hint, failed changes reported, row count sized to theme count; localized strings
+  - Tag: `TDD`
+  - References: REQ-094, REQ-088
+  - Evidence: `LocaleContractTest`/`MenuLocalizationTest` pass with literal keys; selector sizes rows to theme count and reports failed changes. Live client rendering not verified.
+  - Files: `interaction/menus/guild/GuildSettingsMenu.kt`, `lang/en_US.yml`
+- [ ] **LG-1805** Resource pack — `guild_bg_haunted_hall_<rows>_row` and `guild_bg_winter_lodge_<rows>_row` Nexo glyphs/textures for every row count used
+  - Tag: `ASSET`
+  - References: REQ-094
+  - Notes: textures live in the server's Nexo pack, outside this repository
 - [x] **LG-1810** Fix shifted gui_theme / ally-home columns on guild insert
   - Tag: `TDD`
   - References: REQ-094 (GUI themes), ally homes
