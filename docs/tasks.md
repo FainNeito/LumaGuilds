@@ -586,3 +586,9 @@ PR grouping: tasks under each `## PR-n` header ship together in one pull request
 
 - [x] **Claims-disabled vault startup regression (REQ-015):** Vault claim lookup is optional; claims-enabled placement remains fail-closed. Both real startup graphs pass, and the full test suite plus shadowJar build pass.
 - [x] **Withdrawal fee messaging (REQ-015):** Quick withdrawal buttons preview actual capped fees and total deduction; successful physical and personal-account withdrawals report destination, fee and total. Regression test and full suite pass; shadowJar rebuilt.
+
+- [x] **LG-1810** Fix shifted gui_theme / ally-home columns on guild insert
+  - Tag: `TDD`
+  - References: REQ-094 (GUI themes), ally homes
+  - Evidence: Every `insertGuild` variant listed `gui_theme` last but passed its value before the ally-home values. The variant without LFG/tracking columns omitted it entirely. So new guilds stored the theme name in `ally_home_world` and the allowed-guilds list in `gui_theme`. Loading masked it: the theme name fails UUID parsing, so the ally home was ignored, and `''` falls back to NEUTRAL. `GuildInsertColumnOrderTest` (real migrated schema) failed before the fix (2/3), and passes after it. Startup now repairs affected rows idempotently (rows whose `ally_home_world` is a theme name). Full suite: 1003 passing.
+  - Files: `infrastructure/persistence/guilds/GuildRepositorySQLite.kt`, `GuildInsertColumnOrderTest.kt`
