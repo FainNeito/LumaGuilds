@@ -95,10 +95,11 @@ dependencies {
     // Drop the built jar into libs/ from the RoseChat project (libs/ is gitignored).
     val roseChatApi = files(findProperty("roseChatJar") ?: "libs/RoseChat-RC-2.jar")
     compileOnly(roseChatApi)
-    compileOnly(files("libs/EnthusiaPlaytime-api.jar"))
+    val playtimeApi = files(findProperty("playtimeJar") ?: "libs/EnthusiaPlaytime-api.jar")
+    compileOnly(playtimeApi)
     testCompileOnly(roseChatApi)
     testRuntimeOnly(findProperty("roseChatRuntimeJar")?.let { files(it) } ?: roseChatApi)
-    testImplementation(files("libs/EnthusiaPlaytime-api.jar"))
+    testImplementation(playtimeApi)
 
     // Nexo API (com.nexomc.nexo.api.NexoItems) for custom item textures/icons.
     // compileOnly — Nexo bundles its API at runtime; shading would conflict.

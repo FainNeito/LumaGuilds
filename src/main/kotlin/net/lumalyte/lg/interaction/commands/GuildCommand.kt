@@ -455,7 +455,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("home")
     @CommandPermission("lumaguilds.guild.home")
-    @CommandCompletion("@guildhomes")
+    @CommandCompletion("@guildaccessiblehomes")
     fun onHome(player: Player, @Optional homeName: String?, @Optional confirm: String?) {
         // Handle "/guild home confirm" — ACF puts "confirm" into homeName, not confirm param
         val isConfirm = confirm?.lowercase() == "confirm" || homeName?.lowercase() == "confirm"
@@ -1125,6 +1125,13 @@ class GuildCommand : BaseCommand(), KoinComponent {
         }
 
         player.sendMessage(lang.msg("command.migrated.guild.history.blank_line_2", "length" to "═".repeat(20 + displayName.length)))
+    }
+
+    @Subcommand("chatsettings")
+    @CommandPermission("lumaguilds.guild.chat")
+    fun onChatSettings(player: Player) {
+        val navigator = MenuNavigator(player)
+        navigator.openMenu(menuFactory.createPlayerChatSettingsMenu(navigator, player))
     }
 
     @Subcommand("chat")
@@ -2496,6 +2503,29 @@ class GuildCommand : BaseCommand(), KoinComponent {
                 player.playSound(player.location, org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 0.8f)
             }
         }
+    }
+
+    @Subcommand("start|gettingstarted")
+    @CommandPermission("lumaguilds.guild.help")
+    fun onGettingStarted(player: Player, @Optional guildId: String?) {
+        val selected = if (guildId == null) guildService.getPlayerGuilds(player.uniqueId).firstOrNull()?.id else {
+            try { java.util.UUID.fromString(guildId) } catch (_: IllegalArgumentException) {
+                player.sendMessage(lang.msg("onboarding.unavailable")); return
+            }
+        }
+        val navigator = MenuNavigator(player)
+        navigator.openMenu(menuFactory.createGuildGettingStartedMenu(navigator, player, selected))
+    }
+
+    @Subcommand("start dismiss")
+    @CommandPermission("lumaguilds.guild.help")
+    fun onDismissGettingStarted(player: Player) {
+        val repository = org.koin.core.context.GlobalContext.get().get<net.lumalyte.lg.application.persistence.GuildOnboardingRepository>()
+        val dismissed = guildService.getPlayerGuilds(player.uniqueId).map { repository.dismiss(player.uniqueId, it.id) }
+        if (dismissed.any { !it }) {
+            player.sendMessage(lang.msg("onboarding.failed")); return
+        }
+        player.sendMessage(lang.msg("onboarding.dismissed"))
     }
 
     @Subcommand("help")

@@ -2,43 +2,43 @@ package net.lumalyte.lg
 
 import co.aikar.commands.PaperCommandManager
 import co.aikar.idb.Database
-import net.lumalyte.lg.di.appModule
-import net.lumalyte.lg.infrastructure.persistence.migrations.SQLiteMigrations
-import net.lumalyte.lg.infrastructure.persistence.migrations.MariaDBMigrations
-import net.lumalyte.lg.infrastructure.persistence.storage.SQLiteStorage
-import net.lumalyte.lg.infrastructure.persistence.storage.MariaDBStorage
-import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
-import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadMariaDBStorage
-import net.lumalyte.lg.infrastructure.persistence.storage.Storage
-import net.lumalyte.lg.infrastructure.placeholders.LumaGuildsExpansion
-import net.lumalyte.lg.interaction.commands.*
-import net.lumalyte.lg.interaction.commands.LumaGuildsCommand
-import net.lumalyte.lg.interaction.listeners.*
-import net.lumalyte.lg.infrastructure.listeners.ProgressionEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import net.milkbowl.vault.chat.Chat
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.lumalyte.lg.application.services.ConfigService
+import net.lumalyte.lg.application.services.DailyWarCostsService
+import net.lumalyte.lg.application.services.accessibleHomeNames
+import net.lumalyte.lg.di.appModule
+import net.lumalyte.lg.infrastructure.listeners.ProgressionEventListener
+import net.lumalyte.lg.infrastructure.persistence.migrations.MariaDBMigrations
+import net.lumalyte.lg.infrastructure.persistence.migrations.SQLiteMigrations
+import net.lumalyte.lg.infrastructure.persistence.storage.MariaDBStorage
+import net.lumalyte.lg.infrastructure.persistence.storage.SQLiteStorage
+import net.lumalyte.lg.infrastructure.persistence.storage.Storage
+import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadMariaDBStorage
+import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
+import net.lumalyte.lg.infrastructure.placeholders.LumaGuildsExpansion
+import net.lumalyte.lg.infrastructure.services.ConfigServiceBukkit
+import net.lumalyte.lg.infrastructure.services.DailyWarCostsScheduler
+import net.lumalyte.lg.infrastructure.services.LumaGuildsChannelProvider
+import net.lumalyte.lg.interaction.commands.*
+import net.lumalyte.lg.interaction.commands.LumaGuildsCommand
+import net.lumalyte.lg.interaction.listeners.*
+import net.milkbowl.vault.chat.Chat
 import org.bukkit.Bukkit
 import org.bukkit.plugin.ServicePriority
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitScheduler
-import org.koin.core.context.GlobalContext.startKoin
 import org.koin.core.context.GlobalContext.get
-import net.lumalyte.lg.application.services.ConfigService
-import net.lumalyte.lg.application.services.DailyWarCostsService
-import net.lumalyte.lg.infrastructure.services.ConfigServiceBukkit
-import net.lumalyte.lg.infrastructure.services.DailyWarCostsScheduler
-import net.lumalyte.lg.infrastructure.services.LumaGuildsChannelProvider
+import org.koin.core.context.GlobalContext.startKoin
 import java.io.File
 import java.io.IOException
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
-
 
 /**
  * The entry point for the Luma Guilds plugin.
@@ -124,6 +124,12 @@ class LumaGuilds : JavaPlugin() {
         )
         logColored("✓ GuildLookup registered in ServicesManager for cross-plugin integration")
 
+        Bukkit.getServicesManager().register(
+            net.lumalyte.lg.api.GuildShopXpApi::class.java,
+            net.lumalyte.lg.infrastructure.services.GuildShopXpProvider(get().get(), get().get(), get().get()),
+            this, ServicePriority.Normal,
+        )
+
         val guildVisualLookup = net.lumalyte.lg.api.GuildVisualLookupImpl(
             get().get<net.lumalyte.lg.application.services.GuildService>(),
             get().get<net.lumalyte.lg.application.services.MemberService>(),
@@ -136,6 +142,23 @@ class LumaGuilds : JavaPlugin() {
             ServicePriority.Normal
         )
         logColored("✓ GuildVisualLookup registered in ServicesManager for cross-plugin integration")
+        Bukkit.getServicesManager().register(
+            net.lumalyte.lg.api.GuildAllianceLookup::class.java,
+            net.lumalyte.lg.api.GuildAllianceLookupImpl(get().get()),
+            this,
+            ServicePriority.Normal,
+        )
+
+        // REQ-121: EnthusiaHolidays grants holiday menu themes through this API.
+        Bukkit.getServicesManager().register(
+            net.lumalyte.lg.api.GuildCosmeticUnlocks::class.java,
+            net.lumalyte.lg.api.GuildCosmeticUnlocksImpl(
+                get().get<net.lumalyte.lg.application.services.GuildCosmeticUnlockService>()
+            ),
+            this,
+            ServicePriority.Normal
+        )
+        logColored("✓ GuildCosmeticUnlocks registered in ServicesManager for cross-plugin integration")
 
         // REQ-121: EnthusiaHolidays grants holiday menu themes through this API.
         Bukkit.getServicesManager().register(
@@ -783,6 +806,14 @@ class LumaGuilds : JavaPlugin() {
             guildService.getHomes(guild.id).homeNames.toList()
         }
 
+        // Current membership/rank caches are read on the server thread, like the home command.
+        commandManager.commandCompletions.registerCompletion("guildaccessiblehomes") { context ->
+            val player = context.player ?: return@registerCompletion emptyList()
+            val service = get().get<net.lumalyte.lg.application.services.GuildService>()
+            val guild = service.getPlayerGuilds(player.uniqueId).firstOrNull()
+            if (guild == null) emptyList() else service.accessibleHomeNames(player.uniqueId, guild.id)
+        }
+
         // Register unlocked emojis completion (shows only emojis the player has permission to use)
         commandManager.commandCompletions.registerAsyncCompletion("unlockedemojis") { context ->
             val player = context.player ?: return@registerAsyncCompletion emptyList()
@@ -857,6 +888,10 @@ class LumaGuilds : JavaPlugin() {
         commandManager.registerCommand(QuickAllyChatCommand())
         commandManager.registerCommand(QuickModChatCommand())
         commandManager.registerCommand(QuickAnnounceCommand())
+        commandManager.registerCommand(
+            net.lumalyte.lg.interaction.commands
+                .FullscreenAnnounceCommand(),
+        )
 
         // Register LumaGuilds admin command
         getCommand("lumaguilds")?.setExecutor(LumaGuildsCommand())
@@ -998,6 +1033,7 @@ class LumaGuilds : JavaPlugin() {
         server.pluginManager.registerEvents(vaultInventoryListener, this)
 
         // Register player session cleanup listener
+        server.pluginManager.registerEvents(get().get<net.lumalyte.lg.infrastructure.listeners.GuildOnboardingListener>(), this)
         server.pluginManager.registerEvents(net.lumalyte.lg.infrastructure.listeners.PlayerSessionListener(), this)
 
         // Register war kill tracking listener
@@ -1097,12 +1133,19 @@ class LumaGuilds : JavaPlugin() {
         val wireRoseChatHook = {
             val roseChatCleanupListener = get().get<net.lumalyte.lg.infrastructure.listeners.RoseChatCleanupListener>()
             server.pluginManager.registerEvents(roseChatCleanupListener, this)
+            server.pluginManager.registerEvents(
+                get().get<net.lumalyte.lg.infrastructure.listeners.GuildChatReconnectListener>(), this
+            )
             logColored("✓ RoseChat integration registered for chat cleanup")
 
             // Enforce guild mutes on the live RoseChat message path (players
             // already seated in a guild channel when a mute lands).
             val guildMuteChatListener = get().get<net.lumalyte.lg.infrastructure.listeners.GuildMuteChatListener>()
             server.pluginManager.registerEvents(guildMuteChatListener, this)
+            server.pluginManager.registerEvents(get().get<net.lumalyte.lg.infrastructure.listeners.GlobalChatVisibilityListener>(), this)
+            val indicator = get().get<net.lumalyte.lg.infrastructure.listeners.ChatDestinationIndicator>()
+            server.pluginManager.registerEvents(indicator, this)
+            server.scheduler.runTaskTimer(this, indicator, 1L, 40L)
 
             // Register RoseChat ChannelProvider so guild/ally/modchat channels
             // resolve from channels.yml. A delayed reload re-reads the config
@@ -1433,13 +1476,12 @@ class LumaGuilds : JavaPlugin() {
         return get().get()
     }
 
-    fun getPhysicalCurrencyService(): net.lumalyte.lg.application.services.PhysicalCurrencyService {
-        return get().get()
-    }
+    fun getPhysicalCurrencyService(): net.lumalyte.lg.application.services.PhysicalCurrencyService = get().get()
 
     override fun onDisable() {
         enthusiaStaffStrikeFeed?.close()
         enthusiaStaffStrikeFeed = null
+        get().getOrNull<net.lumalyte.lg.infrastructure.listeners.ChatDestinationIndicator>()?.close()
         Bukkit.getServicesManager().unregisterAll(this)
         try {
             get().getOrNull<net.lumalyte.lg.application.services.DiscordAccountLinkSubscription>()?.unsubscribe()

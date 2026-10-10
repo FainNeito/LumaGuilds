@@ -132,20 +132,29 @@ internal class GuildStallMenu(
     }
 
     private fun controls(maxPage: Int, summary: Component): List<Row> {
-        return listOf(
-            Row(lang.gui("guild_stall.back"), emptyList()) {
-                goBack()
-            },
-            Row(lang.gui("guild_stall.previous"), emptyList()) {
-                page = (page - 1).coerceAtLeast(0)
-                open()
-            },
-            Row(lang.gui("guild_stall.refresh"), summaryLines(summary)) { open() },
-            Row(lang.gui("guild_stall.next"), emptyList()) {
-                page = (page + 1).coerceAtMost(maxPage)
-                open()
-            },
-        )
+        val navigation = navigationControls(maxPage, summary)
+        val stall = selected ?: return navigation
+        val manager = GuildStallManagerControls(player, guild.id, members, lang)
+        return navigation + manager.rows(stall).map { Row(it.name, emptyList(), it.action) }
+    }
+
+    private fun navigationControls(maxPage: Int, summary: Component): List<Row> {
+        val navigation =
+            listOf(
+                Row(lang.gui("guild_stall.back"), emptyList()) {
+                    goBack()
+                },
+                Row(lang.gui("guild_stall.previous"), emptyList()) {
+                    page = (page - 1).coerceAtLeast(0)
+                    open()
+                },
+                Row(lang.gui("guild_stall.refresh"), summaryLines(summary)) { open() },
+                Row(lang.gui("guild_stall.next"), emptyList()) {
+                    page = (page + 1).coerceAtMost(maxPage)
+                    open()
+                },
+            )
+        return navigation
     }
 
     private fun goBack() {

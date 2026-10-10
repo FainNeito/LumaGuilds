@@ -691,6 +691,18 @@ class MenuFactory(
         }
     }
 
+    /** Permission-aware guild onboarding for both menu clients. */
+    fun createGuildGettingStartedMenu(navigator: MenuNavigator, player: Player, guildId: java.util.UUID?): Menu =
+        if (shouldUseBedrockMenus(player)) {
+            net.lumalyte.lg.interaction.menus.bedrock.BedrockGuildGettingStartedMenu(navigator, player, guildId, logger)
+        } else {
+            net.lumalyte.lg.interaction.menus.guild.GuildGettingStartedMenu(navigator, player, guildId)
+        }
+
+    fun createPlayerChatSettingsMenu(navigator: MenuNavigator, player: Player): Menu =
+        if (shouldUseBedrockMenus(player)) net.lumalyte.lg.interaction.menus.bedrock.BedrockPlayerChatSettingsMenu(navigator, player, logger)
+        else net.lumalyte.lg.interaction.menus.guild.PlayerChatSettingsMenu(navigator, player)
+
     /** Read-only guild stall menu with the same Market snapshot on both platforms. */
     fun createGuildStallMenu(menuNavigator: MenuNavigator, player: Player, guild: net.lumalyte.lg.domain.entities.Guild): Menu =
         net.lumalyte.lg.interaction.menus.guild.GuildStallMenu(menuNavigator, player, guild, shouldUseBedrockMenus(player))

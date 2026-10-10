@@ -515,6 +515,11 @@ fun guildClaimsIntegrationModule() = module {
  * Social module - Party system, chat, and LFG
  */
 fun socialModule() = module {
+    single<net.lumalyte.lg.application.persistence.GuildOnboardingRepository> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.GuildOnboardingRepositorySQL(get())
+    }
+    single { net.lumalyte.lg.application.services.GuildGettingStartedService(get(), get(), get()) }
+    single { net.lumalyte.lg.infrastructure.listeners.GuildOnboardingListener(get(), get(), get(), get(), get()) }
     // Repositories
     single<PartyRepository> { PartyRepositorySQLite(get()) }
     single<PlayerPartyPreferenceRepository> { PlayerPartyPreferenceRepositorySQLite(get()) }
@@ -526,6 +531,14 @@ fun socialModule() = module {
         net.lumalyte.lg.infrastructure.persistence.guilds.GuildChatRankSettingsRepositorySQL(get())
     }
     single { net.lumalyte.lg.application.services.GuildChatRankSettingsService(get(), get()) }
+    single<net.lumalyte.lg.application.persistence.GuildChatReconnectSettingsRepository> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.GuildChatReconnectSettingsRepositorySQL(get())
+    }
+    single { net.lumalyte.lg.application.services.GuildChatReconnectSettingsService(get(), get()) }
+    single {
+        net.lumalyte.lg.infrastructure.listeners.GuildChatReconnectListener(get(), get(), get())
+    }
+
 
     // Services
     single<PartyService> { PartyServiceBukkit(get(), get(), get(), get(), get()) }
@@ -603,6 +616,8 @@ fun socialModule() = module {
     single<net.lumalyte.lg.infrastructure.listeners.RoseChatCleanupListener> {
         net.lumalyte.lg.infrastructure.listeners.RoseChatCleanupListener(get(), get(), get(), get(), get())
     }
+    single { net.lumalyte.lg.infrastructure.listeners.GlobalChatVisibilityListener(get()) }
+    single { net.lumalyte.lg.infrastructure.listeners.ChatDestinationIndicator(get(), get()) }
     single<net.lumalyte.lg.infrastructure.listeners.GuildMuteChatListener> {
         net.lumalyte.lg.infrastructure.listeners.GuildMuteChatListener(get(), get(), get())
     }
