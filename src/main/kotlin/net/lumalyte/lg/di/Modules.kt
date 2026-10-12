@@ -846,6 +846,9 @@ fun progressionModule() = module {
             plugin = get<LumaGuilds>(),
             config = get<ConfigService>().loadConfig().webApi,
             guildLeaderboardHandler = get(),
+            playerGuildSnapshot = { players ->
+                net.lumalyte.lg.infrastructure.web.handlers.PlayerGuildSnapshotHandler(get(), get(), get()).build(players)
+            },
             guildQuestSnapshot = {
                 net.lumalyte.lg.infrastructure.web.handlers.GuildQuestSnapshotHandler(
                     get<net.lumalyte.lg.application.persistence.QuestRepository>() as?

@@ -18,6 +18,7 @@ class WebApiServer(
     private val plugin: JavaPlugin,
     private val config: WebApiConfig,
     private val guildLeaderboardHandler: GuildLeaderboardHandler,
+    private val playerGuildSnapshot: ((List<java.util.UUID>) -> Map<String, Any?>)? = null,
     private val guildQuestSnapshot: (() -> Map<String, Any?>?)? = null,
 ) {
     private val gson: Gson = GsonBuilder().disableHtmlEscaping().create()
@@ -34,6 +35,7 @@ class WebApiServer(
         val httpServer = HttpServer.create(InetSocketAddress(config.host, config.port), 0)
         httpServer.createContext("/api/leaderboards/guilds", ::handleGuildLeaderboard)
         httpServer.createContext("/api/community/guildquests", ::handleGuildQuests)
+        httpServer.createContext("/api/community/player-guilds", ::handlePlayerGuilds)
         httpServer.createContext("/api/health") { exchange ->
             respondJson(exchange, 200, mapOf("status" to "ok"))
         }
@@ -124,6 +126,32 @@ class WebApiServer(
         var result = 0
         for (i in a.indices) result = result or (a[i].code xor b[i].code)
         return result == 0
+    }
+
+    private fun handlePlayerGuilds(exchange: HttpExchange) {
+        try {
+            if (exchange.requestURI.path != "/api/community/player-guilds") {
+                respondJson(exchange, 404, mapOf("error" to "not_found")); return
+            }
+            if (exchange.requestMethod != "GET") {
+                respondJson(exchange, 405, mapOf("error" to "method_not_allowed")); return
+            }
+            if (config.bearerToken.isBlank() || !isAuthorized(exchange)) {
+                respondJson(exchange, 401, mapOf("error" to "unauthorized")); return
+            }
+            val query = parseQuery(exchange.requestURI.rawQuery)
+            val raw = query["players"]?.split(',').orEmpty()
+            if (query.keys != setOf("players") || raw.size !in 1..50 || raw.distinct().size != raw.size ||
+                raw.any { !it.matches(Regex("[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}")) }) {
+                respondJson(exchange, 400, mapOf("error" to "invalid_players")); return
+            }
+            val data = playerGuildSnapshot?.invoke(raw.map(java.util.UUID::fromString))
+            if (data == null) { respondJson(exchange, 503, mapOf("error" to "guild_lookup_unavailable")); return }
+            if (questGson.toJson(data).toByteArray(StandardCharsets.UTF_8).size > 150_000) {
+                respondJson(exchange, 503, mapOf("error" to "guild_lookup_too_large")); return
+            }
+            respondJson(exchange, 200, data, questGson)
+        } catch (_: Exception) { respondJson(exchange, 503, mapOf("error" to "guild_lookup_unavailable")) }
     }
 
     private fun respondJson(exchange: HttpExchange, status: Int, body: Any, serializer: Gson = gson) {
