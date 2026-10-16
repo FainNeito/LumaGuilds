@@ -31,7 +31,7 @@ requirement/task/evidence record is manual; no automated SPEAR validator claimed
 - [x] Shared implementation and all seven style assets; pack lint passes with existing warnings
 - [x] Focused and full existing checks: {'tests': 1953, 'failures': 0, 'errors': 0, 'skipped': 16}
 - [x] Responsive interactive preview: 72 theme/screen/width combinations, fee validation and Discord round trip
-- [ ] Reviewable source delivery
+- [x] Reviewable source delivery: FainNeito/LumaGuilds PR #5 and Enthusia-Pack PR #1, stacked drafts; canonical parent reconciliation still pending
 - [ ] In-game GUI-scale / client-pack acceptance (not browser proof)
 
 Private PNGs remain outside the public source repository.
