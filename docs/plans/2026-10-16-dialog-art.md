@@ -5,6 +5,7 @@ Continuation base cd949644 retains the combined, unmerged TEST dialog stack.
 No deployment, restart, pack rebuild or production operation is authorized by this task.
 
 ## Spec
+
 - DA-001: WHEN a themed dialog renders, THE SYSTEM SHALL use a compact,
   independently drawn dialog emblem instead of cropped inventory headers,
   footers, separators or background strips.
@@ -16,6 +17,7 @@ No deployment, restart, pack rebuild or production operation is authorized by th
   permissions, selected themes and pause=false/NONE transition behavior.
 
 ## Prove / engine / architecture / refine
+
 The supplied client screenshots show legacy inventory bands enclosing disconnected
 native widgets. Source confirms body() injects header/divider/footer while
 referenceBody() and card() follow a different contract. Regression checks assert
