@@ -25,7 +25,7 @@ internal class GuildDialogThemeTest {
     @Test
     fun resolvesSelectedArtwork() {
         val skin = assertNotNull(GuildDialogTheme(resolver).resolve(GuiTheme.VOIDLIGHT))
-        val expected = listOf("header", "divider", "footer", "marker").map { "guild_dialog_voidlight_$it" }
+        val expected = listOf("guild_dialog_voidlight_crest_v3")
         assertEquals(expected + SPACER_ID, names)
         assertEquals(NamedTextColor.LIGHT_PURPLE, skin.accent)
         val label = skin.label(Component.text("Confirm 100 coins"))
@@ -42,7 +42,7 @@ internal class GuildDialogThemeTest {
     fun incompleteThemeStaysPlain() {
         val partial =
             NexoGlyphResolver { name ->
-                if (name.endsWith("footer")) null else resolver.resolve(name)
+                if (name.endsWith("crest_v3")) null else resolver.resolve(name)
             }
         assertNull(GuildDialogTheme(partial).resolve(GuiTheme.ENTHUSIA))
     }

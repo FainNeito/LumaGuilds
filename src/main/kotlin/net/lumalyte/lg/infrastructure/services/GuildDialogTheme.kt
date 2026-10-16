@@ -9,7 +9,7 @@ import net.lumalyte.lg.utils.GuiTheme
 
 private const val DIALOG_ART_FONT = "lumaguilds:dialogs"
 private const val DIALOG_ART_WIDTH = 280
-private val ART_PARTS = listOf("header", "divider", "footer", "marker")
+private val ART_PARTS = listOf("crest_v3")
 private val DIALOG_ACCENTS =
     mapOf(
         GuiTheme.FROSTBOUND to NamedTextColor.AQUA,
@@ -27,9 +27,7 @@ internal class GuildDialogTheme(
         val resolved = theme.resolved()
         return if (resolved.hasBackground) {
             parts(resolved)?.let {
-                GuildDialogSkin(it, guildDialogAccent(resolved)) {
-                    GuildDialogCards.resolve(resolver, resolved.name.lowercase())
-                }
+                GuildDialogSkin(it, guildDialogAccent(resolved))
             }
         } else {
             null
@@ -69,48 +67,42 @@ internal fun ResolvedNexoGlyph.matchesId(expected: String): Boolean = id == null
 internal class GuildDialogSkin(
     private val parts: Map<String, Component>,
     val accent: NamedTextColor,
-    cards: () -> GuildDialogCards? = { null },
 ) {
-    private val cardArt by lazy(cards)
-
-    fun card(lines: List<Component>): Component? = cardArt?.render(lines)
+    // Native text stays independent of decorative glyph advances and font metrics.
+    fun card(
+        @Suppress("UNUSED_PARAMETER") lines: List<Component>,
+    ): Component? = null
 
     fun referenceBody(
         @Suppress("UNUSED_PARAMETER") title: Component,
         subtitle: Component,
         content: List<DialogBody>,
     ): List<DialogBody> {
-        // The native dialog already renders its title. Avoid a duplicate framed
-        // heading and divider, which displace the useful content far below it.
-        return if (subtitle == Component.empty()) {
-            content
-        } else {
-            listOf(DialogBody.plainMessage(subtitle, DIALOG_ART_WIDTH)) + content
-        }
+        val contents =
+            if (subtitle == Component.empty()) {
+                content
+            } else {
+                listOf(DialogBody.plainMessage(subtitle, DIALOG_ART_WIDTH)) + content
+            }
+        return body(contents)
     }
 
     fun body(content: List<DialogBody>): List<DialogBody> {
         return buildList {
-            add(band("header", true))
-            content.forEachIndexed { index, body ->
-                if (index > 0) add(band("divider", false))
-                add(body)
+            parts["crest_v3"]?.let { crest ->
+                add(
+                    DialogBody.plainMessage(
+                        crest.append(Component.newline()).append(parts.getValue("spacer")),
+                        DIALOG_ART_WIDTH,
+                    ),
+                )
             }
-            add(band("footer", true))
+            addAll(content)
         }
     }
 
     fun label(text: Component): Component {
         return text.colorIfAbsent(accent)
-    }
-
-    private fun band(
-        name: String,
-        reserveLine: Boolean,
-    ): DialogBody {
-        val glyph = parts.getValue(name)
-        val text = if (reserveLine) glyph.append(Component.newline()).append(parts.getValue("spacer")) else glyph
-        return DialogBody.plainMessage(text, DIALOG_ART_WIDTH)
     }
 }
 

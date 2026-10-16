@@ -1,26 +1,37 @@
-# Guild dialog theme integration
+# Guild dialog artwork
 
-Supported Java dialogs use the guild's existing resolved GUI style. Recruitment pages, menu navigation, settings, progression, quest standings, readers and text inputs share the same optional artwork contract. Vanilla stays plain; selecting a theme does not grant a holiday unlock or alter emoji permissions.
+Java menus, readers and inputs share an optional compact emblem drawn specifically
+for dialogs. A central seal with engraved wings replaces cropped inventory bands.
+The native title appears once. Real guild banners, text and controls remain native
+widgets. No background glyphs are painted behind variable-length text.
 
-The private deployment package adds four glyphs per style:
+## Pack contract
 
-| Part | ID | Texture size | Ascent | Reserved native lines |
-| --- | --- | --- | --- | --- |
-| Header | `guild_dialog_<style>_header` | 256 x 18 | 7 | 2 |
-| Divider | `guild_dialog_<style>_divider` | 256 x 8 | 7 | 1 |
-| Footer | `guild_dialog_<style>_footer` | 256 x 10 | 7 | 2 |
-| Button accent | `guild_dialog_<style>_marker` | 8 x 8 | 7 | Native button label |
+Each style supplies guild_dialog_<style>_crest_v3: a 96x12 transparent PNG with
+height 12 and ascent 7 in lumaguilds:dialogs. Styles remain enthusia, frostbound,
+verdant, voidlight, obsidian, halloween and christmas. Selecting a style does not
+grant a holiday unlock or emoji permission.
 
-Styles are `enthusia`, `frostbound`, `verdant`, `voidlight`, `obsidian`, `halloween` and `christmas`. Textures use `lumaguilds:dialogs/<style>/<part>` and the dedicated `lumaguilds:dialogs` font. Nexo assigns characters; plugin code resolves IDs through the public API instead of hardcoding Unicode. Definitions use `is_emoji: false`, no chat placeholders, no tab completion, and the internal `lumaguilds.internal.dialog_art` permission. No new player permission grant is required for server-rendered artwork.
+The emblem reserves two native text lines using the existing guild_dialog_spacer.
+Both registrations must match their IDs and font, contain one character, and have
+is_emoji=false. Missing, invalid or old-only Nexo assets retain complete plain
+dialogs. Legacy bands and card overlays are never used as a fallback. Assets are
+resolved afresh on each screen.
 
-All four style glyphs and the shared transparent `guild_dialog_spacer` must resolve with the expected font and non-emoji metadata. Otherwise the complete plain dialog is used. The spacer is a non-whitespace glyph on the reserved second line, so reservation does not depend on clients retaining a trailing empty newline. Its 1 x 1 transparent texture has height 1 and ascent 0. Artwork is resolved afresh for each dialog rather than cached across Nexo reloads.
+Private assets and conflict-checked fixed characters live in Enthusia Pack under
+java/nexo/glyphs/enthusia/lumaguilds_dialog_art_v3.yml and
+java/nexo/pack/assets/lumaguilds/textures/dialogs/v3/<style>/crest.png.
+The existing spacer definition is reused without duplicate registration. Keep
+legacy artwork for rollback to older builds. No global button texture replacement.
 
-Pack delivery remains owned by Nexo, as for existing guild inventories. Do not gate registered artwork on the backend Player pack-status flag: a proxy may suppress duplicate sends after a transfer while the client retains its pack. A live rollout must verify the updated pack on actual clients, including a proxy transfer; registered server glyphs alone cannot prove the client's exact pack hash.
+## Delivery and acceptance
 
-Header, separator and footer bands reserve native text lines and do not cover buttons or inputs. Markers are part of the real button labels. Native button surfaces, keyboard focus and hitboxes remain Minecraft-owned; no global vanilla GUI texture override is installed. The previous NONE-after-action transition and owner/revision/lifetime guards remain authoritative.
+Nexo owns pack delivery. Do not infer client pack delivery solely from backend
+status flags when a proxy can retain packs across transfer. After a separately
+authorized activation, test actual Minecraft clients across GUI scales, all styles
+and Vanilla, missing assets, real banners, long text, fees, input focus, navigation
+and proxy transfers. Native buttons and untrusted-dialog indicators stay client owned.
 
-## Installation and acceptance boundary
-
-Licensed PNGs are excluded from this repository. The private package is rooted at the Nexo plugin directory and contains `glyphs/enthusia/lumaguilds_dialogs.yml` plus 29 namespaced PNGs under `pack/assets/lumaguilds/textures/dialogs`. Preserve existing files, inspect glyph-ID conflicts and back up the pack before an authorized install. Install the artwork before activating a plugin build that uses it, then use Nexo's normal pack rebuild/send flow only when authorized. A plugin build requires its own authorized activation; do not hot-reload the plugin.
-
-Check every supported style and Vanilla, a client without the pack, partial/missing glyph registration, Back/Next/Escape, real guild banners, complete payment quotes, and native text-input focus. Verify desktop GUI scales and long localized labels in Minecraft. The responsive browser preview uses the same private PNGs but does not prove client layout or pack delivery. Production requires merged source and verified release provenance; this document does not authorize installation, pack reload, restart or production changes.
+The interactive preview embeds these exact emblem PNGs and cached Minecraft font
+artwork with sample data. Responsive browser layout is not a Minecraft screenshot
+or client acceptance. No deployment, reload or restart is authorized by this change.
