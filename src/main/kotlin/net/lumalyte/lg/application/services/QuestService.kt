@@ -1,6 +1,7 @@
 ﻿package net.lumalyte.lg.application.services
 
 import net.lumalyte.lg.application.persistence.QuestRepository
+import net.lumalyte.lg.application.persistence.BankQuestContribution
 import net.lumalyte.lg.domain.entities.GuildQuestProgress
 import net.lumalyte.lg.domain.entities.QuestCondition
 import net.lumalyte.lg.domain.entities.QuestConditionType
@@ -41,6 +42,18 @@ class QuestService(
 ) {
     fun activeQuestSet(): WeeklyQuestSet? = repository.getActiveQuestSet()
     fun recentQuestSets(limit: Int): List<WeeklyQuestSet> = repository.getRecentQuestSets(limit)
+
+    /** Standings from retained completed sets, not an invented current-season counter. */
+    fun recordedWins(): Map<UUID, Int> {
+        val active = repository.getActiveQuestSet()?.weekId
+        val counts = mutableMapOf<UUID, Int>()
+        repository.getRecentQuestSets(52).filter { it.weekId != active && !it.endsAt.isAfter(Instant.now()) }
+            .forEach { week -> week.quests.forEach { quest ->
+                repository.getQuestLeaderboard(week.weekId, quest.id, 1).firstOrNull()?.takeIf { it.currentCount > 0 }
+                    ?.let { counts[it.guildId] = (counts[it.guildId] ?: 0) + 1 }
+            } }
+        return counts
+    }
     fun deactivate() = repository.deactivateActiveQuestSet()
 
     fun progressFor(guildId: UUID, questId: String): GuildQuestProgress {
@@ -93,7 +106,7 @@ class QuestService(
         context: QuestProgressContext = QuestProgressContext(),
         actorId: UUID? = null,
     ) {
-        if (amount <= 0) return
+        if (amount <= 0 || action == QuestAction.DEPOSIT_BANK) return
         val active = repository.getActiveQuestSet() ?: return
         active.quests.asSequence()
             .filter { it.action == action && targetMatches(it.target.id, targetId) }
@@ -112,6 +125,24 @@ class QuestService(
                     claimCompletedQuest(active, quest, guildId, actorId)
                 }
             }
+    }
+
+    /** Gross bank notifications are not evidence of new contribution. */
+    fun incrementBankDeposit(guildId: UUID, actorId: UUID, transactionId: UUID) {
+        val active = repository.getActiveQuestSet() ?: return
+        active.quests.filter {
+            it.action == QuestAction.DEPOSIT_BANK &&
+                targetMatches(it.target.id, "lumaguilds:bank/coins") &&
+                conditionsMatch(it.conditions, QuestProgressContext())
+        }.forEach { quest ->
+            val updated =
+                repository.applyBankContribution(
+                    BankQuestContribution(transactionId, active.weekId, quest.id, guildId, actorId, quest.targetCount),
+                )
+            if (updated != null && !updated.claimed && updated.completedAt != null) {
+                claimCompletedQuest(active, quest, guildId, actorId)
+            }
+        }
     }
 
     fun claimQuest(actorId: UUID, guildId: UUID, questId: String): Boolean {
