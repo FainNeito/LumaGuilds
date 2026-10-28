@@ -1497,9 +1497,15 @@ class GuildCommand : BaseCommand(), KoinComponent {
         navigator.openMenu(menuFactory.createGuildLeaderboardMenu(navigator, player, guild))
     }
 
+    @Default
+    @CommandPermission("lumaguilds.guild.menu")
+    fun onDefault(player: Player) = openGuildMenu(player, fallbackToInfo = true)
+
     @Subcommand("menu")
     @CommandPermission("lumaguilds.guild.menu")
-    fun onMenu(player: Player) {
+    fun onMenu(player: Player) = openGuildMenu(player, fallbackToInfo = false)
+
+    private fun openGuildMenu(player: Player, fallbackToInfo: Boolean) {
         val playerId = player.uniqueId
 
         // Find player's guild
@@ -1515,7 +1521,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
         val playerRank = rankService.getPlayerRank(playerId, guild.id)
         val highestRank = rankService.getHighestRank(guild.id)
 
-        if (!adminOverrideService.hasOverride(playerId) && playerRank?.id != highestRank?.id) {
+        if (!adminOverrideService.hasOverride(playerId) && (playerRank == null || highestRank == null || playerRank.id != highestRank.id)) {
             // Check if player has management permissions
             val hasManagementPerms = playerRank?.permissions?.any { permission ->
                 permission in setOf(
@@ -1529,6 +1535,10 @@ class GuildCommand : BaseCommand(), KoinComponent {
             } ?: false
 
             if (!hasManagementPerms) {
+                if (fallbackToInfo) {
+                    onInfo(player, null)
+                    return
+                }
                 player.sendMessage(lang.msg("command.migrated.guild.menu.you_don_t_have_permission_to_access"))
                 player.sendMessage(lang.msg("command.migrated.guild.menu.only_guild_owners_and_members_with_management"))
                 return
