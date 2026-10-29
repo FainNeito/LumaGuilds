@@ -416,6 +416,11 @@ private class FlakyCompletionNotifier : QuestCompletionNotifier {
 
 private class FakeQuestRepository(initial: WeeklyQuestSet?) : QuestRepository {
     private var active = initial
+    private var revision = 0L
+
+    override fun currentBankQuestRevision(): Long = revision
+    override fun beginBankQuestTransition(weekId: String, expectedRevision: Long): Boolean =
+        active?.weekId == weekId && revision == expectedRevision
     private val questSets = mutableMapOf<String, WeeklyQuestSet>().apply {
         initial?.let { put(it.weekId, it) }
     }
@@ -433,11 +438,15 @@ private class FakeQuestRepository(initial: WeeklyQuestSet?) : QuestRepository {
         questSets.values.sortedByDescending { it.startsAt }.take(limit)
 
     override fun saveActiveQuestSet(questSet: WeeklyQuestSet) {
+        revision++
         active = questSet
         questSets[questSet.weekId] = questSet
     }
 
-    override fun deactivateActiveQuestSet() { active = null }
+    override fun deactivateActiveQuestSet() {
+        if (active != null) revision++
+        active = null
+    }
 
     override fun getProgress(
         weekId: String,
@@ -541,6 +550,291 @@ private class FakeQuestRepository(initial: WeeklyQuestSet?) : QuestRepository {
 // Shared native contracts use deliberate currency fixtures and separate failure scenarios.
 @Suppress("MagicNumber", "TooManyFunctions")
 internal abstract class BankQuestContributionContract : BankDepositDeliveryFixture() {
+
+    @Test fun resetRejectsStaleDefinitionSnapshotBeforePayout() {
+        val (repository, _, rewards) = bankQuests()
+        val original = repository.getActiveQuestSet()!!
+        val first = original.copy(quests = listOf(original.quests.single().copy(
+            leaderboard = true, leaderboardPayouts = mapOf(1 to 500),
+        )))
+        repository.saveActiveQuestSet(first)
+        repository.saveProgress(GuildQuestProgress(first.weekId, "bank", guild, 1))
+        val captured = java.util.concurrent.CountDownLatch(1)
+        val resume = java.util.concurrent.CountDownLatch(1)
+        val pauseOnce = java.util.concurrent.atomic.AtomicBoolean(true)
+        val reader = object : QuestRepository by repository {
+            override fun getActiveQuestSet(): WeeklyQuestSet? {
+                val snapshot = repository.getActiveQuestSet()
+                if (pauseOnce.compareAndSet(true, false)) {
+                    captured.countDown()
+                    check(resume.await(15, TimeUnit.SECONDS)) { "Reset fixture was not resumed" }
+                }
+                return snapshot
+            }
+        }
+        val resetting = QuestService(reader, rewards, fullSetBonusExperience = 0)
+        val next = first.copy(weekId = "after-reset", startsAt = first.endsAt,
+            endsAt = first.endsAt.plusSeconds(604_800))
+        val reset = CompletableFuture.supplyAsync {
+            runCatching { resetting.resetWeeklyQuests(next) }.exceptionOrNull()
+        }
+        try {
+            assertTrue(captured.await(15, TimeUnit.SECONDS), "Reset did not capture the old definition")
+            // A separate adapter commits the edit before reset can acquire its fence.
+            QuestRepositorySQLite(db).saveActiveQuestSet(first.copy(quests = listOf(
+                first.quests.single().copy(leaderboardPayouts = mapOf(1 to 200)),
+            )))
+        } finally {
+            resume.countDown()
+        }
+        val failure = reset.get(15, TimeUnit.SECONDS)
+        assertTrue(rewards.experienceAwards.isEmpty(), "Stale reset paid ${rewards.experienceAwards}")
+        assertIs<IllegalStateException>(failure)
+        assertEquals(first.weekId, repository.getActiveQuestSet()!!.weekId)
+        assertFalse(repository.isLeaderboardRecipientPaid(first.weekId, "bank", guild))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_bank_quest_transition"))
+        QuestService(repository, rewards, fullSetBonusExperience = 0).resetWeeklyQuests(next)
+        assertEquals(listOf(guild to 200), rewards.experienceAwards)
+        assertEquals(next.weekId, repository.getActiveQuestSet()!!.weekId)
+    }
+
+    @Test fun `one failed recovery does not prevent other deposits and remains retryable`() {
+        val (repository, quests, _) = bankQuests()
+        val failed = physicalRequest(UUID(0, 1), 1_000)
+        val healthy = physicalRequest(UUID(0, 2), 1_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(failed))
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(healthy))
+        val trigger = if (db.dialect == SqlDialect.MARIADB) {
+            "FOR EACH ROW BEGIN IF NEW.transaction_id = '${failed.transactionId}' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'fixture fault'; END IF; END"
+        } else {
+            "WHEN NEW.transaction_id = '${failed.transactionId}' BEGIN SELECT RAISE(ABORT, 'fixture fault'); END"
+        }
+        execute("CREATE TRIGGER reject_one_bank_quest BEFORE INSERT ON guild_bank_contribution_quests $trigger")
+        quests.reconcilePendingRewards()
+        assertEquals(1_000, quests.progressFor(guild, "bank").currentCount)
+        assertEquals(listOf(failed.transactionId), repository.pendingBankContributions(128).map { it.transactionId })
+        execute("DROP TRIGGER reject_one_bank_quest")
+        quests.reconcilePendingRewards()
+        assertEquals(2_000, quests.progressFor(guild, "bank").currentCount)
+        assertTrue(repository.pendingBankContributions(128).isEmpty())
+    }
+
+    @Test fun `unattempted deposits are not starved by a full batch of retrying entries`() {
+        val (repository, quests, _) = bankQuests()
+        repeat(128) { index ->
+            val request = physicalRequest(UUID(0, index.toLong() + 1), 1)
+            assertIs<GuildGoldResult.Applied>(service.depositPhysical(request))
+            repository.noteBankContributionAttempt(request.transactionId)
+        }
+        val fresh = physicalRequest(UUID(0, 1_000), 1)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(fresh))
+        assertEquals(fresh.transactionId, repository.pendingBankContributions(1).single().transactionId)
+        quests.reconcilePendingRewards()
+        assertEquals(1, scalar("SELECT COUNT(*) FROM guild_bank_contribution_quests WHERE transaction_id = ?", fresh.transactionId.toString()))
+    }
+
+    @Test fun `unavailable quest revision rejects before creating a payment`() {
+        bankQuests()
+        execute("DROP TABLE guild_bank_quest_revision")
+        val request = physicalRequest(amount = 100)
+        assertEquals(GuildGoldResult.Rejected(net.lumalyte.lg.domain.gold.GuildGoldRejection.EXTERNAL_UNAVAILABLE),
+            service.depositPhysical(request))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_gold_operations WHERE transaction_id = ?", request.transactionId.toString()))
+    }
+
+    @Test fun `quote captured before quest deactivation must not prepare after deactivation`() {
+        val (repository, _, _) = bankQuests()
+        val oldQuote = quote
+        repository.deactivateActiveQuestSet()
+        val mutation = net.lumalyte.lg.domain.gold.GuildGoldMutation(
+            UUID.randomUUID(), guild, actor, net.lumalyte.lg.domain.gold.GuildGoldRoute.PHYSICAL_ITEM,
+            net.lumalyte.lg.domain.gold.GuildGoldDirection.CREDIT, 100, 0, "stale quest quote",
+        )
+        assertEquals(net.lumalyte.lg.domain.gold.GuildGoldPreparation.QuestTransition, gold.prepareDeposit(mutation, oldQuote))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_gold_operations WHERE transaction_id = ?", mutation.transactionId.toString()))
+        val fresh = physicalRequest(amount = 100)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(fresh))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_bank_quest_intents WHERE transaction_id = ?", fresh.transactionId.toString()))
+    }
+
+    @Test fun `quote captured before same-week definition edit must not prepare against replacement`() {
+        val (repository, _, _) = bankQuests()
+        val original = repository.getActiveQuestSet()!!
+        val oldQuote = quote
+        repository.saveActiveQuestSet(original.copy(quests = listOf(original.quests.single().copy(experienceReward = 900))))
+        val mutation = net.lumalyte.lg.domain.gold.GuildGoldMutation(
+            UUID.randomUUID(), guild, actor, net.lumalyte.lg.domain.gold.GuildGoldRoute.PHYSICAL_ITEM,
+            net.lumalyte.lg.domain.gold.GuildGoldDirection.CREDIT, 100, 0, "stale quest quote",
+        )
+        assertEquals(net.lumalyte.lg.domain.gold.GuildGoldPreparation.QuestTransition, gold.prepareDeposit(mutation, oldQuote))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_gold_operations WHERE transaction_id = ?", mutation.transactionId.toString()))
+    }
+
+    @Test fun `weekly rotation waits for committed bank contribution recovery`() {
+        val (repository, quests, rewards) = bankQuests()
+        val original = repository.getActiveQuestSet()!!
+        val request = physicalRequest(amount = 5_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(request))
+        val next = original.copy(weekId = "following-week")
+        assertThrows<IllegalStateException> { repository.saveActiveQuestSet(next) }
+        assertEquals(original.weekId, repository.getActiveQuestSet()!!.weekId)
+        quests.reconcilePendingRewards()
+        assertEquals(listOf(500), rewards.experienceAwards.map { it.second })
+        repository.saveActiveQuestSet(next)
+        assertEquals(next.weekId, repository.getActiveQuestSet()!!.weekId)
+    }
+
+    @Test fun `reset does not pay leaderboard before pending contribution is recovered`() {
+        val (repository, quests, rewards) = bankQuests()
+        val active = repository.getActiveQuestSet()!!
+        repository.saveActiveQuestSet(active.copy(quests = listOf(active.quests.single().copy(
+            leaderboard = true, leaderboardPayouts = mapOf(1 to 200),
+        ))))
+        val first = physicalRequest(amount = 1_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(first))
+        quests.incrementBankDeposit(guild, actor, first.transactionId)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(physicalRequest(amount = 4_000)))
+        assertThrows<IllegalStateException> { quests.resetWeeklyQuests(active.copy(weekId = "following-week")) }
+        assertTrue(rewards.experienceAwards.isEmpty())
+        quests.reconcilePendingRewards()
+        quests.resetWeeklyQuests(active.copy(weekId = "following-week"))
+        assertEquals(listOf(500, 200), rewards.experienceAwards.map { it.second })
+    }
+
+    @Test fun `weekly transition fences new deposits before external payment and resumes after restart`() {
+        val (repository, _, _) = bankQuests()
+        val active = repository.getActiveQuestSet()!!
+        assertTrue(repository.beginBankQuestTransition(active.weekId))
+        val request = physicalRequest(amount = 100)
+        assertEquals(GuildGoldResult.Rejected(net.lumalyte.lg.domain.gold.GuildGoldRejection.WEEKLY_QUEST_TRANSITION),
+            service.depositPhysical(request))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_gold_operations WHERE transaction_id = ?", request.transactionId.toString()))
+        restart()
+        val resumed = QuestRepositorySQLite(db)
+        assertTrue(resumed.beginBankQuestTransition(active.weekId))
+        val next = active.copy(weekId = "following-week")
+        resumed.saveActiveQuestSet(next)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(physicalRequest(amount = 100)))
+    }
+
+    @Test fun `a quote from before a completed transition is rejected before payment`() {
+        val (repository, _, _) = bankQuests()
+        captureQuestRevision = false
+        val active = repository.getActiveQuestSet()!!
+        assertTrue(repository.beginBankQuestTransition(active.weekId))
+        repository.saveActiveQuestSet(active.copy(weekId = "following-week", startsAt = occurredAt.plusSeconds(1)))
+        val stale = physicalRequest(amount = 100)
+        assertEquals(GuildGoldResult.Rejected(net.lumalyte.lg.domain.gold.GuildGoldRejection.WEEKLY_QUEST_TRANSITION),
+            service.depositPhysical(stale))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_gold_operations WHERE transaction_id = ?", stale.transactionId.toString()))
+        quote = quote.copy(occurredAt = occurredAt.plusSeconds(2), questRevision = repository.currentBankQuestRevision())
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(physicalRequest(amount = 100)))
+    }
+
+    @Test fun `MariaDB deposit preparation and transition cannot both pass the fence`() {
+        assumeTrue(db.dialect == SqlDialect.MARIADB)
+        val (repository, quests, _) = bankQuests()
+        repeat(10) { index ->
+            val active = repository.getActiveQuestSet()!!
+            val start = java.util.concurrent.CountDownLatch(1)
+            val deposit = CompletableFuture.supplyAsync {
+                start.await()
+                service.depositPhysical(physicalRequest(amount = 100))
+            }
+            val transition = CompletableFuture.supplyAsync {
+                start.await()
+                repository.beginBankQuestTransition(active.weekId)
+            }
+            start.countDown()
+            val result = deposit.get(15, TimeUnit.SECONDS)
+            val fenced = transition.get(15, TimeUnit.SECONDS)
+            if (fenced) {
+                assertEquals(GuildGoldResult.Rejected(net.lumalyte.lg.domain.gold.GuildGoldRejection.WEEKLY_QUEST_TRANSITION), result)
+            } else {
+                assertIs<GuildGoldResult.Applied>(result)
+                assertTrue(repository.hasUnresolvedBankContributions(active.weekId))
+                quests.reconcilePendingRewards()
+            }
+            repository.saveActiveQuestSet(active.copy(weekId = "race-$index"))
+        }
+    }
+
+    @Test fun `deposit retains its original quest identity across replacement`() {
+        val (repository, _, _) = bankQuests()
+        val original = repository.getActiveQuestSet()!!
+        val request = physicalRequest(amount = 5_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(request))
+        assertEquals(1, scalar("SELECT COUNT(*) FROM guild_bank_quest_intents WHERE transaction_id = ? AND quest_id = ?", request.transactionId.toString(), "bank"))
+        repository.saveActiveQuestSet(original.copy(quests = listOf(original.quests.single().copy(id = "replacement"))))
+        restart()
+        assertEquals(1, scalar("SELECT COUNT(*) FROM guild_bank_quest_intents WHERE transaction_id = ? AND quest_id = ?", request.transactionId.toString(), "bank"))
+        assertEquals(0, scalar("SELECT COUNT(*) FROM guild_bank_quest_intents WHERE transaction_id = ? AND quest_id = ?", request.transactionId.toString(), "replacement"))
+    }
+
+    @Test fun `delayed deposit cannot credit replacement quest definition`() {
+        val (repository, quests, rewards) = bankQuests()
+        val original = repository.getActiveQuestSet()!!
+        val request = physicalRequest(amount = 5_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(request))
+        // The active definition can be replaced in the same week before event delivery.
+        val replacement = original.quests.single().copy(id = "replacement")
+        repository.saveActiveQuestSet(original.copy(quests = listOf(replacement)))
+        quests.incrementBankDeposit(guild, actor, request.transactionId)
+        assertEquals(0, quests.progressFor(guild, "replacement").currentCount)
+        quests.reconcilePendingRewards()
+        assertTrue(repository.pendingBankContributions(1).isEmpty())
+        assertTrue(rewards.experienceAwards.isEmpty())
+    }
+
+    @Test fun `delayed deposit cannot credit edited definition with same quest id`() {
+        val (repository, quests, rewards) = bankQuests()
+        val original = repository.getActiveQuestSet()!!
+        val request = physicalRequest(amount = 5_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(request))
+        val edited = original.quests.single().copy(experienceReward = 900)
+        repository.saveActiveQuestSet(original.copy(quests = listOf(edited)))
+        quests.incrementBankDeposit(guild, actor, request.transactionId)
+        assertEquals(0, quests.progressFor(guild, edited.id).currentCount)
+        assertTrue(rewards.experienceAwards.isEmpty())
+    }
+
+    @Test fun `committed contribution recovers when publication is lost`() {
+        val (_, quests, rewards) = bankQuests()
+        val request = physicalRequest(amount = 5_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(request))
+        // Simulate a stop after settlement and before the post-commit event is delivered.
+        restart()
+        val recovered = QuestService(QuestRepositorySQLite(db), rewards, fullSetBonusExperience = 0)
+        recovered.reconcilePendingRewards()
+        assertEquals(5_000, recovered.progressFor(guild, "bank").currentCount)
+        assertEquals(listOf(500), rewards.experienceAwards.map { it.second })
+    }
+
+    @Test fun `recycled deposit cannot starve the recovery queue`() {
+        val (repository, quests, rewards) = bankQuests()
+        val first = physicalRequest(amount = 1_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(first))
+        quests.incrementBankDeposit(guild, actor, first.transactionId)
+        assertIs<GuildGoldResult.Applied>(service.withdrawPersonal(personalRequest(amount = 1_000)))
+        val recycled = physicalRequest(amount = 1_000)
+        assertIs<GuildGoldResult.Applied>(service.depositPhysical(recycled))
+        assertEquals(1, repository.pendingBankContributions(128).size)
+        quests.reconcilePendingRewards()
+        assertEquals(1_000, quests.progressFor(guild, "bank").currentCount)
+        assertTrue(rewards.experienceAwards.isEmpty())
+        assertTrue(repository.pendingBankContributions(128).isEmpty())
+    }
+
+    @Test fun `bounded recovery drains backlog over multiple passes`() {
+        val (repository, quests, _) = bankQuests()
+        repeat(129) { assertIs<GuildGoldResult.Applied>(service.depositPhysical(physicalRequest(amount = 1))) }
+        quests.reconcilePendingRewards()
+        assertEquals(128, quests.progressFor(guild, "bank").currentCount)
+        assertEquals(1, repository.pendingBankContributions(128).size)
+        quests.reconcilePendingRewards()
+        assertEquals(129, quests.progressFor(guild, "bank").currentCount)
+        assertTrue(repository.pendingBankContributions(1).isEmpty())
+    }
 
     @Test fun `fresh deposits without a chapter count once and pay the quest once`() {
         execute("DELETE FROM chapter_lifecycle")
@@ -650,6 +944,8 @@ internal abstract class BankQuestContributionContract : BankDepositDeliveryFixtu
         quests.incrementBankDeposit(guild, actor, UUID.randomUUID())
         assertEquals(0, quests.progressFor(guild, "bank").currentCount)
         val original = repository.getActiveQuestSet()!!
+        // Model an explicitly closed recovery item to exercise the old-run fence below.
+        repository.finishBankContributionRecovery(request.transactionId)
         repository.saveActiveQuestSet(
             original.copy(
                 weekId = "next",
@@ -719,6 +1015,7 @@ internal abstract class BankQuestContributionContract : BankDepositDeliveryFixtu
             WeeklyQuestSet("2026-W43", occurredAt.minusSeconds(86_400), occurredAt.plusSeconds(604_800), listOf(definition))
         val repository = QuestRepositorySQLite(db)
         repository.saveActiveQuestSet(week)
+        quote = quote.copy(questRevision = repository.currentBankQuestRevision())
         val rewards = RecordingRewardSink()
         return Triple(repository, QuestService(repository, rewards, fullSetBonusExperience = 0), rewards)
     }

@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.UUID
 import kotlin.math.abs
+import org.slf4j.LoggerFactory
 
 interface QuestRewardSink {
     fun awardExperience(guildId: UUID, amount: Int, transactionId: UUID): Boolean
@@ -40,6 +41,7 @@ class QuestService(
     private val leaderboardWinnerExperience: Int = 0,
     private val completionNotifier: QuestCompletionNotifier = QuestCompletionNotifier.NOOP,
 ) {
+    private val logger = LoggerFactory.getLogger(QuestService::class.java)
     fun activeQuestSet(): WeeklyQuestSet? = repository.getActiveQuestSet()
     fun recentQuestSets(limit: Int): List<WeeklyQuestSet> = repository.getRecentQuestSets(limit)
 
@@ -156,6 +158,15 @@ class QuestService(
      * Safe to call repeatedly: XP and item delivery use stable transaction identities.
      */
     fun reconcilePendingRewards(): Int {
+        repository.pendingBankContributions(128).forEach { contribution ->
+            try {
+                repository.noteBankContributionAttempt(contribution.transactionId)
+                incrementBankDeposit(contribution.guildId, contribution.actorId, contribution.transactionId)
+                repository.finishBankContributionRecovery(contribution.transactionId)
+            } catch (error: Exception) {
+                logger.warn("Bank quest contribution {} remains pending for retry", contribution.transactionId, error)
+            }
+        }
         var delivered = 0
 
         repository.getActiveQuestSet()?.let { active ->
@@ -185,11 +196,19 @@ class QuestService(
         return delivered
     }
 
+    /** A reset must not discard the remaining bounded recovery backlog. */
+    fun hasPendingBankContributionRecovery(): Boolean = repository.pendingBankContributions(1).isNotEmpty()
+
     fun resetWeeklyQuests(nextQuestSet: WeeklyQuestSet) {
+        // Read generation first: edits during either snapshot read must invalidate the fence.
+        val revision = repository.currentBankQuestRevision()
         val active = repository.getActiveQuestSet()
         if (active?.weekId == nextQuestSet.weekId) return
 
         active?.let { current ->
+            check(repository.beginBankQuestTransition(current.weekId, revision)) {
+                "Weekly quest reset blocked by changed definitions or unresolved bank contributions"
+            }
             check(reconcileFullSetBonuses(current)) {
                 "Unable to durably settle weekly quest completion bonuses"
             }

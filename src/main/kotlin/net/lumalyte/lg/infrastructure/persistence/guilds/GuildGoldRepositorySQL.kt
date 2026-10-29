@@ -147,8 +147,14 @@ class GuildGoldRepositorySQL(
                         }
                     }
                     if (run != null) check(run.guildExists) { "Guild no longer exists for a new bank deposit" }
+                    if (quote != null && !lockQuestPreparation(connection, quote.occurredAt.toEpochMilli(), quote.questRevision)) {
+                        return@transaction GuildGoldPreparation.QuestTransition
+                    }
                     insertPrepared(connection, mutation)
-                    if (quote != null) bankDeliveries.capture(connection, mutation, quote, checkNotNull(run))
+                    if (quote != null) {
+                        bankDeliveries.capture(connection, mutation, quote, checkNotNull(run))
+                        captureBankQuestIntents(connection, mutation.transactionId, quote.occurredAt.toEpochMilli())
+                    }
                     GuildGoldPreparation.New(
                         GuildGoldOperationRecord(
                             mutation = mutation,
@@ -160,6 +166,51 @@ class GuildGoldRepositorySQL(
                 }
             }
         }
+
+    private fun lockQuestPreparation(connection: Connection, occurredAt: Long, quoteRevision: Long): Boolean {
+        val hasQuestTables = listOf("weekly_quest_sets", "weekly_quest_definitions").all { table ->
+            connection.metaData.getTables(connection.catalog, null, table, null).use { it.next() }
+        }
+        if (!hasQuestTables) return true
+        // Lock the active set even when it contains no bank definitions. A locking join
+        // returning no rows would otherwise leave a gap during definition replacement.
+        if (mariaDb) {
+            connection.prepareStatement("SELECT week_id FROM weekly_quest_sets WHERE active = 1 FOR UPDATE").use { statement ->
+                statement.executeQuery().use { rows -> while (rows.next()) { /* acquire all active-set locks */ } }
+            }
+        }
+        val transitionLock = if (mariaDb) " FOR UPDATE" else ""
+        val transition = connection.selectOne("SELECT week_id FROM guild_bank_quest_transition WHERE id = 1$transitionLock") { it.getString(1) }
+        if (transition != null) return false
+        val revision = connection.selectOne("SELECT revision FROM guild_bank_quest_revision WHERE id = 1$transitionLock") { it.getLong(1) }
+            ?: error("Bank quest revision is unavailable")
+        if (revision != quoteRevision) return false
+        // A quote can be captured immediately before a transition but reach preparation
+        // after it completes. Refuse it before payment; retry will capture the new time.
+        val activeStart = connection.selectOne("SELECT starts_at FROM weekly_quest_sets WHERE active = 1$transitionLock") { it.getLong(1) }
+        return activeStart == null || occurredAt >= activeStart
+    }
+
+    private fun captureBankQuestIntents(connection: Connection, transactionId: UUID, occurredAt: Long) {
+        val hasQuestTables = listOf("weekly_quest_sets", "weekly_quest_definitions").all { table ->
+            connection.metaData.getTables(connection.catalog, null, table, null).use { it.next() }
+        }
+        if (!hasQuestTables) return
+        // Serialize capture with weekly rotation so a prepared operation is visible to its reset gate.
+        val definitions = QuestDefinitionFingerprint.activeBankDefinitions(connection, occurredAt, lock = mariaDb)
+        connection.prepareStatement(
+            "INSERT INTO guild_bank_quest_intents (transaction_id, week_id, quest_id, fingerprint) VALUES (?, ?, ?, ?)"
+        ).use { statement ->
+            definitions.forEach { definition ->
+                statement.setString(1, transactionId.toString())
+                statement.setString(2, definition.weekId)
+                statement.setString(3, definition.questId)
+                statement.setString(4, definition.fingerprint)
+                statement.addBatch()
+            }
+            statement.executeBatch()
+        }
+    }
 
     override fun findOperation(transactionId: UUID): GuildGoldOperationRecord? =
         storage.connection.connection.use { connection -> findOperation(connection, transactionId, false) }
