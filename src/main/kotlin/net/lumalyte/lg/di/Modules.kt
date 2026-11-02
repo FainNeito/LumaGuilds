@@ -1112,6 +1112,7 @@ fun economyModule() = module {
                 { org.bukkit.Bukkit.getOfflinePlayer(it) },
             ),
             net.lumalyte.lg.infrastructure.services.GuildCreationVaultJournal(get()),
+            net.lumalyte.lg.infrastructure.services.PhysicalGoldJournal(get())::pending,
         )
     }
     single {

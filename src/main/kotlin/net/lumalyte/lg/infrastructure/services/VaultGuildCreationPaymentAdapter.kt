@@ -16,8 +16,9 @@ import java.util.UUID
 class VaultGuildCreationPaymentAdapter(
     private val personal: PersonalEconomyPort,
     private val journal: GuildCreationVaultJournal,
+    private val legacyPending: (UUID) -> UUID? = { null },
 ) : GuildCreationPaymentPort {
-    override fun pendingReservation(playerId: UUID): UUID? = journal.pending(playerId)
+    override fun pendingReservation(playerId: UUID): UUID? = legacyPending(playerId) ?: journal.pending(playerId)
 
     override fun reserve(transactionId: UUID, playerId: UUID, requestedValue: Long): PhysicalReservationResult {
         if (requestedValue <= 0) return PhysicalReservationResult.Unavailable

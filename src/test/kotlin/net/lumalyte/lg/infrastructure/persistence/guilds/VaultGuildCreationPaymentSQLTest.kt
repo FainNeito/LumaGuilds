@@ -8,6 +8,7 @@ import net.lumalyte.lg.config.GuildConfig
 import net.lumalyte.lg.config.MainConfig
 import net.lumalyte.lg.domain.entities.Guild
 import net.lumalyte.lg.infrastructure.services.GuildCreationVaultJournal
+import net.lumalyte.lg.infrastructure.services.PhysicalGoldJournal
 import net.lumalyte.lg.infrastructure.services.VaultGuildCreationPaymentAdapter
 import net.lumalyte.lg.infrastructure.services.VaultPersonalEconomyAdapter
 import net.milkbowl.vault.economy.Economy
@@ -33,6 +34,51 @@ class VaultGuildCreationPaymentSQLTest : RewardSqlTestFixture() {
 
     private fun port(personal: PersonalEconomyPort, journal: GuildCreationVaultJournal) =
         VaultGuildCreationPaymentAdapter(personal, journal)
+
+    @Test fun unresolvedLegacyReceiptBlocksVaultDebitAcrossJournalReopen() {
+        val storage = openStorage()
+        val player = UUID.randomUUID()
+        val legacy = PhysicalGoldJournal(storage)
+        val receipt = PhysicalGoldReservation(UUID.randomUUID(), player, 10)
+        legacy.insert(receipt, "legacy payload")
+        val economy = FakePersonal(100)
+        val payments = VaultGuildCreationPaymentAdapter(
+            economy, GuildCreationVaultJournal(storage), PhysicalGoldJournal(storage)::pending
+        )
+        assertEquals(GuildCreationCostResult.PendingReview(receipt.id),
+            service(payments).createGuild(UUID.randomUUID(), player) { fail("must not found") })
+        assertEquals(0, economy.debits.get())
+        assertEquals("legacy payload", legacy.get(receipt.id)?.payload)
+    }
+
+    @Test fun terminalLegacyReceiptsDoNotBlockVaultDebit() {
+        val storage = openStorage()
+        val player = UUID.randomUUID()
+        val legacy = PhysicalGoldJournal(storage)
+        for (terminal in listOf("COMMITTED", "RESTORED")) {
+            val receipt = PhysicalGoldReservation(UUID.randomUUID(), player, 10)
+            legacy.insert(receipt, "payload")
+            assertTrue(legacy.transition(receipt.id, "REMOVING", terminal))
+        }
+        val economy = FakePersonal(100)
+        val payments = VaultGuildCreationPaymentAdapter(
+            economy, GuildCreationVaultJournal(storage), PhysicalGoldJournal(storage)::pending
+        )
+        assertIs<GuildCreationCostResult.Applied>(
+            service(payments).createGuild(UUID.randomUUID(), player) { guild() })
+        assertEquals(1, economy.debits.get())
+    }
+
+    @Test fun legacyReceiptLookupFailureStopsBeforeVaultDebit() {
+        val storage = openStorage()
+        val economy = FakePersonal(100)
+        val payments = VaultGuildCreationPaymentAdapter(economy, GuildCreationVaultJournal(storage)) {
+            throw IllegalStateException("legacy journal unavailable")
+        }
+        assertEquals(GuildCreationCostResult.PaymentUnavailable,
+            service(payments).createGuild(UUID.randomUUID(), UUID.randomUUID()) { fail("must not found") })
+        assertEquals(0, economy.debits.get())
+    }
 
     @Test fun appliedDebitCommitsAndReleasesGuardWithoutDiscardingAudit() {
         val storage = openStorage()
