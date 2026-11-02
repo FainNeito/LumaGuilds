@@ -4,6 +4,16 @@
 allprojects {
     repositories {
         maven { url = uri('https://api.modrinth.com/maven') }
+        // The Iridium repository is unrelated to these dynamic dependencies.
+        // Its 502 responses must not prevent their own repositories resolving them.
+        whenObjectAdded { repository ->
+            if (repository.hasProperty('url') && repository.url?.host == 'nexus.iridiumdevelopment.net') {
+                repository.content {
+                    excludeGroup('io.papermc.paper')
+                    excludeGroup('com.comphenix.protocol')
+                }
+            }
+        }
     }
     configurations.configureEach {
         resolutionStrategy.dependencySubstitution {
