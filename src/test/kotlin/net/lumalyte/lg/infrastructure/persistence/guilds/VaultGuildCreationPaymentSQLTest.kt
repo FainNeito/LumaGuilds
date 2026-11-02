@@ -51,6 +51,34 @@ class VaultGuildCreationPaymentSQLTest : RewardSqlTestFixture() {
         assertEquals("legacy payload", legacy.get(receipt.id)?.payload)
     }
 
+    @Test fun legacyReceiptsSurviveClosedAndReopenedStorage() {
+        val before = openStorage()
+        val priorJournal = PhysicalGoldJournal(before)
+        val pending = PhysicalGoldReservation(UUID.randomUUID(), UUID.randomUUID(), 10)
+        val terminal = PhysicalGoldReservation(UUID.randomUUID(), UUID.randomUUID(), 10)
+        priorJournal.insert(pending, "pending payload")
+        priorJournal.insert(terminal, "terminal payload")
+        assertTrue(priorJournal.transition(terminal.id, "REMOVING", "RESTORED"))
+        closeStorage(before)
+
+        val after = openStorage()
+        val reopened = PhysicalGoldJournal(after)
+        assertEquals("REMOVING", reopened.get(pending.id)?.phase)
+        assertEquals("pending payload", reopened.get(pending.id)?.payload)
+        assertEquals("RESTORED", reopened.get(terminal.id)?.phase)
+        assertEquals("terminal payload", reopened.get(terminal.id)?.payload)
+        val economy = FakePersonal(100)
+        val payments = VaultGuildCreationPaymentAdapter(economy, GuildCreationVaultJournal(after), reopened::pending)
+        assertEquals(GuildCreationCostResult.PendingReview(pending.id),
+            service(payments).createGuild(UUID.randomUUID(), pending.playerId) { fail("must not found") })
+        assertEquals(0, economy.debits.get())
+        assertIs<GuildCreationCostResult.Applied>(
+            service(payments).createGuild(UUID.randomUUID(), terminal.playerId) { guild() })
+        assertEquals(1, economy.debits.get())
+        assertEquals("REMOVING", reopened.get(pending.id)?.phase)
+        assertEquals("pending payload", reopened.get(pending.id)?.payload)
+    }
+
     @Test fun terminalLegacyReceiptsDoNotBlockVaultDebit() {
         val storage = openStorage()
         val player = UUID.randomUUID()
