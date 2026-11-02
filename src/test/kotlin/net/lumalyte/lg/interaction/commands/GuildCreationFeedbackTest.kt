@@ -20,6 +20,7 @@ class GuildCreationFeedbackTest {
         val repository = mockk<GuildRepository>()
         val config = mockk<ConfigService>()
         val payments = mockk<GuildCreationPaymentPort>(relaxed = true)
+        every { payments.pendingReservation(any()) } returns null
         val costs = GuildCostService({ config.loadConfig() }, payments, mockk(relaxed = true))
         val lang = mockk<LangService>(relaxed = true)
         val player = mockk<Player>(relaxed = true)
@@ -78,6 +79,7 @@ class GuildCreationFeedbackTest {
         val player = mockk<Player>(relaxed = true)
         val server = mockk<org.bukkit.Server>(relaxed = true)
         val payments = mockk<GuildCreationPaymentPort>(relaxed = true)
+        every { payments.pendingReservation(any()) } returns null
         val costs = GuildCostService({ config.loadConfig() }, payments, mockk(relaxed = true))
         val playerId = UUID.randomUUID()
         val guild = net.lumalyte.lg.domain.entities.Guild(UUID.randomUUID(), "Valid Name", createdAt = java.time.Instant.now())
