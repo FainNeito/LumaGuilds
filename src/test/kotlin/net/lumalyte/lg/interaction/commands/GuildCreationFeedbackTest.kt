@@ -19,6 +19,8 @@ class GuildCreationFeedbackTest {
         val guilds = mockk<GuildService>()
         val repository = mockk<GuildRepository>()
         val config = mockk<ConfigService>()
+        val payments = mockk<GuildCreationPaymentPort>(relaxed = true)
+        val costs = GuildCostService({ config.loadConfig() }, payments, mockk(relaxed = true))
         val lang = mockk<LangService>(relaxed = true)
         val player = mockk<Player>(relaxed = true)
         every { player.uniqueId } returns UUID.randomUUID()
@@ -27,7 +29,7 @@ class GuildCreationFeedbackTest {
         every { config.loadConfig() } returns MainConfig(chapterTwoGoldCostsEnabled = false)
         every { guilds.createGuild(any(), any(), any()) } returns null
         startKoin { modules(module {
-            single { guilds }; single { repository }; single { config }; single { lang }
+            single { guilds }; single { repository }; single { costs }; single { config }; single { lang }
         }) }
         every { player.hasPermission("lumaguilds.guild.creationcooldown.bypass") } returns false
         GuildCommand().onCreate(player, "Valid Name", null)
@@ -35,6 +37,36 @@ class GuildCreationFeedbackTest {
         every { player.hasPermission("lumaguilds.guild.creationcooldown.bypass") } returns true
         GuildCommand().onCreate(player, "Valid Name", null)
         verify(exactly = 1) { guilds.createGuild(any(), any(), any()) }
+        verify(exactly = 0) { payments.reserve(any(), any(), any()) }
+        verify(exactly = 0) { lang.msg("command.migrated.guild.create.raw_gold_paid", *anyVararg()) }
+        verify(exactly = 1) { lang.msg("command.migrated.guild.create.the_name_is_already_taken_by_another", *anyVararg()) }
+    }
+
+    @Test fun freeCommandCannotBypassPendingOrUnavailablePaymentLookup() {
+        stopKoin()
+        val guilds = mockk<GuildService>()
+        val repository = mockk<GuildRepository>()
+        val config = mockk<ConfigService>()
+        val lang = mockk<LangService>(relaxed = true)
+        val player = mockk<Player>(relaxed = true)
+        val payments = mockk<GuildCreationPaymentPort>()
+        val costs = GuildCostService({ config.loadConfig() }, payments, mockk(relaxed = true))
+        val playerId = UUID.randomUUID()
+        every { player.uniqueId } returns playerId
+        every { guilds.getPlayerGuilds(playerId) } returns emptySet()
+        every { repository.creationCooldownUntil(playerId) } returns null
+        every { config.loadConfig() } returns MainConfig(chapterTwoGoldCostsEnabled = false)
+        startKoin { modules(module {
+            single { guilds }; single { repository }; single { costs }; single { config }; single { lang }
+        }) }
+        every { payments.pendingReservation(playerId) } returns UUID.randomUUID()
+        GuildCommand().onCreate(player, "Valid Name", null)
+        every { payments.pendingReservation(playerId) } throws IllegalStateException("database unavailable")
+        GuildCommand().onCreate(player, "Valid Name", null)
+        verify(exactly = 0) { guilds.createGuild(any(), any(), any()) }
+        verify(exactly = 0) { payments.reserve(any(), any(), any()) }
+        verify(exactly = 1) { lang.msg("command.migrated.guild.create.payment_outcome_uncertain", *anyVararg()) }
+        verify(exactly = 1) { lang.msg("command.migrated.guild.create.raw_gold_unavailable") }
     }
 
     @Test fun bypassRetainsMembershipValidationAndPaidCreationFailures() {

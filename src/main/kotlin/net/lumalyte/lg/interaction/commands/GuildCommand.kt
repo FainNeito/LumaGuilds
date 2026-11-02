@@ -177,17 +177,16 @@ class GuildCommand : BaseCommand(), KoinComponent {
             return
         }
         val goldCostsEnabled = configService.loadConfig().chapterTwoGoldCostsEnabled
-        val guild = if (!goldCostsEnabled) {
-            guildService.createGuild(name, playerId, banner)
-        } else {
-            when (val result = guildCostService.createGuild(UUID.randomUUID(), playerId) {
+        val guild = when (val result = guildCostService.createGuild(UUID.randomUUID(), playerId) {
                 guildService.createGuild(name, playerId, banner)
             }) {
                 is net.lumalyte.lg.application.services.GuildCreationCostResult.Applied -> {
-                    player.sendMessage(lang.msg(
-                        "command.migrated.guild.create.raw_gold_paid",
-                        "cost" to result.cost,
-                    ))
+                    if (result.cost > 0) {
+                        player.sendMessage(lang.msg(
+                            "command.migrated.guild.create.raw_gold_paid",
+                            "cost" to result.cost,
+                        ))
+                    }
                     result.guild
                 }
                 net.lumalyte.lg.application.services.GuildCreationCostResult.InsufficientGold -> {
@@ -204,6 +203,10 @@ class GuildCommand : BaseCommand(), KoinComponent {
                 }
                 is net.lumalyte.lg.application.services.GuildCreationCostResult.CreationFailed -> {
                     player.sendMessage(lang.msg("command.migrated.guild.create.failed_to_create_guild"))
+                    if (!goldCostsEnabled && result.compensated) {
+                        player.sendMessage(lang.msg("command.migrated.guild.create.the_name_is_already_taken_by_another", "name" to name))
+                        player.sendMessage(lang.msg("command.migrated.guild.create.please_choose_a_different_name"))
+                    }
                     if (!result.compensated) {
                         player.sendMessage(lang.msg("command.migrated.guild.create.payment_requires_review"))
                     }
@@ -223,9 +226,8 @@ class GuildCommand : BaseCommand(), KoinComponent {
                         "transaction" to result.transactionId))
                     return
                 }
-            }
         }
-        if (guild != null) {
+        run {
             player.sendMessage(lang.msg("command.migrated.guild.create.guild_created_successfully", "name" to name))
             player.sendMessage(lang.msg("command.migrated.guild.create.you_are_now_the_owner_of_the"))
             player.sendMessage(lang.msg("command.common.blank_line"))
@@ -239,10 +241,6 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
             // Log the guild creation
             player.server.logger.info("Guild '${name}' created by ${player.name} (${player.uniqueId})")
-        } else {
-            player.sendMessage(lang.msg("command.migrated.guild.create.failed_to_create_guild"))
-            player.sendMessage(lang.msg("command.migrated.guild.create.the_name_is_already_taken_by_another", "name" to name))
-            player.sendMessage(lang.msg("command.migrated.guild.create.please_choose_a_different_name"))
         }
     }
     
