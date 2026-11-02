@@ -16,7 +16,7 @@ import java.util.UUID
 class VaultGuildCreationPaymentAdapter(
     private val personal: PersonalEconomyPort,
     private val journal: GuildCreationVaultJournal,
-    private val legacyPending: (UUID) -> UUID? = { null },
+    private val legacyPending: (UUID) -> UUID?,
 ) : GuildCreationPaymentPort {
     override fun pendingReservation(playerId: UUID): UUID? = legacyPending(playerId) ?: journal.pending(playerId)
 

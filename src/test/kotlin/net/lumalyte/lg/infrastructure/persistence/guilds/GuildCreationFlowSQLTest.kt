@@ -86,7 +86,9 @@ class GuildCreationFlowSQLTest : RewardSqlTestFixture() {
                 return ExternalTransferResult.Applied
             }
         }
-        val payments = VaultGuildCreationPaymentAdapter(personal, GuildCreationVaultJournal(storage))
+        val payments = VaultGuildCreationPaymentAdapter(
+            personal, GuildCreationVaultJournal(storage), PhysicalGoldJournal(storage)::pending
+        )
         val failures = mutableListOf<Exception>()
         val costs = GuildCostService({ cfg }, payments, mockk(relaxed = true)) { _, error -> failures += error }
         val outcome = costs.createGuild(UUID.randomUUID(), playerId) {

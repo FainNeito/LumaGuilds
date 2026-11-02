@@ -56,6 +56,12 @@ class GuildCostService @JvmOverloads constructor(
         playerId: UUID,
         create: () -> Guild?,
     ): GuildCreationCostResult {
+        try {
+            physicalGold.pendingReservation(playerId)?.let { return GuildCreationCostResult.PendingReview(it) }
+        } catch (error: Exception) {
+            reportCreationFailure(transactionId, error)
+            return GuildCreationCostResult.PaymentUnavailable
+        }
         val cfg = config()
         if (!cfg.chapterTwoGoldCostsEnabled) {
             return create()?.let { GuildCreationCostResult.Applied(it, 0) }
@@ -63,12 +69,6 @@ class GuildCostService @JvmOverloads constructor(
         }
         val cost = cfg.guild.createGuildCost.toLong()
         if (cost <= 0) return GuildCreationCostResult.ConfigurationError
-        try {
-            physicalGold.pendingReservation(playerId)?.let { return GuildCreationCostResult.PendingReview(it) }
-        } catch (error: Exception) {
-            reportCreationFailure(transactionId, error)
-            return GuildCreationCostResult.PaymentUnavailable
-        }
 
         return when (val reserved = physicalGold.reserve(transactionId, playerId, cost)) {
             PhysicalReservationResult.Insufficient -> GuildCreationCostResult.InsufficientGold

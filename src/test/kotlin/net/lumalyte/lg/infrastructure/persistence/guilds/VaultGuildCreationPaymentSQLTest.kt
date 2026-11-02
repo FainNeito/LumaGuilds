@@ -33,7 +33,7 @@ class VaultGuildCreationPaymentSQLTest : RewardSqlTestFixture() {
     private fun guild() = Guild(UUID.randomUUID(), "Founded", createdAt = Instant.now())
 
     private fun port(personal: PersonalEconomyPort, journal: GuildCreationVaultJournal) =
-        VaultGuildCreationPaymentAdapter(personal, journal)
+        VaultGuildCreationPaymentAdapter(personal, journal) { null }
 
     @Test fun unresolvedLegacyReceiptBlocksVaultDebitAcrossJournalReopen() {
         val storage = openStorage()
@@ -77,6 +77,38 @@ class VaultGuildCreationPaymentSQLTest : RewardSqlTestFixture() {
         }
         assertEquals(GuildCreationCostResult.PaymentUnavailable,
             service(payments).createGuild(UUID.randomUUID(), UUID.randomUUID()) { fail("must not found") })
+        assertEquals(0, economy.debits.get())
+    }
+
+    @Test fun unresolvedLegacyReceiptBlocksEvenWhenCreationCostsAreDisabled() {
+        val storage = openStorage()
+        val player = UUID.randomUUID()
+        val legacy = PhysicalGoldJournal(storage)
+        val receipt = PhysicalGoldReservation(UUID.randomUUID(), player, 10)
+        legacy.insert(receipt, "legacy payload")
+        val economy = FakePersonal(100)
+        val payments = VaultGuildCreationPaymentAdapter(
+            economy, GuildCreationVaultJournal(storage), legacy::pending
+        )
+        val freeService = GuildCostService(
+            { MainConfig(chapterTwoGoldCostsEnabled = false) }, payments, mockk(relaxed = true)
+        )
+        assertEquals(GuildCreationCostResult.PendingReview(receipt.id),
+            freeService.createGuild(UUID.randomUUID(), player) { fail("must not found") })
+        assertEquals(0, economy.debits.get())
+    }
+
+    @Test fun freeCreationSucceedsWithoutAnUnresolvedReceipt() {
+        val storage = openStorage()
+        val economy = FakePersonal(100)
+        val payments = VaultGuildCreationPaymentAdapter(
+            economy, GuildCreationVaultJournal(storage), PhysicalGoldJournal(storage)::pending
+        )
+        val freeService = GuildCostService(
+            { MainConfig(chapterTwoGoldCostsEnabled = false) }, payments, mockk(relaxed = true)
+        )
+        assertEquals(0L, assertIs<GuildCreationCostResult.Applied>(
+            freeService.createGuild(UUID.randomUUID(), UUID.randomUUID()) { guild() }).cost)
         assertEquals(0, economy.debits.get())
     }
 
