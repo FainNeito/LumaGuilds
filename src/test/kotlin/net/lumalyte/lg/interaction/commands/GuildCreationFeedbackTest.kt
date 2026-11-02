@@ -69,6 +69,40 @@ class GuildCreationFeedbackTest {
         verify(exactly = 1) { lang.msg("command.migrated.guild.create.raw_gold_unavailable") }
     }
 
+    @Test fun freeCommandCreatesAndAnnouncesWithoutCharging() {
+        stopKoin()
+        val guilds = mockk<GuildService>()
+        val repository = mockk<GuildRepository>()
+        val config = mockk<ConfigService>()
+        val lang = mockk<LangService>(relaxed = true)
+        val player = mockk<Player>(relaxed = true)
+        val server = mockk<org.bukkit.Server>(relaxed = true)
+        val payments = mockk<GuildCreationPaymentPort>(relaxed = true)
+        val costs = GuildCostService({ config.loadConfig() }, payments, mockk(relaxed = true))
+        val playerId = UUID.randomUUID()
+        val guild = net.lumalyte.lg.domain.entities.Guild(UUID.randomUUID(), "Valid Name", createdAt = java.time.Instant.now())
+        every { player.uniqueId } returns playerId
+        every { player.server } returns server
+        every { server.logger } returns java.util.logging.Logger.getAnonymousLogger()
+        every { guilds.getPlayerGuilds(playerId) } returns emptySet()
+        every { guilds.createGuild("Valid Name", playerId, null) } returns guild
+        every { repository.creationCooldownUntil(playerId) } returns null
+        every { config.loadConfig() } returns MainConfig(chapterTwoGoldCostsEnabled = false)
+        mockkObject(net.lumalyte.lg.utils.ChatUtils)
+        every { net.lumalyte.lg.utils.ChatUtils.broadcastMessage(any<String>(), any()) } just Runs
+        every { net.lumalyte.lg.utils.ChatUtils.broadcastMessage(any<net.kyori.adventure.text.Component>(), any()) } just Runs
+        startKoin { modules(module {
+            single { guilds }; single { repository }; single { costs }; single { config }; single { lang }
+        }) }
+        GuildCommand().onCreate(player, "Valid Name", null)
+        verify(exactly = 1) { guilds.createGuild("Valid Name", playerId, null) }
+        verify(exactly = 0) { payments.reserve(any(), any(), any()) }
+        verify(exactly = 0) { lang.msg("command.migrated.guild.create.raw_gold_paid", *anyVararg()) }
+        verify(exactly = 1) { lang.msg("command.migrated.guild.create.guild_created_successfully", *anyVararg()) }
+        verify(exactly = 1) { lang.msg("command.migrated.guild.create.you_are_now_the_owner_of_the") }
+        verify(exactly = 1) { lang.msg("command.migrated.guild.create.a_new_guild_has_been_founded_by", *anyVararg()) }
+    }
+
     @Test fun bypassRetainsMembershipValidationAndPaidCreationFailures() {
         stopKoin()
         val guilds = mockk<GuildService>()
