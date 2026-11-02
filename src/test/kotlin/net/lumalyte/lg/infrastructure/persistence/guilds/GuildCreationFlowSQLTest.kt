@@ -6,8 +6,6 @@ import net.lumalyte.lg.config.GuildConfig
 import net.lumalyte.lg.config.MainConfig
 import net.lumalyte.lg.domain.rewards.*
 import net.lumalyte.lg.infrastructure.services.*
-import org.bukkit.Material
-import org.bukkit.inventory.ItemStack
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.koin.core.context.*
@@ -43,8 +41,6 @@ class GuildCreationFlowSQLTest : RewardSqlTestFixture() {
         val server = MockBukkit.mock()
         val player = spyk(server.addPlayer())
         val playerId = player.uniqueId
-        every { player.saveData() } just Runs
-        player.inventory.setItem(0, ItemStack(Material.RAW_GOLD, 20))
         val storage = openStorage()
         migrateProductionSchema(storage)
         val cfg = MainConfig(chapterTwoGoldCostsEnabled = true, guild = GuildConfig(createGuildCost = 10))
@@ -75,18 +71,33 @@ class GuildCreationFlowSQLTest : RewardSqlTestFixture() {
             every { org.bukkit.Bukkit.getPlayer(playerId) } returns player
             every { player.hasPermission("lumaguilds.guild.creationcooldown.bypass") } returns grant
         }
-        val physical = BukkitPhysicalGoldAdapter({ id -> if (id == playerId) player else null }, Material.RAW_GOLD, null, 1,
-            PhysicalGoldJournal(storage))
+        val personal = object : PersonalEconomyPort {
+            var remaining = 20L
+            var withdrawals = 0
+            override fun isAvailable() = true
+            override fun balance(playerId: UUID) = remaining
+            override fun debit(playerId: UUID, amount: Long): ExternalTransferResult {
+                withdrawals++
+                remaining -= amount
+                return ExternalTransferResult.Applied
+            }
+            override fun credit(playerId: UUID, amount: Long): ExternalTransferResult {
+                remaining += amount
+                return ExternalTransferResult.Applied
+            }
+        }
+        val payments = VaultGuildCreationPaymentAdapter(personal, GuildCreationVaultJournal(storage))
         val failures = mutableListOf<Exception>()
-        val costs = GuildCostService({ cfg }, physical, mockk(relaxed = true)) { _, error -> failures += error }
+        val costs = GuildCostService({ cfg }, payments, mockk(relaxed = true)) { _, error -> failures += error }
         val outcome = costs.createGuild(UUID.randomUUID(), playerId) {
             guildService.createGuild("Complete Guild", playerId, null)
         }
         assertTrue(failures.isEmpty(), failures.joinToString { it.stackTraceToString() })
         if (bypass && !grant) {
             assertTrue(assertIs<GuildCreationCostResult.CreationFailed>(outcome).compensated)
-            assertEquals(20, player.inventory.getItem(0)!!.amount)
-            assertNull(physical.pendingReservation(playerId))
+            assertEquals(20L, personal.remaining)
+            assertEquals(1, personal.withdrawals)
+            assertNull(payments.pendingReservation(playerId))
             assertEquals(expiry.toEpochMilli(), guilds.creationCooldownUntil(playerId)!!.toEpochMilli())
             assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guilds")!!.getInt("n"))
             return
@@ -101,8 +112,9 @@ class GuildCreationFlowSQLTest : RewardSqlTestFixture() {
         assertIs<GuildRewardRead.Available>(rewards.read(result.guild.id))
         assertEquals(4321, assertNotNull(progression.getGuildProgression(result.guild.id)).experienceForNextLevel)
         assertEquals(10L, result.cost)
-        assertEquals(10, player.inventory.getItem(0)!!.amount)
-        assertNull(physical.pendingReservation(playerId))
+        assertEquals(10L, personal.remaining)
+        assertEquals(1, personal.withdrawals)
+        assertNull(payments.pendingReservation(playerId))
         if (bypass) {
             assertEquals(expiry.toEpochMilli(), guilds.creationCooldownUntil(playerId)!!.toEpochMilli())
             assertEquals(playerId.toString(), storage.connection.getFirstRow(
