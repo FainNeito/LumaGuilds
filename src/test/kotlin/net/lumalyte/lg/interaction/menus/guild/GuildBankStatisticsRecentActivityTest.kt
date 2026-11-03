@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
+import io.mockk.verify
 import net.badgersmc.nexus.i18n.LangHost
 import net.badgersmc.nexus.i18n.LangService
 import net.badgersmc.nexus.i18n.Locale
@@ -15,9 +16,12 @@ import net.lumalyte.lg.domain.entities.BankTransaction
 import net.lumalyte.lg.domain.entities.Guild
 import net.lumalyte.lg.domain.entities.TransactionType
 import net.lumalyte.lg.infrastructure.i18n.LumaGuildsLang
+import net.lumalyte.lg.infrastructure.i18n.gui
 import net.lumalyte.lg.interaction.menus.MenuFactory
 import net.lumalyte.lg.interaction.menus.MenuNavigator
 import org.bukkit.Material
+import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
 import org.bukkit.plugin.java.JavaPlugin
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -55,10 +59,15 @@ internal class GuildBankStatisticsRecentActivityTest {
         val bank = mockk<BankService>(relaxed = true)
         val members = mockk<MemberService>(relaxed = true)
         val factory = mockk<MenuFactory>(relaxed = true)
+        val unknownId = UUID.randomUUID()
+        val unknownPlayer = mockk<OfflinePlayer>()
+        every { unknownPlayer.name } returns null
+        mockkStatic(Bukkit::class)
+        every { Bukkit.getOfflinePlayer(unknownId) } returns unknownPlayer
         val transactions = listOf(
             BankTransaction(guildId = guild.id, actorId = UUID(0, 0), type = TransactionType.DEDUCTION, amount = 2),
             BankTransaction(guildId = guild.id, actorId = player.uniqueId, type = TransactionType.DEPOSIT, amount = 100),
-            BankTransaction(guildId = guild.id, actorId = UUID.randomUUID(), type = TransactionType.WITHDRAWAL, amount = 5),
+            BankTransaction(guildId = guild.id, actorId = unknownId, type = TransactionType.WITHDRAWAL, amount = 5),
         )
         every { bank.getBankStats(guild.id) } returns BankStats(0, 0, 0, 0, 0)
         every { bank.getTransactionHistory(guild.id, null) } returns emptyList()
@@ -77,8 +86,13 @@ internal class GuildBankStatisticsRecentActivityTest {
         assertEquals(Material.WRITABLE_BOOK, item.type)
         val plain = PlainTextComponentSerializer.plainText()
         val lore = item.itemMeta.lore()!!.map(plain::serialize)
-        assertTrue(lore.any { it.contains("System deducted 2") }, lore.toString())
-        assertTrue(lore.any { it.contains("KnownMember deposited 100") }, lore.toString())
-        assertTrue(lore.any { it.contains("Unknown withdrew 5") }, lore.toString())
+        fun expected(playerName: String, actionKey: String, amount: Int): String = plain.serialize(
+            language.gui("menu.bank.stats.activity.row", "player" to playerName,
+                "action" to language.gui(actionKey, "amount" to amount))
+        )
+        assertTrue(lore.any { it.contains(expected("System", "menu.bank.stats.activity.deducted", 2)) }, lore.toString())
+        assertTrue(lore.any { it.contains(expected("KnownMember", "menu.bank.stats.activity.deposited", 100)) }, lore.toString())
+        assertTrue(lore.any { it.contains(expected("Unknown", "menu.bank.stats.activity.withdrew", 5)) }, lore.toString())
+        verify(exactly = 0) { Bukkit.getOfflinePlayer(UUID(0, 0)) }
     }
 }
