@@ -932,7 +932,17 @@ fun progressionModule() = module {
         net.lumalyte.lg.infrastructure.web.WebApiServer(
             plugin = get<LumaGuilds>(),
             config = get<ConfigService>().loadConfig().webApi,
-            guildLeaderboardHandler = get()
+            guildLeaderboardHandler = get(),
+            playerGuildSnapshot = { players ->
+                net.lumalyte.lg.infrastructure.persistence.guilds.PublicPlayerGuildSnapshotSql(get()).build(players)
+            },
+            guildQuestSnapshot = {
+                net.lumalyte.lg.infrastructure.web.handlers.GuildQuestSnapshotHandler(
+                    get<net.lumalyte.lg.application.persistence.QuestRepository>() as?
+                        net.lumalyte.lg.application.persistence.PublicQuestSnapshotReader,
+                    get(),
+                ).build()
+            },
         )
     }
     single<ModeService> { ModeServiceBukkit(get(), get(), get(), get()) }
