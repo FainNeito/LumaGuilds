@@ -86,13 +86,14 @@ internal class GuildBankStatisticsRecentActivityTest {
         assertEquals(Material.WRITABLE_BOOK, item.type)
         val plain = PlainTextComponentSerializer.plainText()
         val lore = item.itemMeta.lore()!!.map(plain::serialize)
-        fun expected(playerName: String, actionKey: String, amount: Int): String = plain.serialize(
-            language.gui("menu.bank.stats.activity.row", "player" to playerName,
+        fun expected(playerName: String, actionKey: String, amount: Int): String {
+            val activity = language.gui("menu.bank.stats.activity.row", "player" to playerName,
                 "action" to language.gui(actionKey, "amount" to amount))
-        )
-        assertTrue(lore.any { it.contains(expected("System", "menu.bank.stats.activity.deducted", 2)) }, lore.toString())
-        assertTrue(lore.any { it.contains(expected("KnownMember", "menu.bank.stats.activity.deposited", 100)) }, lore.toString())
-        assertTrue(lore.any { it.contains(expected("Unknown", "menu.bank.stats.activity.withdrew", 5)) }, lore.toString())
+            return plain.serialize(language.gui("menu.bank.stats.overview.recent_activity_row", "activity" to activity))
+        }
+        assertTrue(expected("System", "menu.bank.stats.activity.deducted", 2) in lore, lore.toString())
+        assertTrue(expected("KnownMember", "menu.bank.stats.activity.deposited", 100) in lore, lore.toString())
+        assertTrue(expected("Unknown", "menu.bank.stats.activity.withdrew", 5) in lore, lore.toString())
         verify(exactly = 0) { Bukkit.getOfflinePlayer(UUID(0, 0)) }
     }
 }
