@@ -2,6 +2,11 @@
 
 Every task carries exactly one tag (`TDD` / `DOC` / `INFRA`), a `References:` line, and an `Evidence:` block that MUST be filled with real source citations before any downstream SPEAR phase runs on it.
 
+- [~] **LG-WEBSITE-FEEDS** Public quest and player-guild snapshots.
+  - Tag: `TDD`
+  - References: REQ-WEBSITE-QUEST-001; REQ-WEBSITE-MEMBERSHIP-002.
+  - Evidence: 13 focused local tests passed against main c0a144b plus candidate, including blank-token rejection. Thread safety of membership caches, MariaDB and companion runtime validation remain open; see `docs/WEBSITE-QUEST-EXPORT.md` and `docs/WEBSITE-PLAYER-GUILDS.md`.
+
 - [~] **LG-2010** Guild stall menus and optional read adapter.
   - Tag: `TDD`
   - References: REQ-124/125; Market REQ-340/341.
