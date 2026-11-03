@@ -21,14 +21,16 @@ sealed interface PhysicalReservationResult {
     data object Unknown : PhysicalReservationResult
 }
 
-interface PhysicalGoldPort {
+interface PhysicalGoldPort : GuildCreationPaymentPort {
     /** Read-only value of currency eligible for reservation; null means unavailable. */
     fun availableValue(playerId: UUID): Long? = null
 
-    fun reserve(transactionId: UUID, playerId: UUID, requestedValue: Long): PhysicalReservationResult
+    override fun reserve(transactionId: UUID, playerId: UUID, requestedValue: Long): PhysicalReservationResult
     fun reservation(transactionId: UUID): PhysicalGoldReservation? = null
-    fun commit(reservation: PhysicalGoldReservation): PhysicalCommitResult
-    fun restore(reservation: PhysicalGoldReservation): Boolean
+    /** Durable unresolved receipt, including intermediate phases; never consumes currency. */
+    override fun pendingReservation(playerId: UUID): UUID? = null
+    override fun commit(reservation: PhysicalGoldReservation): PhysicalCommitResult
+    override fun restore(reservation: PhysicalGoldReservation): Boolean
     fun deliver(playerId: UUID, value: Long, transactionId: UUID): ExternalTransferResult
 
     data object Unavailable : PhysicalGoldPort {

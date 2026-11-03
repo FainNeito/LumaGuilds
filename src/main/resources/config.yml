@@ -14,6 +14,15 @@
 # mariadb: Production-grade MySQL/MariaDB database (recommended for production)
 database_type: sqlite
 
+# Recruitment board and private in-game applications.
+recruitment:
+  maximum_applications: 3
+  application_days: 7
+  offer_hours: 48
+  onboarding_delay_seconds: 300
+  # 0 disables repeating discovery announcements. If enabled, minimum 30 minutes.
+  reminder_minutes: 0
+
 # Database performance settings
 database:
   # Enable virtual threads for database operations (Java 21+ only)
@@ -125,7 +134,7 @@ guild:
   max_name_length: 32
   min_name_length: 1
   max_guild_count: 1000
-  # Chapter 2 raw-gold costs. These must be positive before enabling chapter_two_gold_costs_enabled.
+  # Chapter 2 costs: guild creation uses personal digital Vault gold; home activation uses the guild bank. Values must be positive when enabled.
   # Numeric values are intentionally operator-selected; the approved design defines behavior, not prices.
   create_guild_cost: 0
   home_activation_base_cost: 0
