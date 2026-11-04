@@ -49,3 +49,7 @@ Review found that personal advancement completion cannot serve as a guild-level 
 As a conservative safeguard, sampled playtime totals are now always treated as historical for guild XP. Personal advancement progress remains active; guild XP for playtime is intentionally unavailable until event-backed guild tracking can prove a future completion. This prevents the known false-positive route but does not implement the desired playtime reward.
 
 Hosted unit run 41766604841 failed two assertions: the boss listener test omitted the new-event argument and the icon mapping coverage omitted the new source. Updated both expectations; their focused local suites pass. This evidence does not imply the full hosted suite or MariaDB checks have passed.
+
+An isolated port of the ten draft commits onto parent main 3d76a629 compiled and passed the focused runtime, boss, SQL award and icon tests. The histories diverge; this port does not reconcile the fork's unrelated changes or authorize replacing fork main.
+
+The pure eligibility policy can now compare the actor's current fingerprint to a complete retained peer history and fails closed for incomplete histories. Its focused tests pass, including a match against an older offline observation. This policy is not wired to the bridge: durable history collection, explicit completeness and retention semantics, key lifecycle and migration remain required before it is safe to use.

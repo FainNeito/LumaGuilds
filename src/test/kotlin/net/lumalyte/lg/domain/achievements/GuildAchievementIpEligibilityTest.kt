@@ -24,4 +24,18 @@ class GuildAchievementIpEligibilityTest {
         assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
             GuildAchievementIpEligibility.decide(actor, setOf(peer), mapOf(actor to "h1", peer to "h2")))
     }
+
+    @Test fun `older offline peer address still blocks and unknown history fails closed`() {
+        val members = setOf(actor, peer)
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, "old", mapOf(peer to GuildAchievementIpEligibility.PeerHistory(setOf("old", "new"), true))))
+        assertEquals(GuildAchievementIpEligibility.Decision.ELIGIBLE,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, "other", mapOf(peer to GuildAchievementIpEligibility.PeerHistory(setOf("old", "new"), true))))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, "other", emptyMap()))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, "other", mapOf(peer to GuildAchievementIpEligibility.PeerHistory(setOf(""), true))))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, "other", mapOf(peer to GuildAchievementIpEligibility.PeerHistory(setOf("old"), false))))
+    }
 }
