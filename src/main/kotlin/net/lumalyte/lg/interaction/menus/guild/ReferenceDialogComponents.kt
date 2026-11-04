@@ -50,5 +50,4 @@ internal fun referenceRewardEffect(lang: net.badgersmc.nexus.i18n.LangService,
     is net.lumalyte.lg.domain.rewards.RewardEffect.HomeCapacity -> lang.gui("chronicle.home_effect", "amount" to value.amount)
     is net.lumalyte.lg.domain.rewards.RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt())
     is net.lumalyte.lg.domain.rewards.RewardEffect.WithdrawalFee -> lang.gui("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
-    net.lumalyte.lg.domain.rewards.RewardEffect.AllyHomes -> lang.gui("chronicle.ally_effect")
 }

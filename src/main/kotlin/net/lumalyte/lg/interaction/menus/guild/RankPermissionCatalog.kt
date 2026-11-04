@@ -13,8 +13,13 @@ internal object RankPermissionCatalog {
             RankPermission.DELETE_CLAIMS,
         )
 
+    /** Kept in the enum so stored ranks still load; no longer editable (REQ-158). */
+    private val RETIRED_PERMISSIONS = setOf(RankPermission.USE_ALLY_HOMES)
+
     fun categories(claimsEnabled: Boolean): Map<String, List<RankPermission>> =
-        RankPermission.entries.filter { claimsEnabled || it !in CLAIM_PERMISSIONS }.groupBy { permission ->
+        RankPermission.entries
+            .filter { it !in RETIRED_PERMISSIONS && (claimsEnabled || it !in CLAIM_PERMISSIONS) }
+            .groupBy { permission ->
             when (permission) {
                 RankPermission.MANAGE_RANKS, RankPermission.MANAGE_MEMBERS,
                 RankPermission.MANAGE_RECRUITMENT, RankPermission.EDIT_RECRUITMENT_SETTINGS,

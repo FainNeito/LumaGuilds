@@ -11,7 +11,7 @@ enum class ChronicleBranch {
     fun includes(effect: RewardEffect): Boolean = when (this) {
         ALL -> true
         TREASURY -> effect is RewardEffect.BankCapacity || effect is RewardEffect.WithdrawalFee
-        TRAVEL -> effect is RewardEffect.HomeCooldown || effect == RewardEffect.AllyHomes
+        TRAVEL -> effect is RewardEffect.HomeCooldown
         OUTPOSTS -> effect is RewardEffect.HomeCapacity
     }
 }

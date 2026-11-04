@@ -252,7 +252,6 @@ internal class GuildChronicleMenu(
         is RewardEffect.HomeCapacity -> lang.gui("chronicle.home_effect", "amount" to value.amount)
         is RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt())
         is RewardEffect.WithdrawalFee -> lang.gui("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
-        RewardEffect.AllyHomes -> lang.gui("chronicle.ally_effect")
     }
 
     private fun impact(value: RewardEffect, current: RewardEntitlements): Component = when (value) {
@@ -269,12 +268,11 @@ internal class GuildChronicleMenu(
         is RewardEffect.WithdrawalFee -> lang.gui("chronicle.percent_change",
             "current" to (current.withdrawalFeeMultiplier * 100).toInt(),
             "after" to (minOf(current.withdrawalFeeMultiplier, value.multiplier) * 100).toInt())
-        RewardEffect.AllyHomes -> if (current.allyHomes) lang.gui("chronicle.ally_owned") else lang.gui("chronicle.ally_after")
     }
 
     private fun icon(value: RewardEffect) = when (value) {
         is RewardEffect.BankCapacity, is RewardEffect.WithdrawalFee -> "lg_bank"
         is RewardEffect.HomeCapacity -> "lg_home_add"
-        is RewardEffect.HomeCooldown, RewardEffect.AllyHomes -> "lg_home_teleport"
+        is RewardEffect.HomeCooldown -> "lg_home_teleport"
     }
 }

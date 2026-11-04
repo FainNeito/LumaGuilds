@@ -776,34 +776,6 @@ class LumaGuilds : JavaPlugin() {
             (guildNames + playerNames).distinct().sorted()
         }
 
-        // Ally guilds whose ally-home the executing player can teleport to.
-        // Includes the player's OWN guild (gated by canUseOwnAllyHome) plus every active ALLY
-        // that has an ally-home set and passes canUseAllyHome (rank perm + inbound whitelist).
-        commandManager.commandCompletions.registerAsyncCompletion("allyguilds") { context ->
-            val player = context.player ?: return@registerAsyncCompletion emptyList()
-            val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
-            val relationService = get().get<net.lumalyte.lg.application.services.RelationService>()
-            val guilds = guildService.getPlayerGuilds(player.uniqueId)
-            if (guilds.isEmpty()) return@registerAsyncCompletion emptyList()
-            val sourceGuild = guilds.first()
-            val results = mutableListOf<String>()
-            // Own guild's ally-home, when set and the player's rank may use it.
-            if (sourceGuild.allyHome != null &&
-                guildService.canUseOwnAllyHome(player.uniqueId, sourceGuild.id)) {
-                results.add(sourceGuild.name)
-            }
-            relationService
-                .getGuildRelationsByType(sourceGuild.id, net.lumalyte.lg.domain.entities.RelationType.ALLY)
-                .mapNotNullTo(results) { rel ->
-                    val otherId = rel.getOtherGuild(sourceGuild.id)
-                    val other = guildService.getGuild(otherId) ?: return@mapNotNullTo null
-                    if (other.allyHome == null) return@mapNotNullTo null
-                    if (!guildService.canUseAllyHome(player.uniqueId, sourceGuild.id, other.id)) return@mapNotNullTo null
-                    other.name
-                }
-            results.distinct().sorted()
-        }
-
         commandManager.commandCompletions.registerAsyncCompletion("guildhomes") { context ->
             val player = context.player ?: return@registerAsyncCompletion emptyList()
             val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()

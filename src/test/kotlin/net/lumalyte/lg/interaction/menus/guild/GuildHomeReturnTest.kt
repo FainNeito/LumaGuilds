@@ -12,10 +12,9 @@ import org.koin.core.context.GlobalContext
 import kotlin.test.assertEquals
 
 internal class GuildHomeReturnTest : GuildParentReturnFixture() {
-    @Test fun `home and ally access Back unwind to the existing homes screen even after repeated clicks`() {
+    @Test fun `home access Back unwinds to the existing homes screen even after repeated clicks`() {
         val constructors: List<(MenuNavigator) -> Menu> = listOf(
             { HomeAccessMenu(it, player, guild, "Home") },
-            { AllyHomeAccessMenu(it, player, guild) },
         )
         constructors.forEach { create ->
             val navigator = MenuNavigator(player)
@@ -39,7 +38,6 @@ internal class GuildHomeReturnTest : GuildParentReturnFixture() {
     @Test fun `revoked home permission returns without leaving the denied editor in history`() {
         every { ranks.hasPermission(player.uniqueId, guild.id, RankPermission.MANAGE_HOME) } returns false
         assertGuardReturn { HomeAccessMenu(it, player, guild, "Home") }
-        assertGuardReturn { AllyHomeAccessMenu(it, player, guild) }
     }
 
     @Test fun `removed home returns without reopening the missing-home editor on Back`() {

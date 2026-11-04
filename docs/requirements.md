@@ -466,7 +466,7 @@ WHEN a guild withdrawal is offered THEN THE SYSTEM SHALL preview the calculated 
 **Ubiquitous.** THE Bedrock Guild Bank SHALL expose a coherent navigation hierarchy for canonical balance/actions, transaction history, statistics, member contributions, automation, budget and security where authorized. Deposit/withdraw and every mutable bank-management setting SHALL use the same Java authority and canonical BankService/persistence semantics, including unresolved payout review states. Management settings SHALL be authorization-checked before rendering mutable controls and again at mutation time; history/analytics SHALL be bounded and use real persisted data.
 
 ### REQ-116
-**Event-driven.** WHEN a Bedrock player manages guild homes THEN THE SYSTEM SHALL retain the current paid activation/use behavior and SHALL provide functional per-home rank access and inbound ally-home access controls backed by the same services as Java. Bedrock SHALL NOT replace these supported controls with an unavailable placeholder.
+**Event-driven.** WHEN a Bedrock player manages guild homes THEN THE SYSTEM SHALL retain the current paid activation/use behavior and SHALL provide functional per-home rank access controls backed by the same services as Java (ally-home access was removed by REQ-158). Bedrock SHALL NOT replace these supported controls with an unavailable placeholder.
 
 ### REQ-117
 **Ubiquitous.** THE Bedrock member/rank management surface SHALL expose the same currently supported authorized member actions and rank permission/prefix semantics as Java through a coherent selected-member/rank flow. Rank editing SHALL preserve stable rank identity and existing priority unless an explicit reorder action is performed; alternate Bedrock editors SHALL NOT silently expose conflicting permission subsets or change ordering as a side effect of editing.
@@ -545,6 +545,8 @@ WHILE the companion accounting command is available THE guild stall detail menu 
 ### REQ-140
 WHEN a player opens or interacts with a guild vault THE SYSTEM SHALL recheck current ACCESS_VAULT authorization. Item movements SHALL require DEPOSIT_TO_VAULT for ingress and WITHDRAW_FROM_VAULT for egress, including shift transfers, collection, drops and swaps. Swaps SHALL require both permissions. Permission loss SHALL cancel the interaction before mutation and close only the affected vault view safely. Player-only actions SHALL retain normal behavior while access remains valid; the gold button SHALL retain its existing operation-specific checks. Unknown/cancelled actions SHALL NOT mutate or synchronize the vault. Existing explicit admin override semantics SHALL remain unchanged.
 ### REQ-141
+> **SUPERSEDED by REQ-158** (2026-11-04): ally-home teleportation was removed.
+
 **Event-driven.** WHEN a player clicks a previously rendered Java ally-home button THEN THE SYSTEM SHALL resolve the target guild by its stable identity, read its current ally home, and recheck current eligible-home listing (including both guilds' required perks) and service-backed ally-home access before starting the countdown. Removed homes, disbanded targets and revoked access SHALL be denied; relocated homes SHALL use current coordinates and renamed targets SHALL retain their identity. Existing safety/countdown/economy behavior SHALL be preserved. Real client acceptance is deferred; this correction addresses stale menu state, not authorization changes during an already running countdown.
 ### REQ-143
 **Event-driven.** WHEN a companion checks guild alliance access THE public GuildAllianceLookup SHALL return true only for an active ALLY relation between distinct guilds; pending, ended, absent and enemy relations SHALL return false. The repository SHALL be warmed at registration so event reads use its existing cache.
@@ -607,6 +609,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 ### REQ-156
 **Ubiquitous.** THE SYSTEM SHALL add a `prestige` category to the Top-N leaderboard placeholders and the player-guild rank placeholders, ordering guilds by prestige tier, then current-run level and XP, with `value` equal to the tier; Top-N rows SHALL also expose `prestige`, `prestige_roman` and `prestige_badge` fields for every category, using the same 30-second leaderboard cache as the existing categories.
+
+### REQ-158
+**Ubiquitous.** THE SYSTEM SHALL NOT offer ally-home teleportation: there SHALL be no Allied Waypoints reward, no `allyhome`, `setallyhome` or `removeallyhome` guild subcommands, no ally-home buttons in the Java or Bedrock home menus, no ally-home access menus and no ally-home rank-permission toggles. The level 50 major reward SHALL be Grand Vault (`grand-vault`, price 2,500), adding 5,000 bank capacity, purchasable and prestige-eligible like the other non-home rewards. On upgrade THE SYSTEM SHALL convert every stored `ally-homes` ownership (current-run or permanent) and Chronicle goal to `grand-vault` exactly once, moving no gold and preserving prestige counts. Stored ally-home locations and access lists MAY remain in storage but SHALL NOT be read for any player action.
 
 ## Guild Chronicle
 

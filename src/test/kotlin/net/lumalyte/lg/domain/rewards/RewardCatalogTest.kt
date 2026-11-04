@@ -24,24 +24,31 @@ class RewardCatalogTest {
                 assertEquals(cell.substringAfterLast("; ").toLong(), reward.price)
                 val effect = cell.substringAfter(": ").substringBefore(';')
                 when (val actual = reward.effect) {
-                    is RewardEffect.BankCapacity -> {
-                        assertEquals("+1,000 capacity", effect)
-                        assertEquals(1_000L, actual.amount)
-                    }
+                    is RewardEffect.BankCapacity -> assertEquals(
+                        effect.removePrefix("+").removeSuffix(" capacity").replace(",", "").toLong(),
+                        actual.amount,
+                    )
                     is RewardEffect.HomeCapacity -> {
                         assertEquals("+1 slot", effect)
                         assertEquals(1, actual.amount)
                     }
                     is RewardEffect.HomeCooldown -> assertEquals(effect.removeSuffix("x").toDouble(), actual.multiplier)
                     is RewardEffect.WithdrawalFee -> assertEquals(effect.removeSuffix("x").toDouble(), actual.multiplier)
-                    RewardEffect.AllyHomes -> assertEquals("reciprocal access", effect)
                 }
             }
         }
         assertEquals(48_500L, catalog.rewards.sumOf { it.price })
         assertEquals(30, catalog.rewards.map { it.id }.toSet().size)
         assertEquals(9, catalog.rewards.count { it.effect is RewardEffect.HomeCapacity })
-        assertEquals(10_000L, catalog.rewards.mapNotNull { (it.effect as? RewardEffect.BankCapacity)?.amount }.sum())
+        assertEquals(15_000L, catalog.rewards.mapNotNull { (it.effect as? RewardEffect.BankCapacity)?.amount }.sum())
+        // REQ-158: Grand Vault replaced Allied Waypoints at level 50.
+        assertNull(catalog.find("ally-homes"))
+        val vault = assertNotNull(catalog.find("grand-vault"))
+        assertEquals(50, vault.level)
+        assertEquals(RewardKind.MAJOR, vault.kind)
+        assertEquals(2_500L, vault.price)
+        assertEquals(RewardEffect.BankCapacity(5_000), vault.effect)
+        assertTrue(vault.prestigeEligible)
     }
 
     @Test

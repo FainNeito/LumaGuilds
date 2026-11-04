@@ -536,20 +536,6 @@ class MenuFactory(
         }
     }
 
-    /** Creates the platform-native inbound ally-home whitelist editor. */
-    fun createAllyHomeAccessMenu(
-        menuNavigator: MenuNavigator,
-        player: Player,
-        guild: net.lumalyte.lg.domain.entities.Guild
-    ): Menu {
-        return if (shouldUseBedrockMenus(player)) {
-            net.lumalyte.lg.interaction.menus.bedrock.BedrockAllyHomeAccessMenu(
-                menuNavigator, player, guild, logger
-            )
-        } else {
-            net.lumalyte.lg.interaction.menus.guild.AllyHomeAccessMenu(menuNavigator, player, guild)
-        }
-    }
 
     /**
      * Creates a guild rank management menu appropriate for the player's platform

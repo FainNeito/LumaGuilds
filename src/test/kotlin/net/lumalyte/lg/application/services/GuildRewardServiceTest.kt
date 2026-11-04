@@ -34,7 +34,6 @@ class GuildRewardServiceTest {
         assertEquals(50, first.entitlements.memberCapacity)
         assertEquals(0.9, first.entitlements.withdrawalFeeMultiplier)
         assertEquals(1.0, first.entitlements.homeCooldownMultiplier)
-        assertFalse(first.entitlements.allyHomes)
         ceiling = 10_000
         members = 31
         val next = service.entitlementsIfEnabled(guild)!!

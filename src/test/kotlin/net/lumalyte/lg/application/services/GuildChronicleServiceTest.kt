@@ -31,7 +31,7 @@ class GuildChronicleServiceTest {
         assertEquals((1..100).toList(), all.map { it.level })
         assertEquals(catalog.rewards.map { it.id }, all.flatMap { it.offers }.map { it.reward.id })
         assertEquals(30, all.sumOf { it.offers.size })
-        assertTrue(all.flatMap { it.offers }.any { it.reward.id == "ally-homes" })
+        assertTrue(all.flatMap { it.offers }.any { it.reward.id == "grand-vault" })
         assertTrue(all.flatMap { it.offers }.any { it.reward.id == "fee-5" })
         val exported = org.json.JSONArray(all.map { tier -> org.json.JSONObject()
             .put("level", tier.level).put("bank", tier.automaticBankCapacity)

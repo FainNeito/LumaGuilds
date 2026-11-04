@@ -202,6 +202,11 @@ class MariaDBMigrations(private val plugin: JavaPlugin, private val connection: 
                 updateDatabaseVersion(BankContributionSchema.VERSION)
                 currentDbVersion = BankContributionSchema.VERSION
             }
+            RetiredRewardSchema.convert(connection)
+            if (currentDbVersion < RetiredRewardSchema.VERSION) {
+                updateDatabaseVersion(RetiredRewardSchema.VERSION)
+                currentDbVersion = RetiredRewardSchema.VERSION
+            }
             GuildDescriptionSchema.ensure(connection)
             connection.commit()
             val finalVersion = getCurrentDatabaseVersion()

@@ -29,7 +29,8 @@ this checkout contains no AGENTS.md, SPEAR SKILL.md or state runner.
    required at every fifth level and an additional major reward. Neither purchase
    requires buying the other. Checkpoint levels do not automatically increase capacity.
 3. Use the 30 purchases below: ten bank extensions, five cooldown upgrades, five
-   withdrawal discounts, nine permanent home slots and one ally-home unlock.
+   withdrawal discounts, nine permanent home slots and one Grand Vault (major bank
+   extension). Allied Waypoints was removed on 2026-11-04 (REQ-158).
    Repeated home slots provide useful major unlocks without inventing unsupported
    cosmetics. The operator approved these names, counts and prices.
 4. Numeric purchase price is **100 × (level / 5)** gold. Major purchase price is
@@ -95,7 +96,8 @@ each `fee-N` (Treasury Discount N) sets an **absolute** withdrawal fee multiplie
 These multipliers are not percentage-point reductions and do not multiply together.
 A 0.5 fee multiplier halves the configured fee rate, not the withdrawn principal.
 Each `home-N` (Guild Outpost N) adds **one permanent capacity slot**.
-`ally-homes` (Allied Waypoints) enables existing reciprocal ally-home access.
+`grand-vault` (Grand Vault) adds **5,000 capacity**. It replaced `ally-homes`
+(Allied Waypoints) on 2026-11-04 (REQ-158); owned copies were converted.
 
 All prices are raw-gold units debited from canonical guild gold via the application
 service. A displayed unlock does not grant an effect or debit gold.
@@ -158,7 +160,7 @@ capacity resets to 8,000 on prestige and is never a selectable reward.
 | 47 | Capacity +500 + event | 26,500 | — | — | — | Auto: run / no | E, B |
 | 48 | Capacity +500 + event | 27,000 | — | — | — | Auto: run / no | E, B |
 | 49 | Capacity +500 + event | 27,500 | — | — | — | Auto: run / no | E, B |
-| 50 | Level-up event | 27,500 | cooldown-5: 0.5x; 1000 | ally-homes: reciprocal access; 2500 | L50 | Numeric: R; major: R | E, B, C, A |
+| 50 | Level-up event | 27,500 | cooldown-5: 0.5x; 1000 | grand-vault: +5,000 capacity; 2500 | L50 | Numeric: R; major: R | E, B, C, A |
 | 51 | Capacity +500 + event | 28,000 | — | — | — | Auto: run / no | E, B |
 | 52 | Capacity +500 + event | 28,500 | — | — | — | Auto: run / no | E, B |
 | 53 | Capacity +500 + event | 29,000 | — | — | — | Auto: run / no | E, B |
@@ -252,8 +254,7 @@ Accepted retention rules:
 - All unique bank extensions and home slots are independently purchasable at their
   levels without lower-tier prerequisites. Permanent homes cannot be repurchased,
   refunded by deleting a location, or chosen as the prestige perk.
-- Allied Waypoints is a non-stackable boolean and can be retained once. It does not
-  bypass the other guild's entitlement, alliance or home-access restrictions.
+- Grand Vault is a single major bank extension and can be retained once.
 - All ownership is guild-scoped, persistent and applied once by transaction ID.
   Deleting a home location does not clear its purchased capacity entitlement.
 
@@ -282,7 +283,7 @@ no production database access or economic retuning is part of this document.
 Your guild grows from level 1 to 100. Ordinary levels expand how much gold your
 bank can hold; they never create gold. Every fifth level opens a numeric upgrade
 you can choose to buy with guild gold. Every tenth level also opens a major
-upgrade, such as another permanent home slot or ally-home access. Reaching a
+upgrade, such as another permanent home slot or a larger bank. Reaching a
 level unlocks the choice; it does not buy the upgrade automatically.
 
 Guilds start with room for 50 members regardless of level. Purchased home capacity

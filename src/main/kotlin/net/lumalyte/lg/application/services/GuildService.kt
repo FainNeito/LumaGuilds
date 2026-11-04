@@ -168,21 +168,6 @@ interface GuildService {
     fun removeHome(guildId: UUID, actorId: UUID): Boolean
 
     /**
-     * Gets accessible ally homes for a guild. Both guilds must have ALLY_HOME_ACCESS perk unlocked.
-     * Returns each ally's explicitly set ally home, not their regular guild home.
-     *
-     * @param guildId The ID of the requesting guild.
-     * @return Map of ally guild name to their explicit ally home, for allies where both guilds have the perk.
-     */
-    fun getAllyHomes(guildId: UUID): Map<String, GuildHome>
-
-    fun setAllyHome(guildId: UUID, home: GuildHome, actorId: UUID): Boolean
-
-    fun removeAllyHome(guildId: UUID, actorId: UUID): Boolean
-
-    fun getAllyHome(guildId: UUID): GuildHome?
-
-    /**
      * Sets the mode for a guild (Peaceful/Hostile).
      *
      * @param guildId The ID of the guild.
@@ -344,35 +329,9 @@ interface GuildService {
     fun canUseHome(playerId: UUID, guildId: UUID, homeName: String): Boolean
 
     /**
-     * Checks whether a player may teleport to another guild's ally-home. Returns true when:
-     * - player is in `sourceGuildId`, AND
-     * - target guild has an ally-home set, AND
-     * - source guild is in target.allyHomeAllowedGuilds (inbound), AND
-     * - (player's rank in source is Owner) OR (rank has USE_ALLY_HOMES permission).
-     */
-    fun canUseAllyHome(playerId: UUID, sourceGuildId: UUID, targetGuildId: UUID): Boolean
-
-    /**
-     * Checks whether a player may teleport to their OWN guild's ally-home. Returns true when:
-     * - the player is a member of the guild, AND
-     * - the guild has an ally-home set, AND
-     * - (player's rank is the highest-priority Owner rank) OR (rank has USE_ALLY_HOMES permission).
-     *
-     * This is distinct from [canUseAllyHome], which gates teleporting to an *allied* guild's
-     * ally-home and therefore requires an active alliance between two different guilds.
-     */
-    fun canUseOwnAllyHome(playerId: UUID, guildId: UUID): Boolean
-
-    /**
      * Updates the rank whitelist for a named home. Caller must have MANAGE_HOME.
      */
     fun setHomeAllowedRanks(guildId: UUID, homeName: String, allowedRankIds: Set<UUID>, actorId: UUID): Boolean
-
-    /**
-     * Updates the inbound allow-list of guilds whose members may teleport to this guild's
-     * ally-home. Caller must have MANAGE_HOME.
-     */
-    fun setAllyHomeAllowedGuilds(guildId: UUID, allowedGuildIds: Set<UUID>, actorId: UUID): Boolean
 
     /**
      * Changes the GUI background theme for all guild menus.

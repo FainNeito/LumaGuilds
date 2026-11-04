@@ -16,7 +16,6 @@ sealed interface RewardEffect {
     data class WithdrawalFee(val multiplier: Double) : RewardEffect {
         init { require(multiplier.isFinite() && multiplier > 0 && multiplier <= 1) }
     }
-    data object AllyHomes : RewardEffect
 }
 
 enum class RewardKind { NUMERIC, MAJOR }
@@ -42,7 +41,7 @@ data class RewardDefinition(
             RewardKind.NUMERIC -> effect is RewardEffect.BankCapacity ||
                 effect is RewardEffect.HomeCooldown || effect is RewardEffect.WithdrawalFee
             RewardKind.MAJOR -> level % 10 == 0 &&
-                (effect is RewardEffect.HomeCapacity || effect == RewardEffect.AllyHomes)
+                (effect is RewardEffect.HomeCapacity || effect is RewardEffect.BankCapacity)
         }) { "Effect does not match checkpoint kind" }
     }
 }
@@ -113,7 +112,9 @@ class RewardCatalog(levels: List<RewardLevel>) {
                     if (level % 10 == 0) {
                         val price = 500L * (level / 10)
                         add(if (level == 50) {
-                            RewardDefinition("ally-homes", "Allied Waypoints", level, RewardKind.MAJOR, price, RewardEffect.AllyHomes)
+                            // REQ-158: replaced Allied Waypoints (ally-homes) on 2026-11-04.
+                            RewardDefinition("grand-vault", "Grand Vault", level, RewardKind.MAJOR, price,
+                                RewardEffect.BankCapacity(5_000))
                         } else {
                             home++
                             RewardDefinition("home-$home", "Guild Outpost $home", level, RewardKind.MAJOR, price,

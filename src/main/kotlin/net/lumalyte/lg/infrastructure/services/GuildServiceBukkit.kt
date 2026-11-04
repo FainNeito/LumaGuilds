@@ -514,85 +514,6 @@ class GuildServiceBukkit(
         }
     }
     
-    override fun getAllyHomes(guildId: UUID): Map<String, GuildHome> {
-        try {
-            val guild = guildRepository.getById(guildId) ?: return emptyMap()
-
-            // Check if requesting guild has the perk
-            val progressionService = org.koin.core.context.GlobalContext.get()
-                .get<net.lumalyte.lg.application.services.ProgressionService>()
-            if (!progressionService.hasPerkUnlocked(guildId, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)) {
-                return emptyMap()
-            }
-
-            // Get active ally relations
-            val allyRelations = relationRepository.getByGuildAndType(
-                guildId, net.lumalyte.lg.domain.entities.RelationType.ALLY
-            ).filter { it.isActive() }
-
-            val result = mutableMapOf<String, GuildHome>()
-            for (relation in allyRelations) {
-                val allyGuildId = relation.getOtherGuild(guildId)
-
-                // Ally must also have the perk unlocked (mutual requirement)
-                if (!progressionService.hasPerkUnlocked(allyGuildId, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)) {
-                    continue
-                }
-
-                val allyGuild = guildRepository.getById(allyGuildId) ?: continue
-                val allyHome = allyGuild.allyHome ?: continue
-                result[allyGuild.name] = allyHome
-            }
-            return result
-        } catch (e: Exception) {
-            logger.error("Error getting ally homes for guild $guildId", e)
-            return emptyMap()
-        }
-    }
-
-    override fun setAllyHome(guildId: UUID, home: GuildHome, actorId: UUID): Boolean {
-        try {
-            val guild = guildRepository.getById(guildId) ?: return false
-            if (!hasPermission(actorId, guildId, RankPermission.MANAGE_MEMBERS)) {
-                logger.warn("Player $actorId attempted to set ally home for guild $guildId without permission")
-                return false
-            }
-            val updatedGuild = guild.copy(allyHome = home)
-            val result = guildRepository.update(updatedGuild)
-            if (result) {
-                logger.info("Guild $guildId ally home set by $actorId")
-            }
-            return result
-        } catch (e: Exception) {
-            logger.error("Error setting ally home for guild $guildId", e)
-            return false
-        }
-    }
-
-    override fun removeAllyHome(guildId: UUID, actorId: UUID): Boolean {
-        try {
-            val guild = guildRepository.getById(guildId) ?: return false
-            if (!hasPermission(actorId, guildId, RankPermission.MANAGE_MEMBERS)) {
-                logger.warn("Player $actorId attempted to remove ally home for guild $guildId without permission")
-                return false
-            }
-            if (guild.allyHome == null) return false
-            val updatedGuild = guild.copy(allyHome = null)
-            val result = guildRepository.update(updatedGuild)
-            if (result) {
-                logger.info("Guild $guildId ally home removed by $actorId")
-            }
-            return result
-        } catch (e: Exception) {
-            logger.error("Error removing ally home for guild $guildId", e)
-            return false
-        }
-    }
-
-    override fun getAllyHome(guildId: UUID): GuildHome? {
-        return guildRepository.getById(guildId)?.allyHome
-    }
-
     override fun setMode(guildId: UUID, mode: GuildMode, actorId: UUID): Boolean {
         val guild = guildRepository.getById(guildId) ?: return false
         
@@ -755,35 +676,6 @@ class GuildServiceBukkit(
         return guildRepository.updateGuiTheme(guildId, guild.guiTheme, theme)
     }
 
-    override fun canUseAllyHome(playerId: UUID, sourceGuildId: UUID, targetGuildId: UUID): Boolean {
-        if (guildRepository.getById(sourceGuildId) == null) return false
-        val targetGuild = guildRepository.getById(targetGuildId) ?: return false
-        if (targetGuild.allyHome == null) return false
-        if (sourceGuildId !in targetGuild.allyHomeAllowedGuilds) return false
-        // Guard against stale or manually-injected whitelist entries: the two guilds must
-        // currently be actively allied, not merely whitelisted from a prior alliance.
-        val activeAlliance = relationRepository
-            .getByGuildAndType(sourceGuildId, net.lumalyte.lg.domain.entities.RelationType.ALLY)
-            .any { rel -> rel.isActive() && (rel.guildA == targetGuildId || rel.guildB == targetGuildId) }
-        if (!activeAlliance) return false
-        val member = memberRepository.getByPlayerAndGuild(playerId, sourceGuildId) ?: return false
-        val rank = rankRepository.getById(member.rankId) ?: return false
-        val ownerRank = rankRepository.getHighestRank(sourceGuildId)
-        if (ownerRank != null && rank.id == ownerRank.id) return true
-        return RankPermission.USE_ALLY_HOMES in rank.permissions
-    }
-
-    override fun canUseOwnAllyHome(playerId: UUID, guildId: UUID): Boolean {
-        val guild = guildRepository.getById(guildId) ?: return false
-        if (guild.allyHome == null) return false
-        val member = memberRepository.getByPlayerAndGuild(playerId, guildId) ?: return false
-        val rank = rankRepository.getById(member.rankId) ?: return false
-        // Guild owner (highest-priority rank) always has access; otherwise gate on USE_ALLY_HOMES.
-        val ownerRank = rankRepository.getHighestRank(guildId)
-        if (ownerRank != null && rank.id == ownerRank.id) return true
-        return RankPermission.USE_ALLY_HOMES in rank.permissions
-    }
-
     override fun setHomeAllowedRanks(
         guildId: UUID, homeName: String, allowedRankIds: Set<UUID>, actorId: UUID
     ): Boolean {
@@ -803,26 +695,6 @@ class GuildServiceBukkit(
         }
         val updatedHome = home.copy(allowedRankIds = sanitized)
         val updatedGuild = guild.copy(homes = guild.homes.withHome(homeName, updatedHome))
-        return guildRepository.update(updatedGuild)
-    }
-
-    override fun setAllyHomeAllowedGuilds(
-        guildId: UUID, allowedGuildIds: Set<UUID>, actorId: UUID
-    ): Boolean {
-        if (!hasPermission(actorId, guildId, RankPermission.MANAGE_HOME)) {
-            logger.warn("Player $actorId attempted to set ally-home guild whitelist for guild $guildId without MANAGE_HOME")
-            return false
-        }
-        val guild = guildRepository.getById(guildId) ?: return false
-        // Filter to real, currently-existing guilds; canUseAllyHome additionally checks the
-        // active-ALLY relation at teleport time so phantom IDs are inert, but persisting them
-        // pollutes the table over time.
-        val sanitized = allowedGuildIds.filter { it != guildId && guildRepository.getById(it) != null }.toSet()
-        val rejected = allowedGuildIds - sanitized
-        if (rejected.isNotEmpty()) {
-            logger.warn("setAllyHomeAllowedGuilds: dropping ${rejected.size} unknown/self guild id(s) for guild $guildId: $rejected")
-        }
-        val updatedGuild = guild.copy(allyHomeAllowedGuilds = sanitized)
         return guildRepository.update(updatedGuild)
     }
 

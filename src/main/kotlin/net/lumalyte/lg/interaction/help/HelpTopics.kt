@@ -7,7 +7,7 @@ object HelpTopics {
 
     val all: List<HelpTopic> = listOf(
         topic("guilds", "create", "join", "leave", "disband", "transfer", "info", "list"),
-        topic("homes", "sethome", "home", "homes", "removehome", "setallyhome", "removeallyhome"),
+        topic("homes", "sethome", "home", "homes", "removehome"),
         topic("ranks", "ranks", "menu"),
         topic("chat", "chat", "guild-chat", "allychat", "ally-chat", "modchat", "mod-chat", "announce"),
         topic("alliances", "ally", "enemy", "truce", "neutral"),

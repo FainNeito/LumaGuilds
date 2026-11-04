@@ -265,7 +265,6 @@ class ProgressionServiceBukkit(
                 if (rewards.homeCapacity > 1) add(PerkType.ADDITIONAL_HOMES)
                 if (rewards.homeCooldownMultiplier < 1.0) add(PerkType.TELEPORT_COOLDOWN_REDUCTION)
                 if (rewards.withdrawalFeeMultiplier < 1.0) add(PerkType.REDUCED_WITHDRAWAL_FEES)
-                if (rewards.allyHomes) add(PerkType.ALLY_HOME_ACCESS)
             }
         }
         val progression = progressionRepository.getGuildProgression(guildId) ?: return emptyList()

@@ -270,6 +270,11 @@ class SQLiteMigrations(private val plugin: JavaPlugin, private val connection: C
                 updateDatabaseVersion(BankContributionSchema.VERSION)
                 dbVersion = BankContributionSchema.VERSION
             }
+            RetiredRewardSchema.convert(connection)
+            if (dbVersion < RetiredRewardSchema.VERSION) {
+                updateDatabaseVersion(RetiredRewardSchema.VERSION)
+                dbVersion = RetiredRewardSchema.VERSION
+            }
             GuildDescriptionSchema.ensure(connection)
             // Validate that all required tables exist, recreate if missing
             validateAndRepairSchema()

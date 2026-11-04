@@ -36,7 +36,6 @@ data class RewardEntitlements(
     val memberCapacity: Int,
     val homeCooldownMultiplier: Double,
     val withdrawalFeeMultiplier: Double,
-    val allyHomes: Boolean,
     val offers: List<RewardOffer>,
     val prestigeChoices: List<RewardDefinition>
 ) {
@@ -91,7 +90,7 @@ class RewardEntitlementResolver(private val catalog: RewardCatalog) {
             }
         }
         return RewardEntitlements(currentBank, permanentBank, minOf(globalBankCeiling, totalBank), homeCapacity,
-            memberCapacity, cooldown, fee, active.any { it.effect == RewardEffect.AllyHomes },
+            memberCapacity, cooldown, fee,
             Collections.unmodifiableList(offers), Collections.unmodifiableList(choices))
     }
 

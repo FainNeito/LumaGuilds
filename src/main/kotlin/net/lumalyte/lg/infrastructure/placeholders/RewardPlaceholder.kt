@@ -18,7 +18,6 @@ object RewardPlaceholder {
             "guild_reward_member_capacity" -> rewards.memberCapacity.toString()
             "guild_reward_home_cooldown_multiplier" -> rewards.homeCooldownMultiplier.toString()
             "guild_reward_withdrawal_fee_multiplier" -> rewards.withdrawalFeeMultiplier.toString()
-            "guild_reward_ally_homes" -> rewards.allyHomes.toString()
             else -> if (identifier.startsWith("guild_reward_offer_"))
                 rewards.offers.find { it.reward.id == identifier.removePrefix("guild_reward_offer_") }?.status?.name ?: ""
                 else ""

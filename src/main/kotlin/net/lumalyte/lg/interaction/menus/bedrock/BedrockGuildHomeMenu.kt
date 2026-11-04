@@ -73,7 +73,6 @@ class BedrockGuildHomeMenu(
                         button(lang.bedrock("bedrock.home.button.remove"))
                         button(lang.bedrock("bedrock.home.button.access"))
                     }
-                    button(lang.bedrock("bedrock.home.button.ally_access"))
                 }
             }
             .validResultHandler { response ->
@@ -162,12 +161,6 @@ class BedrockGuildHomeMenu(
                 return
             }
             currentIndex++
-        }
-
-        // Inbound ally-home access
-        if (canManageHomes() && buttonIndex == currentIndex) {
-            bedrockNavigator.openMenu(menuFactory.createAllyHomeAccessMenu(menuNavigator, player, guild))
-            return
         }
 
         // Default: go back

@@ -15,7 +15,6 @@ class RewardEntitlementsTest {
         assertEquals(50, result.memberCapacity)
         assertEquals(1.0, result.homeCooldownMultiplier)
         assertEquals(1.0, result.withdrawalFeeMultiplier)
-        assertFalse(result.allyHomes)
         assertTrue(result.offers.all { it.status == RewardOfferStatus.AVAILABLE })
         val start = resolver.resolve(1, RewardOwnership())
         assertEquals(8_000L, start.bankCapacity)
@@ -44,7 +43,6 @@ class RewardEntitlementsTest {
         assertEquals(10, result.homeCapacity)
         assertEquals(0.5, result.homeCooldownMultiplier)
         assertEquals(0.5, result.withdrawalFeeMultiplier)
-        assertTrue(result.allyHomes)
     }
 
     @Test
@@ -60,14 +58,14 @@ class RewardEntitlementsTest {
     @Test
     fun `retained perks work below their unlock and homes are never reduced by reset`() {
         val state = RewardOwnership(
-            permanent = setOf("bank-10", "cooldown-5", "ally-homes", "home-1", "home-9"),
+            permanent = setOf("bank-10", "cooldown-5", "grand-vault", "home-1", "home-9"),
             prestigeCount = 3, initialHomeCapacity = 8
         )
         val result = resolver.resolve(1, state)
-        assertEquals(9_000L, result.bankCapacity)
+        assertEquals(14_000L, result.bankCapacity)
+        assertEquals(6_000L, result.permanentBankCapacity)
         assertEquals(13, result.homeCapacity)
         assertEquals(0.5, result.homeCooldownMultiplier)
-        assertTrue(result.allyHomes)
         assertEquals(50, result.memberCapacity)
     }
 
@@ -83,10 +81,10 @@ class RewardEntitlementsTest {
     @Test
     fun `prestige selection requires owned eligible nonpermanent reward and vacant family`() {
         val state = RewardOwnership(
-            currentRun = setOf("bank-1", "cooldown-4", "fee-5", "ally-homes"),
+            currentRun = setOf("bank-1", "cooldown-4", "fee-5", "grand-vault"),
             permanent = setOf("home-1", "cooldown-1"), prestigeCount = 1
         )
-        assertEquals(setOf("bank-1", "fee-5", "ally-homes"), resolver.resolve(100, state).prestigeChoices.map { it.id }.toSet())
+        assertEquals(setOf("bank-1", "fee-5", "grand-vault"), resolver.resolve(100, state).prestigeChoices.map { it.id }.toSet())
         assertTrue(resolver.resolve(99, state.copy(currentRun = state.currentRun - "fee-5")).prestigeChoices.isEmpty())
         assertFalse(resolver.resolve(100, state).prestigeChoices.any { it.id == "cooldown-1" })
     }
