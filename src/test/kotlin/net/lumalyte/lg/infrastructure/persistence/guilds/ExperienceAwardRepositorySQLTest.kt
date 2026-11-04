@@ -272,6 +272,32 @@ class ExperienceAwardRepositorySQLTest {
         assertEquals(1, rowCount("guild_achievement_xp_awards"))
     }
 
+    @Test
+    fun `coordinator pays only eligible future completion through actual ledger`() {
+        val peer = UUID.randomUUID()
+        val node = net.lumalyte.lg.domain.achievements.GuildAchievement(
+            "first_war", null, "First War", listOf("Win"), "WAR", null, 1, 50,
+            emptyList(), "Combat", "SHIELD", "GOAL", 0f, 0f,
+        )
+        val sink = net.lumalyte.lg.infrastructure.services.GuildAchievementXpSqlSink(repository) { instant }
+        val coordinator = net.lumalyte.lg.application.services.GuildAchievementXpCoordinator(listOf(node), sink)
+        val members = setOf(actorId, peer)
+        val distinct = mapOf(actorId to "a", peer to "b")
+        val shared = mapOf(actorId to "a", peer to "a")
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.HISTORICAL,
+            coordinator.complete(guildId, actorId, node, false, members, distinct))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.SHARED_ADDRESS,
+            coordinator.complete(guildId, actorId, node, true, members, shared))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.UNKNOWN_ADDRESS,
+            coordinator.complete(guildId, actorId, node, true, members, mapOf(actorId to "a")))
+        assertEquals(0, rowCount("guild_progression"))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.AWARDED,
+            coordinator.complete(guildId, actorId, node, true, members, distinct))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.DUPLICATE,
+            coordinator.complete(guildId, peer, node, true, members, distinct))
+        assertEquals(50, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
+    }
+
     private fun request() = ExperienceAwardRequest(
         guildId, actorId, ExperienceSource.MOB_KILL, 1, instant, eligible = true,
     )
