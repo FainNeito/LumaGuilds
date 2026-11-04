@@ -1132,7 +1132,7 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     in `GuildPrestigeService` is unchanged; no new non-domain imports in
     application or domain sources.
 
-- [ ] **PRESTIGE-CREDIT-LEDGER** Tag: TDD.
+- [x] **PRESTIGE-CREDIT-LEDGER** Tag: TDD.
   - References: REQ-154 (durable once-per-pair record); plan §Decisions
     "Deliver to online members, ledger after dispatch".
   - Evidence: additive table pattern `CREATE TABLE IF NOT EXISTS` with
@@ -1143,6 +1143,9 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     `co.aikar.idb.Database`,
     `net.lumalyte.lg.infrastructure.persistence.storage.Storage`,
     `net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect`.
+  - Result: empty scaffolding failed the reopen test on its first assertion.
+    The additive table pins `utf8mb4_unicode_ci` on MariaDB like the gold schema.
+    Final: SQLite 1/1 and native MariaDB 1/1 (added to `mariaDbRewardTest`).
 
 - [ ] **PRESTIGE-CREDIT-DELIVERY** Tag: TDD.
   - References: REQ-154 (eligibility, tenure, first-reach, placeholders, skip rules).
