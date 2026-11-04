@@ -21,6 +21,7 @@ internal class GuildAchievementRuntime(
     private val members: MemberRepository,
     private val progression: ProgressionRepository,
     private val stalls: GuildStallReadService = GuildStallReadClient(),
+    private val guildXp: GuildAchievementXpCompletionPort? = null,
 ) {
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
@@ -28,8 +29,11 @@ internal class GuildAchievementRuntime(
     private val dirty = mutableSetOf<UUID>()
     private val failed = mutableSetOf<UUID>()
     private val records = mutableMapOf<UUID, AchievementRecord>()
+    private val pendingGuildXp = mutableMapOf<UUID, List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>>()
     private val reviewRequired = mutableSetOf<UUID>()
     private val ownershipReads = mutableSetOf<UUID>()
+    private val initialized = mutableSetOf<UUID>()
+    private val observedStallOwnership = mutableMapOf<UUID, Boolean>()
 
     fun start() {
         projection.register()
@@ -39,6 +43,7 @@ internal class GuildAchievementRuntime(
         plugin.server.scheduler.runTaskTimer(plugin, Runnable {
             Bukkit.getOnlinePlayers().forEach { player ->
                 if (player.uniqueId in dirty) runCatching { flush(player) }
+                retryGuildXp(player)
             }
             Bukkit.getOnlinePlayers().groupBy { guild(it.uniqueId) }.forEach { (guild, players) ->
                 if (guild != null) {
@@ -46,9 +51,10 @@ internal class GuildAchievementRuntime(
                     val hours = combinedHours(guild)
                     val level = progression.getGuildProgression(guild)?.currentLevel
                     players.forEach { player ->
-                        signal(player, "ROOT")
-                        level?.let { signal(player, "GUILD_LEVEL_UP", it.toString()) }
-                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true)
+                        signal(player, "ROOT", newEvent = false)
+                        level?.let { signal(player, "GUILD_LEVEL_UP", it.toString(), newEvent = false) }
+                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true,
+                            newEvent = player.uniqueId in initialized)
                         read(player)?.let { projection.project(player, it) }
                     }
                 }
@@ -73,16 +79,19 @@ internal class GuildAchievementRuntime(
     }
 
     fun initialize(player: Player) {
+        read(player) ?: return
+        retryGuildXp(player)
         val guild = guild(player.uniqueId) ?: return
         read(player)?.let { record ->
             val pending = engine.pending(record)
             if (pending.completed.isNotEmpty()) deliver(player, record, pending)
         }
-        signal(player, "ROOT")
-        progression.getGuildProgression(guild)?.let { signal(player, "GUILD_LEVEL_UP", it.currentLevel.toString()) }
-        signal(player, "GUILD_COMBINED_PLAYTIME", amount = combinedHours(guild), absolute = true)
+        signal(player, "ROOT", newEvent = false)
+        progression.getGuildProgression(guild)?.let { signal(player, "GUILD_LEVEL_UP", it.currentLevel.toString(), newEvent = false) }
+        signal(player, "GUILD_COMBINED_PLAYTIME", amount = combinedHours(guild), absolute = true, newEvent = false)
         read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
+        initialized += player.uniqueId
     }
 
     /** Existing ownership qualifies. Unavailable or late data never invents a purchase or an award. */
@@ -94,10 +103,12 @@ internal class GuildAchievementRuntime(
         }.whenComplete { result, error ->
             plugin.server.scheduler.runTask(plugin, Runnable {
                 ownershipReads.remove(guildId)
-                if (error == null && viewer.isOnline && guild(viewer.uniqueId) == guildId &&
-                    result is StallReadResult.Available && result.stalls.any { it.state in setOf("OWNED", "GRACE") }) {
+                if (error == null && viewer.isOnline && guild(viewer.uniqueId) == guildId && result is StallReadResult.Available) {
+                    val owned = result.stalls.any { it.state in setOf("OWNED", "GRACE") }
+                    val previous = observedStallOwnership.put(guildId, owned)
+                    if (!owned) return@Runnable
                     online(guildId).filter { isMember(it.uniqueId, guildId) }.forEach {
-                        signal(it, "GUILD_STALL_OWNED", absolute = true)
+                        signal(it, "GUILD_STALL_OWNED", absolute = true, newEvent = previous == false)
                     }
                 }
             })
@@ -111,6 +122,8 @@ internal class GuildAchievementRuntime(
         val raw = player.persistentDataContainer.get(key, PersistentDataType.STRING) ?: return@runCatching AchievementRecord()
         val json = JSONObject(raw)
         require(json.getInt("schema") == 1)
+        val pending = if (json.has("guildXpPending")) json.getJSONArray("guildXpPending") else JSONArray()
+        pendingGuildXp[player.uniqueId] = GuildAchievementXpOutboxCodec.decode(pending)
         check(!json.optBoolean("reviewRequired", false)) { "Ambiguous XP delivery requires administrator review" }
         val counts = json.getJSONObject("progress")
         val progress = counts.keySet().associateWith { id ->
@@ -134,31 +147,50 @@ internal class GuildAchievementRuntime(
     }
 
     fun signal(player: Player, type: String, target: String? = null, amount: Int = 1,
-        absolute: Boolean = false, receipt: String? = null) {
+        absolute: Boolean = false, receipt: String? = null, newEvent: Boolean = false) {
         if (!Bukkit.isPrimaryThread()) {
-            plugin.server.scheduler.runTask(plugin, Runnable { if (player.isOnline) signal(player, type, target, amount, absolute, receipt) })
+            plugin.server.scheduler.runTask(plugin, Runnable { if (player.isOnline) signal(player, type, target, amount, absolute, receipt, newEvent) })
             return
         }
-        if (!player.isOnline || guild(player.uniqueId) == null) return
+        if (!player.isOnline) return
+        val guildId = guild(player.uniqueId) ?: return
         val before = read(player) ?: return
         val change = engine.advance(before, type, target, amount, absolute, receipt)
         if (change.record == before) return
-        deliver(player, before, change)
+        val bridge = guildXp
+        val prepared = if (newEvent && bridge != null) change.completed.mapNotNull { node ->
+            runCatching {
+                val result = bridge.prepare(player, guildId, node)
+                (result as? net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Prepared.Eligible)?.intent?.also {
+                    require(it.guildId == guildId && it.achievementId == node.id)
+                    require(it.amount == GuildAchievementXpPolicy.reward(node) && it.amount > 0)
+                    require(it.transactionId == GuildAchievementXpPolicy.transactionId(guildId, node.id))
+                }
+            }.onFailure { plugin.logger.warning("Guild achievement XP eligibility unavailable; personal achievement remains active") }.getOrNull()
+        } else emptyList()
+        deliver(player, before, change, prepared)
     }
 
-    private fun deliver(player: Player, before: AchievementRecord, change: AchievementChange) {
+    private fun deliver(player: Player, before: AchievementRecord, change: AchievementChange,
+        prepared: List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent> = emptyList()) {
         val xp = change.completed.sumOf { it.personalXp }
         val oldXp = Triple(player.totalExperience, player.level, player.exp)
+        val oldPending = pendingGuildXp[player.uniqueId].orEmpty()
         try {
-            // Claimed IDs and experience are saved together in player.dat; no guild XP or bank calls here.
+            val pending = (oldPending + prepared).distinctBy { it.transactionId }
+            GuildAchievementXpOutboxCodec.encode(pending) // validate before changing player XP
+            pendingGuildXp[player.uniqueId] = pending
+            // Claimed IDs, pending guild intents and personal experience share the player save.
             write(player, change.record)
             if (xp > 0) player.giveExp(xp)
             if (change.completed.isNotEmpty()) flush(player)
             if (change.completed.isNotEmpty()) projection.project(player, change.record)
             change.completed.forEach { announce(player, it) }
+            if (change.completed.isNotEmpty()) retryGuildXp(player)
         } catch (error: Exception) {
             // Only a verified unchanged XP outcome is retryable. Ambiguous outcomes retain claimed IDs.
             if (Triple(player.totalExperience, player.level, player.exp) == oldXp) {
+                pendingGuildXp[player.uniqueId] = oldPending
                 write(player, change.record.copy(rewarded = before.rewarded))
                 runCatching { flush(player) }
             } else {
@@ -189,7 +221,7 @@ internal class GuildAchievementRuntime(
             plugin.server.scheduler.runTask(plugin, Runnable { shared(guildId, type, target, amount, absolute, receipt) })
             return
         }
-        online(guildId).forEach { signal(it, type, target, amount, absolute, receipt) }
+        online(guildId).forEach { signal(it, type, target, amount, absolute, receipt, newEvent = true) }
     }
 
     fun projectionAvailable(): Boolean = projection.available
@@ -199,6 +231,8 @@ internal class GuildAchievementRuntime(
     fun leave(player: Player) {
         if (player.uniqueId in dirty) flush(player)
         records.remove(player.uniqueId)
+        pendingGuildXp.remove(player.uniqueId)
+        initialized.remove(player.uniqueId)
         failed.remove(player.uniqueId)
     }
 
@@ -217,9 +251,27 @@ internal class GuildAchievementRuntime(
             .put("rewarded", JSONArray(record.rewarded.toList())).put("receipts", JSONArray(record.receipts.toList()))
             .put("tracked", record.tracked ?: JSONObject.NULL)
             .put("reviewRequired", player.uniqueId in reviewRequired)
+            .put("guildXpPending", GuildAchievementXpOutboxCodec.encode(pendingGuildXp[player.uniqueId].orEmpty()))
         player.persistentDataContainer.set(key, PersistentDataType.STRING, json.toString())
         player.saveData()
         dirty.remove(player.uniqueId)
+    }
+
+    private fun retryGuildXp(player: Player) {
+        val bridge = guildXp ?: return
+        if (player.uniqueId in failed || player.uniqueId in dirty) return
+        val before = pendingGuildXp[player.uniqueId].orEmpty()
+        if (before.isEmpty()) return
+        val remaining = before.filter { intent ->
+            val outcome = runCatching { bridge.deliver(intent) }.getOrNull()
+            outcome != net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.AWARDED &&
+                outcome != net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.DUPLICATE
+        }
+        if (remaining != before) {
+            pendingGuildXp[player.uniqueId] = remaining
+            dirty += player.uniqueId
+            runCatching { flush(player) }
+        }
     }
 
     private fun strings(array: JSONArray): Set<String> = (0 until array.length()).map { array.getString(it) }.toSet()

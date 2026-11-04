@@ -3,6 +3,8 @@ package net.lumalyte.lg.infrastructure.services
 import io.mockk.*
 import net.lumalyte.lg.application.persistence.MemberRepository
 import net.lumalyte.lg.application.persistence.ProgressionRepository
+import net.lumalyte.lg.application.services.GuildAchievementXpCoordinator
+import net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy
 import org.bukkit.NamespacedKey
 import org.bukkit.persistence.PersistentDataType
 import org.junit.jupiter.api.AfterEach
@@ -128,5 +130,141 @@ internal class GuildAchievementRuntimeTest {
         assertNull(subject.read(player))
         assertEquals("invalid retained data", player.persistentDataContainer.get(key, PersistentDataType.STRING))
         verify(exactly = 0) { player.giveExp(any<Int>()) }
+    }
+
+    @Test fun `pending guild award survives personal save and runtime recreation`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        every { player.saveData() } just Runs
+        every { player.giveExp(any<Int>()) } just Runs
+        val guild = UUID.randomUUID()
+        var memberships = setOf(guild)
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } answers { memberships }
+        every { members.getByGuild(guild) } returns emptySet()
+        val progression = mockk<ProgressionRepository>()
+        every { progression.getGuildProgression(guild) } returns null
+        val stalls = mockk<net.lumalyte.lg.application.services.GuildStallReadService>()
+        every { stalls.read(guild, player.uniqueId) } returns java.util.concurrent.CompletableFuture.completedFuture(
+            net.lumalyte.lg.application.services.StallReadResult.Unavailable)
+        val bridge = mockk<GuildAchievementXpCompletionPort>()
+        val intent = GuildAchievementXpCoordinator.Intent(guild, "to_the_victor", 50,
+            GuildAchievementXpPolicy.transactionId(guild, "to_the_victor"))
+        every { bridge.prepare(player, guild, match { it.id == "to_the_victor" }) } returns GuildAchievementXpCoordinator.Prepared.Eligible(intent)
+        every { bridge.deliver(intent) } returnsMany listOf(GuildAchievementXpCoordinator.Result.UNAVAILABLE, GuildAchievementXpCoordinator.Result.AWARDED)
+        val first = GuildAchievementRuntime(plugin, members, progression, stalls, bridge)
+        first.signal(player, "GUILD_WAR_WON", receipt = "war-1", newEvent = true)
+        val key = NamespacedKey(plugin, "guild_achievements_v1")
+        val saved = org.json.JSONObject(player.persistentDataContainer.get(key, PersistentDataType.STRING)!!)
+        assertEquals(1, saved.getJSONArray("guildXpPending").length())
+        memberships = emptySet()
+        val reopened = GuildAchievementRuntime(plugin, members, progression, stalls, bridge)
+        reopened.initialize(player)
+        val after = org.json.JSONObject(player.persistentDataContainer.get(key, PersistentDataType.STRING)!!)
+        assertEquals(0, after.getJSONArray("guildXpPending").length())
+        verify(exactly = 1) { bridge.prepare(player, guild, match { it.id == "to_the_victor" }) }
+        verify(exactly = 2) { bridge.deliver(intent) }
+        verify(exactly = 1) { player.giveExp(300) }
+    }
+
+    @Test fun `historical synchronization never prepares guild XP`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        every { player.saveData() } just Runs
+        every { player.giveExp(any<Int>()) } just Runs
+        val guild = UUID.randomUUID()
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        val bridge = mockk<GuildAchievementXpCompletionPort>()
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), mockk(), bridge)
+        runtime.signal(player, "GUILD_WAR_WON", receipt = "old-war", newEvent = false)
+        verify(exactly = 0) { bridge.prepare(any(), any(), any()) }
+        verify(exactly = 0) { bridge.deliver(any()) }
+        verify(exactly = 1) { player.giveExp(300) }
+    }
+
+    @Test fun `wrong guild reward intent is rejected without withholding personal XP`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        every { player.saveData() } just Runs
+        every { player.giveExp(any<Int>()) } just Runs
+        val guild = UUID.randomUUID()
+        val wrongGuild = UUID.randomUUID()
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        val bridge = mockk<GuildAchievementXpCompletionPort>()
+        val wrong = GuildAchievementXpCoordinator.Intent(wrongGuild, "to_the_victor", 50,
+            GuildAchievementXpPolicy.transactionId(wrongGuild, "to_the_victor"))
+        every { bridge.prepare(player, guild, any()) } returns GuildAchievementXpCoordinator.Prepared.Eligible(wrong)
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), mockk(), bridge)
+        runtime.signal(player, "GUILD_WAR_WON", receipt = "war-2", newEvent = true)
+        verify(exactly = 0) { bridge.deliver(any()) }
+        verify(exactly = 1) { player.giveExp(300) }
+        val key = NamespacedKey(plugin, "guild_achievements_v1")
+        val saved = org.json.JSONObject(player.persistentDataContainer.get(key, PersistentDataType.STRING)!!)
+        assertEquals(0, saved.getJSONArray("guildXpPending").length())
+    }
+
+    @Test fun `malformed pending guild xp remains quarantined rather than silently discarded`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        val key = NamespacedKey(plugin, "guild_achievements_v1")
+        val original = """{"schema":1,"progress":{},"rewarded":[],"receipts":[],"guildXpPending":"invalid"}"""
+        player.persistentDataContainer.set(key, PersistentDataType.STRING, original)
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(UUID.randomUUID())
+        val runtime = GuildAchievementRuntime(plugin, members, mockk())
+        runtime.signal(player, "GUILD_WAR_WON", newEvent = true)
+        assertNull(runtime.read(player))
+        assertEquals(original, player.persistentDataContainer.get(key, PersistentDataType.STRING))
+        verify(exactly = 0) { player.giveExp(any<Int>()) }
+    }
+
+    @Test fun `new stall ownership after a nonowner baseline prepares guild XP`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        every { player.saveData() } just Runs
+        mockkStatic(org.bukkit.Bukkit::class)
+        every { org.bukkit.Bukkit.getPlayer(player.uniqueId) } returns player
+        val guild = UUID.randomUUID()
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        every { members.getByGuild(guild) } returns setOf(net.lumalyte.lg.domain.entities.Member(
+            player.uniqueId, guild, UUID.randomUUID(), java.time.Instant.EPOCH))
+        val stalls = mockk<net.lumalyte.lg.application.services.GuildStallReadService>()
+        var state = "UNOWNED"
+        every { stalls.read(guild, player.uniqueId) } answers {
+            java.util.concurrent.CompletableFuture.completedFuture(net.lumalyte.lg.application.services.StallReadResult.Available(listOf(
+                net.lumalyte.lg.application.services.GuildStallInfo("stall", "region", "world", state, 1, 60, null, null, null, emptyList()))))
+        }
+        val bridge = mockk<GuildAchievementXpCompletionPort>()
+        val intent = GuildAchievementXpCoordinator.Intent(guild, "prime_real_estate", 50,
+            GuildAchievementXpPolicy.transactionId(guild, "prime_real_estate"))
+        every { bridge.prepare(player, guild, match { it.id == "prime_real_estate" }) } returns GuildAchievementXpCoordinator.Prepared.Eligible(intent)
+        every { bridge.deliver(intent) } returns GuildAchievementXpCoordinator.Result.AWARDED
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), stalls, bridge)
+        runtime.refreshStallOwnership(player, guild)
+        server.scheduler.performOneTick()
+        verify(exactly = 0) { bridge.prepare(any(), any(), any()) }
+        state = "OWNED"
+        runtime.refreshStallOwnership(player, guild)
+        server.scheduler.performOneTick()
+        verify(exactly = 1) { bridge.prepare(player, guild, match { it.id == "prime_real_estate" }) }
+        verify(exactly = 1) { bridge.deliver(intent) }
     }
 }
