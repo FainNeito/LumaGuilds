@@ -1165,7 +1165,7 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     Application imports are domain/application/stdlib plus slf4j, matching the
     existing `GuildPrestigeService` logger convention.
 
-- [ ] **PRESTIGE-CREDIT-WIRING** Tag: INFRA.
+- [x] **PRESTIGE-CREDIT-WIRING** Tag: INFRA.
   - References: REQ-153, REQ-154; plan §Configuration.
   - Evidence: Koin wiring in `di/Modules.kt` (`GuildPrestigeService`,
     `GuildPrestigeAnnouncementBukkit`); prestige keys read in
@@ -1174,3 +1174,11 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     Imports: `org.bukkit.event.player.PlayerJoinEvent`,
     `org.bukkit.event.Listener`, `org.bukkit.event.EventHandler`,
     `org.bukkit.Bukkit`.
+  - Result: `progression.prestige.member_credits` (default disabled) parsed into
+    `PrestigeMemberCreditsConfig`; Koin binds `PrestigeHistory` to the prestige
+    repository, the SQL ledger, `PrestigeMemberCredits` with a server-thread console
+    dispatcher, and `GuildPrestigeService` with the event and credit notifiers; the
+    join listener credits owed members 100 ticks after join. `GuildPrestigeEvent`
+    added to `GuildEventApiContractTest` (5/5). Full suite 2441 tests, 0 failures,
+    106 pre-existing skips; native `mariaDbRewardTest` 127/127; `shadowJar` built.
+    No layered sources changed in this task.

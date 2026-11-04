@@ -1020,6 +1020,11 @@ class LumaGuilds : JavaPlugin() {
         val progressionEventListener = get().get<ProgressionEventListener>()
         server.pluginManager.registerEvents(progressionEventListener, this)
 
+        // REQ-154: credit members for their guild's prestiges when they join.
+        server.pluginManager.registerEvents(
+            get().get<net.lumalyte.lg.infrastructure.listeners.PrestigeCreditJoinListener>(), this,
+        )
+
         val questProgressListener = get().get<net.lumalyte.lg.infrastructure.listeners.QuestProgressListener>()
         server.pluginManager.registerEvents(questProgressListener, this)
         try {
