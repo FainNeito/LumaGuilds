@@ -54,4 +54,15 @@ class GuildDescriptionPersistenceTest : RewardSqlTestFixture() {
         assertEquals("Original", repository.getById(guild.id)?.description)
         assertEquals("Original", GuildRepositorySQLite(storage).getById(guild.id)?.description)
     }
+
+    @Test fun `legacy updates that do not mention description preserve it`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val guild = Guild(UUID.randomUUID(), "LegacyUpdate", createdAt = Instant.now(), description = "Preserved")
+        assertTrue(GuildRepositorySQLite(storage).add(guild))
+        storage.connection.executeUpdate("UPDATE guilds SET name = ? WHERE id = ?", "Renamed", guild.id.toString())
+        val reloaded = GuildRepositorySQLite(storage).getById(guild.id)!!
+        assertEquals("Renamed", reloaded.name)
+        assertEquals("Preserved", reloaded.description)
+    }
 }
