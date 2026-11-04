@@ -20,6 +20,8 @@ class ExperienceAwardRepositorySQL(
     private val curveProvider: () -> ProgressionCurve,
 ) : ExperienceAwardRepository {
 
+    data class AchievementPublication(val transactionId: UUID, val guildId: UUID, val leveledUpTo: Int?)
+
     constructor(storage: Storage<Database>, curve: ProgressionCurve) : this(storage, { curve })
 
     private val mariaDb = storage.dialect == SqlDialect.MARIADB
@@ -71,10 +73,48 @@ class ExperienceAwardRepositorySQL(
                     "INSERT INTO guild_achievement_xp_awards (guild_id, achievement_id, transaction_id) VALUES (?, ?, ?)",
                     request.guildId.toString(), achievementId, request.transactionId.toString(),
                 )
+                connection.updateStatement(
+                    "INSERT INTO guild_achievement_xp_publications (transaction_id, guild_id, leveled_up_to, acknowledged) VALUES (?, ?, ?, 0)",
+                    request.transactionId.toString(), request.guildId.toString(), result.leveledUpTo,
+                )
                 result
             }
         }
     }
+
+    /** Read-only recovery record; acknowledgment belongs after successful cache and notification handling. */
+    fun pendingAchievementPublication(transactionId: UUID): AchievementPublication? =
+        storage.connection.connection.use { connection ->
+            connection.selectOne(
+                "SELECT guild_id, leveled_up_to FROM guild_achievement_xp_publications WHERE transaction_id = ? AND acknowledged = 0",
+                transactionId.toString(),
+            ) { row ->
+                val level = row.getInt("leveled_up_to").let { if (row.wasNull()) null else it }
+                AchievementPublication(transactionId, UUID.fromString(row.getString("guild_id")), level)
+            }
+        }
+
+    /** A worker can drain pending rows in batches without needing the original player online. */
+    fun pendingAchievementPublications(limit: Int): List<AchievementPublication> {
+        require(limit in 1..100)
+        return storage.connection.connection.use { connection ->
+            connection.prepareStatement("SELECT transaction_id, guild_id, leveled_up_to FROM guild_achievement_xp_publications WHERE acknowledged = 0 ORDER BY transaction_id LIMIT ?").use { statement ->
+                statement.setInt(1, limit)
+                statement.executeQuery().use { rows -> buildList {
+                    while (rows.next()) {
+                        val level = rows.getInt("leveled_up_to").let { if (rows.wasNull()) null else it }
+                        add(AchievementPublication(UUID.fromString(rows.getString("transaction_id")), UUID.fromString(rows.getString("guild_id")), level))
+                    }
+                } }
+            }
+        }
+    }
+
+    /** Idempotent acknowledgement; a completed notification is not itself an XP award. */
+    fun acknowledgeAchievementPublication(transactionId: UUID): Boolean =
+        storage.connection.connection.use { connection ->
+            connection.updateStatement("UPDATE guild_achievement_xp_publications SET acknowledged = 1 WHERE transaction_id = ? AND acknowledged = 0", transactionId.toString()) == 1
+        }
 
     private fun reserveWriter(connection: Connection, guildId: UUID) {
         if (mariaDb) {
@@ -124,6 +164,14 @@ class ExperienceAwardRepositorySQL(
                 achievement_id VARCHAR(128) NOT NULL,
                 transaction_id VARCHAR(36) NOT NULL UNIQUE,
                 PRIMARY KEY (guild_id, achievement_id)
+            )""".trimIndent(),
+        )
+        storage.connection.executeUpdate(
+            """CREATE TABLE IF NOT EXISTS guild_achievement_xp_publications (
+                transaction_id VARCHAR(36) PRIMARY KEY,
+                guild_id VARCHAR(36) NOT NULL,
+                leveled_up_to INTEGER,
+                acknowledged INTEGER NOT NULL DEFAULT 0
             )""".trimIndent(),
         )
     }

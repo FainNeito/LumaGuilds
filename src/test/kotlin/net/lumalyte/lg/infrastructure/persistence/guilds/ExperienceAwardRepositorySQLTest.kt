@@ -11,6 +11,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -250,6 +253,34 @@ class ExperienceAwardRepositorySQLTest {
         assertEquals(0, rowCount("guild_progression"))
         assertEquals(0, rowCount("experience_transactions"))
         assertEquals(0, rowCount("guild_achievement_xp_awards"))
+    }
+
+    @Test
+    fun `achievement publication survives recreation and duplicate award until acknowledged`() {
+        val achievement = "first_war"
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, achievement)
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+        repository.awardAtomically(request(), policy, curve.experienceForNextLevel(1) - 25, policy.windowContaining(instant))
+        val result = repository.awardAchievementAtomically(award, achievement, 50) as ExperienceAwardResult.Awarded
+        assertNotNull(result.leveledUpTo)
+        val reopened = ExperienceAwardRepositorySQL(storage, curve)
+        assertEquals(ExperienceAwardRepositorySQL.AchievementPublication(transaction, guildId, result.leveledUpTo), reopened.pendingAchievementPublication(transaction))
+        assertEquals(ExperienceAwardResult.Duplicate, reopened.awardAchievementAtomically(award, achievement, 50))
+        assertTrue(reopened.acknowledgeAchievementPublication(transaction))
+        assertFalse(reopened.acknowledgeAchievementPublication(transaction))
+        assertNull(ExperienceAwardRepositorySQL(storage, curve).pendingAchievementPublication(transaction))
+    }
+
+    @Test
+    fun `failed achievement publication rolls back award and receipt`() {
+        storage.connection.executeUpdate("CREATE TRIGGER reject_publication BEFORE INSERT ON guild_achievement_xp_publications BEGIN SELECT RAISE(ABORT, 'publication rejected'); END")
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, "first_war")
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+        assertThrows(SQLException::class.java) { repository.awardAchievementAtomically(award, "first_war", 50) }
+        assertEquals(0, rowCount("guild_progression"))
+        assertEquals(0, rowCount("experience_transactions"))
+        assertEquals(0, rowCount("guild_achievement_xp_awards"))
+        assertNull(repository.pendingAchievementPublication(transaction))
     }
 
     @Test
