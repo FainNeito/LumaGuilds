@@ -25,9 +25,11 @@ class ExperienceAwardRepositorySQL(
     constructor(storage: Storage<Database>, curve: ProgressionCurve) : this(storage, { curve })
 
     private val mariaDb = storage.dialect == SqlDialect.MARIADB
+    private val timestampFormats: ExperienceTimestampFormats
 
     init {
         createTables()
+        timestampFormats = storage.connection.connection.use { ExperienceTimestampFormats.inspect(it, mariaDb) }
     }
 
     override fun awardAtomically(
@@ -44,7 +46,7 @@ class ExperienceAwardRepositorySQL(
         return storage.connection.connection.use { connection ->
             connection.committingTransaction {
                 reserveWriter(connection, request.guildId)
-                ExperienceAwardTransaction(connection, mariaDb, curve).award(request, policy, requestedXp, window)
+                ExperienceAwardTransaction(connection, mariaDb, curve, timestampFormats).award(request, policy, requestedXp, window)
             }
         }
     }
@@ -67,7 +69,7 @@ class ExperienceAwardRepositorySQL(
                     request.guildId.toString(), achievementId,
                 ) { true } ?: false
                 if (claimed) return@committingTransaction ExperienceAwardResult.Duplicate
-                val result = ExperienceAwardTransaction(connection, mariaDb, curveProvider()).award(request, policy, amount, null)
+                val result = ExperienceAwardTransaction(connection, mariaDb, curveProvider(), timestampFormats).award(request, policy, amount, null)
                 check(result is ExperienceAwardResult.Awarded) { "Achievement award receipt conflicts with XP history" }
                 connection.updateStatement(
                     "INSERT INTO guild_achievement_xp_awards (guild_id, achievement_id, transaction_id) VALUES (?, ?, ?)",
@@ -136,7 +138,7 @@ class ExperienceAwardRepositorySQL(
         policy: ExperiencePolicy,
         requestedXp: Int,
     ): ExperienceAwardResult {
-        val transaction = ExperienceAwardTransaction(connection, mariaDb, curveProvider())
+        val transaction = ExperienceAwardTransaction(connection, mariaDb, curveProvider(), timestampFormats)
         return transaction.award(request, policy, requestedXp, policy.windowContaining(request.occurredAt))
     }
 
