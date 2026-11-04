@@ -11,6 +11,7 @@ import net.lumalyte.lg.domain.values.ExperiencePolicy
 import net.lumalyte.lg.domain.values.CapPeriod
 import net.lumalyte.lg.domain.values.ProgressionCurve
 import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
+import net.lumalyte.lg.infrastructure.services.GuildAchievementPublicationRecovery
 import org.junit.jupiter.api.Test
 import kotlin.test.*
 
@@ -92,5 +93,24 @@ class GuildAchievementPublicationSQLTest : RewardSqlTestFixture() {
         }
         assertIs<ExperienceAwardResult.Awarded>(award("first"))
         assertIs<ExperienceAwardResult.Awarded>(award("second"))
+    }
+
+    @Test fun `failed publication remains pending until successful recovery`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val guild = UUID.randomUUID()
+        assertTrue(GuildRepositorySQLite(storage).add(Guild(guild, "Recovery", createdAt = Instant.now())))
+        val repository = ExperienceAwardRepositorySQL(storage, ProgressionCurve(500.0, 1.15, 150, 100))
+        val transaction = GuildAchievementXpPolicy.transactionId(guild, "first_war")
+        val request = ExperienceAwardRequest(guild, null, ExperienceSource.ACHIEVEMENT, 50, Instant.now(), transactionId = transaction)
+        assertIs<ExperienceAwardResult.Awarded>(repository.awardAchievementAtomically(request, "first_war", 50))
+        assertEquals(0, GuildAchievementPublicationRecovery(repository) { throw IllegalStateException("unavailable") }.recover(10))
+        assertNotNull(repository.pendingAchievementPublication(transaction))
+        val delivered = mutableListOf<UUID>()
+        val worker = GuildAchievementPublicationRecovery(repository) { delivered += it.transactionId; true }
+        assertEquals(1, worker.recover(10))
+        assertEquals(0, worker.recover(10))
+        assertEquals(listOf(transaction), delivered)
+        assertEquals(ExperienceAwardResult.Duplicate, repository.awardAchievementAtomically(request, "first_war", 50))
     }
 }
