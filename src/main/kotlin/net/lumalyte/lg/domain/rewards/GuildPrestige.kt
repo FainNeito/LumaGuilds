@@ -1,5 +1,6 @@
 package net.lumalyte.lg.domain.rewards
 
+import java.time.Instant
 import java.util.UUID
 
 data class PrestigeQuote(
@@ -53,4 +54,13 @@ data class PrestigeOverview(
     val maxPrestigeCount: Int,
     val nextFee: Long?,
     val choices: List<RewardDefinition>,
+)
+/** One applied prestige, read from its receipt and its canonical gold-journal debit. */
+data class PrestigeRecord(
+    val transactionId: UUID,
+    val guildId: UUID,
+    val actorId: UUID,
+    val tier: Int,
+    val retainedRewardId: String,
+    val appliedAt: Instant,
 )

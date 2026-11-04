@@ -589,6 +589,19 @@ The approved recruitment behavior, player/recruiter flows, discovery integration
 ### REQ-STALL-ICONS-1
 **Ubiquitous.** THE SYSTEM SHALL give stall entries, member entries, navigation, status and authorized manager controls distinct semantic icons using the existing themed provider with vanilla fallbacks, while preserving all membership, navigation-token and manager authorization checks. Custom private artwork SHALL remain outside the public plugin repository.
 
+## Prestige history, event and member credits
+
+Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-03-prestige-advancements.md).
+
+### REQ-152
+**Ubiquitous.** THE SYSTEM SHALL provide a read-only prestige history that lists, for a guild, every applied prestige with its resulting tier, retained perk, confirming actor and commit time, oldest first, where commit time is the `created_at` of the prestige's own canonical gold-journal debit (same transaction ID); and SHALL identify, server-wide, the first applied prestige that reached a given tier, ordered by commit time and then transaction ID. Reading history SHALL NOT write, migrate or alter prestige receipts, and SHALL include prestiges committed before this requirement existed.
+
+### REQ-153
+**Event-driven.** WHEN a prestige transaction is newly committed THE SYSTEM SHALL fire exactly one synchronous public `GuildPrestigeEvent` carrying the guild ID, actor ID, resulting tier, retained perk ID, commit time and whether the guild is the first server-wide to reach that tier. Receipt replays, rejections and failures SHALL NOT fire it, and a failing event listener SHALL NOT undo, repeat or alter the committed prestige, its result or its public announcement.
+
+### REQ-154
+**State-driven.** WHILE prestige member credits are enabled (default disabled) THE SYSTEM SHALL, whenever a guild member is online after their guild newly commits a prestige and whenever a member joins the server, dispatch the configured member commands as the console once for each applied prestige of the member's current guild whose commit time is at least the configured minimum tenure (default 24 hours) after that member's guild membership began, and additionally dispatch the configured first-reach commands for prestiges that were first server-wide to reach their tier. Placeholders SHALL be the member's UUID, current name and the resulting tier. THE SYSTEM SHALL durably record each delivered member/prestige pair after dispatch and SHALL NOT dispatch a recorded pair again, including after restart; a crash between dispatch and recording MAY repeat that pair once, so configured commands SHALL be safe to repeat. Offline members, members who joined too recently, and members who left the guild SHALL receive nothing.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

@@ -1090,3 +1090,72 @@ Menu audit follow-up (REQ-063):
     authorization, paid SQL, concurrent admission and rollback coverage is in
     PR19. Full/exact-head verification is recorded in the plan and PR19.
     Roundtable, independent review and live TEST/client acceptance remain pending.
+
+## Prestige history, event and member credits
+
+Plan: `plans/2026-11-03-prestige-advancements.md`. Manual SPEAR evidence; the
+plugin's `state.sh` and `ears.mjs` helpers were run from a local spear-plugin
+checkout (BadgersMC/spear-plugin 2c91bae).
+
+- [x] **PRESTIGE-HISTORY** Tag: TDD.
+  - References: REQ-152; plan §Decisions "No schema change for dates".
+  - Evidence: `PrestigeRepositorySQL.kt` (receipt table `guild_prestige_transactions`,
+    `execute` calls `gold.applyInTransaction` with the quote's transaction ID);
+    `GuildGoldRepositorySQL.kt` `insertPrepared` sets `created_at` from
+    `System.currentTimeMillis()`; `GuildGoldSchema.kt` declares
+    `guild_gold_operations.created_at BIGINT NOT NULL`. Test fixture
+    `RewardSqlTestFixture` / `PrestigeRepositorySQLTest`. Imports:
+    `net.lumalyte.lg.application.persistence.PrestigeHistory`,
+    `net.lumalyte.lg.domain.rewards.PrestigeRecord`, `java.time.Instant`,
+    `java.util.UUID`, `java.sql.Connection`.
+  - Result: unchanged-behaviour scaffolding gave 3 assertion failures (no errors)
+    in 14 SQLite tests. The first implementation passed SQLite but native MariaDB
+    10.11 failed 4 tests with "Illegal mix of collations": `guild_gold_operations`
+    pins `utf8mb4_unicode_ci` while `guild_prestige_transactions` takes the server
+    default. The join now converts the receipt side on MariaDB. Final: 14/14 SQLite
+    and the full `mariaDbRewardTest` profile 126/126, no skips. Layer scan clean.
+
+- [ ] **PRESTIGE-EVENT** Tag: TDD.
+  - References: REQ-153; plan §Decisions "Event at the announcement point".
+  - Evidence: `GuildPrestigeService.confirm` announces only on
+    `PrestigeConfirmation.newlyCommitted`; `GuildPrestigeAnnouncementTest`
+    replay/failure patterns; event shape from `api/events/GuildLevelUpEvent.kt`
+    (`org.bukkit.event.Event`, `org.bukkit.event.HandlerList`). Imports:
+    `net.lumalyte.lg.application.services.GuildPrestigeNotifier`,
+    `net.lumalyte.lg.domain.rewards.PrestigeCompletion`,
+    `net.lumalyte.lg.api.events.GuildPrestigeEvent`, `org.bukkit.Bukkit`,
+    `org.bukkit.event.Event`, `org.bukkit.event.HandlerList`.
+
+- [ ] **PRESTIGE-CREDIT-LEDGER** Tag: TDD.
+  - References: REQ-154 (durable once-per-pair record); plan §Decisions
+    "Deliver to online members, ledger after dispatch".
+  - Evidence: additive table pattern `CREATE TABLE IF NOT EXISTS` with
+    MariaDB `ENGINE=InnoDB` suffix in `PrestigeRepositorySQL.init`;
+    `Storage<Database>`, `SqlDialect` from
+    `infrastructure/persistence/storage`. Imports:
+    `net.lumalyte.lg.application.persistence.PrestigeCreditLedger`,
+    `co.aikar.idb.Database`,
+    `net.lumalyte.lg.infrastructure.persistence.storage.Storage`,
+    `net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect`.
+
+- [ ] **PRESTIGE-CREDIT-DELIVERY** Tag: TDD.
+  - References: REQ-154 (eligibility, tenure, first-reach, placeholders, skip rules).
+  - Evidence: `Member(playerId, guildId, rankId, joinedAt: Instant)` in
+    `domain/entities/Member.kt`; `MemberRepository.getGuildsByPlayer`,
+    `getByPlayerAndGuild`, `getByGuild`; EnthusiaTags
+    `RewardService.queueCounterDelta` keeps unloaded deltas in memory only and
+    `PlayerLookup.findPlayer` accepts a UUID string. Imports:
+    `net.lumalyte.lg.application.persistence.MemberRepository`,
+    `net.lumalyte.lg.domain.entities.Member`,
+    `net.lumalyte.lg.application.services.PrestigeMemberCredits`,
+    `java.time.Duration`.
+
+- [ ] **PRESTIGE-CREDIT-WIRING** Tag: INFRA.
+  - References: REQ-153, REQ-154; plan §Configuration.
+  - Evidence: Koin wiring in `di/Modules.kt` (`GuildPrestigeService`,
+    `GuildPrestigeAnnouncementBukkit`); prestige keys read in
+    `ConfigServiceBukkit.kt` (`progression.prestige.*`); `PrestigeConfig` in
+    `config/MainConfig.kt`; join listeners registered from the plugin bootstrap.
+    Imports: `org.bukkit.event.player.PlayerJoinEvent`,
+    `org.bukkit.event.Listener`, `org.bukkit.event.EventHandler`,
+    `org.bukkit.Bukkit`.
