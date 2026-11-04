@@ -706,6 +706,7 @@ class GuildProgressionMenu(
         ExperienceSource.CLAIM_CREATED -> "lg_claiming"
         ExperienceSource.CLAIM_DESTROYED -> "lg_claim_removed"
         ExperienceSource.WEEKLY_ACTIVITY -> "lg_weekly_activity"
+        ExperienceSource.ACHIEVEMENT -> "lg_weekly_activity"
         ExperienceSource.ADMIN_BONUS -> "lg_admin_bonus"
     }
 
@@ -751,7 +752,7 @@ class GuildProgressionMenu(
         ExperienceSource.ELDER_GUARDIAN_KILL -> Material.PRISMARINE_SHARD
         ExperienceSource.WARDEN_KILL -> Material.ECHO_SHARD
         ExperienceSource.CLAIM_CREATED, ExperienceSource.CLAIM_DESTROYED -> Material.GOLDEN_SHOVEL
-        ExperienceSource.WEEKLY_ACTIVITY, ExperienceSource.ADMIN_BONUS -> Material.NETHER_STAR
+        ExperienceSource.WEEKLY_ACTIVITY, ExperienceSource.ADMIN_BONUS, ExperienceSource.ACHIEVEMENT -> Material.NETHER_STAR
     }
 
     private fun sourceToDisplayName(source: ExperienceSource): Component = when (source) {
