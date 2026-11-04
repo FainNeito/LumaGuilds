@@ -7,6 +7,8 @@ import net.lumalyte.lg.domain.entities.ExperienceAwardResult
 import net.lumalyte.lg.domain.values.ExperiencePolicy
 import net.lumalyte.lg.domain.values.PeriodWindow
 import net.lumalyte.lg.domain.values.ProgressionCurve
+import net.lumalyte.lg.domain.values.ExperienceSource
+import net.lumalyte.lg.domain.values.CapPeriod
 import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
 import net.lumalyte.lg.infrastructure.persistence.storage.Storage
 import java.sql.Connection
@@ -41,6 +43,35 @@ class ExperienceAwardRepositorySQL(
             connection.committingTransaction {
                 reserveWriter(connection, request.guildId)
                 ExperienceAwardTransaction(connection, mariaDb, curve).award(request, policy, requestedXp, window)
+            }
+        }
+    }
+
+    /** Keep the permanent achievement receipt in the same transaction as progression and XP history. */
+    fun awardAchievementAtomically(
+        request: ExperienceAwardRequest,
+        achievementId: String,
+        amount: Int,
+    ): ExperienceAwardResult {
+        require(request.source == ExperienceSource.ACHIEVEMENT && amount > 0)
+        require(achievementId.matches(Regex("[a-z0-9_]+")))
+        require(request.transactionId == net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(request.guildId, achievementId))
+        val policy = ExperiencePolicy(ExperienceSource.ACHIEVEMENT, "ACHIEVEMENT", 1, 0, CapPeriod.UNLIMITED, true)
+        return storage.connection.connection.use { connection ->
+            connection.committingTransaction {
+                reserveWriter(connection, request.guildId)
+                val claimed = connection.selectOne(
+                    "SELECT 1 FROM guild_achievement_xp_awards WHERE guild_id = ? AND achievement_id = ?",
+                    request.guildId.toString(), achievementId,
+                ) { true } ?: false
+                if (claimed) return@committingTransaction ExperienceAwardResult.Duplicate
+                val result = ExperienceAwardTransaction(connection, mariaDb, curveProvider()).award(request, policy, amount, null)
+                check(result is ExperienceAwardResult.Awarded) { "Achievement award receipt conflicts with XP history" }
+                connection.updateStatement(
+                    "INSERT INTO guild_achievement_xp_awards (guild_id, achievement_id, transaction_id) VALUES (?, ?, ?)",
+                    request.guildId.toString(), achievementId, request.transactionId.toString(),
+                )
+                result
             }
         }
     }
@@ -87,6 +118,14 @@ class ExperienceAwardRepositorySQL(
         createUsageTable()
         createProgressionTable()
         createReceiptTable()
+        storage.connection.executeUpdate(
+            """CREATE TABLE IF NOT EXISTS guild_achievement_xp_awards (
+                guild_id VARCHAR(36) NOT NULL,
+                achievement_id VARCHAR(128) NOT NULL,
+                transaction_id VARCHAR(36) NOT NULL UNIQUE,
+                PRIMARY KEY (guild_id, achievement_id)
+            )""".trimIndent(),
+        )
     }
 
     private fun createUsageTable() {

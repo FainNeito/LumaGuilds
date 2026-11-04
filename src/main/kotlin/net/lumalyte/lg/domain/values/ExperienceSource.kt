@@ -59,6 +59,9 @@ enum class ExperienceSource(private val poolOverride: String? = null) {
     // System
     WEEKLY_ACTIVITY,
 
+    /** One-time guild reward for an eligible achievement. */
+    ACHIEVEMENT,
+
     /** Explicit administrator-issued experience bonus. */
     ADMIN_BONUS,
     ;

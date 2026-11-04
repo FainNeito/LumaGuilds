@@ -236,6 +236,48 @@ class ExperienceAwardRepositorySQLTest {
         assertEquals(1, rowCount("experience_transactions"))
     }
 
+    @Test
+    fun `guild achievement payout remains unique after ordinary xp history is pruned`() {
+        val achievement = "first_war"
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, achievement)
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+        assertEquals(ExperienceAwardResult.Awarded(50, 50, false), repository.awardAchievementAtomically(award, achievement, 50))
+        storage.connection.executeUpdate("DELETE FROM experience_transactions WHERE id = ?", transaction.toString())
+        val reopened = ExperienceAwardRepositorySQL(storage, curve)
+        assertEquals(ExperienceAwardResult.Duplicate, reopened.awardAchievementAtomically(award, achievement, 50))
+        assertEquals(50, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
+    }
+
+    @Test
+    fun `failed achievement ledger insert rolls back progression and audit`() {
+        storage.connection.executeUpdate("CREATE TRIGGER reject_achievement BEFORE INSERT ON guild_achievement_xp_awards BEGIN SELECT RAISE(ABORT, 'ledger rejected'); END")
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, "first_war"))
+        assertThrows(SQLException::class.java) { repository.awardAchievementAtomically(award, "first_war", 50) }
+        assertEquals(0, rowCount("guild_progression"))
+        assertEquals(0, rowCount("experience_transactions"))
+        assertEquals(0, rowCount("guild_achievement_xp_awards"))
+    }
+
+    @Test
+    fun `concurrent members award a guild achievement only once`() {
+        val achievement = "first_war"
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, achievement)
+        val start = CountDownLatch(1)
+        val awards = List(8) {
+            CompletableFuture.supplyAsync {
+                start.await()
+                val award = request().copy(actorId = UUID.randomUUID(), source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+                repository.awardAchievementAtomically(award, achievement, 50)
+            }
+        }
+        start.countDown()
+        val results = awards.map { it.get(10, TimeUnit.SECONDS) }
+        assertEquals(1, results.filterIsInstance<ExperienceAwardResult.Awarded>().size)
+        assertEquals(7, results.count { it == ExperienceAwardResult.Duplicate })
+        assertEquals(50, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
+        assertEquals(1, rowCount("guild_achievement_xp_awards"))
+    }
+
     private fun request() = ExperienceAwardRequest(
         guildId, actorId, ExperienceSource.MOB_KILL, 1, instant, eligible = true,
     )
