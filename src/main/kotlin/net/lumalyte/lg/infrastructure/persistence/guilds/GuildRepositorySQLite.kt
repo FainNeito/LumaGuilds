@@ -12,6 +12,7 @@ import net.lumalyte.lg.domain.entities.VaultStatus
 import net.lumalyte.lg.infrastructure.persistence.getInstant
 import net.lumalyte.lg.infrastructure.persistence.getInstantNotNull
 import net.lumalyte.lg.infrastructure.persistence.migrations.GuildChatReconnectSettingsSchema
+import net.lumalyte.lg.infrastructure.persistence.migrations.GuildDescriptionSchema
 import net.lumalyte.lg.infrastructure.persistence.storage.Storage
 import java.sql.SQLException
 import java.time.Instant
@@ -113,6 +114,7 @@ class GuildRepositorySQLite(
         storage.connection.connection.use {
             it.ensureGuildVaultSchema()
             GuildChatReconnectSettingsSchema.create(it)
+            GuildDescriptionSchema.ensure(it)
         }
         createGuildHomesTable()
         migrateTrackingColumn()
@@ -553,6 +555,7 @@ class GuildRepositorySQLite(
             banner = banner,
             emoji = emoji,
             tag = tag,
+            description = rs.getString("description"),
             homes = homes,
             level = level,
             bankBalance = bankBalance,
@@ -719,28 +722,28 @@ class GuildRepositorySQLite(
         // Use cached column existence check
         val sql = if (hasLfgColumns && hasTrackingColumn && hasBankFrozenColumn) {
             """
-            INSERT INTO guilds (id, name, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, is_open, join_fee_enabled, join_fee_amount, tracking_enabled, bank_frozen${bannermanColumnSql}, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${bannermanValueSql}, ?, ?, ?, ?, ?${guiThemeValueSql})
+            INSERT INTO guilds (id, name, description, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, is_open, join_fee_enabled, join_fee_amount, tracking_enabled, bank_frozen${bannermanColumnSql}, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${bannermanValueSql}, ?, ?, ?, ?, ?${guiThemeValueSql})
             """.trimIndent()
         } else if (hasLfgColumns && hasTrackingColumn) {
             """
-            INSERT INTO guilds (id, name, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, is_open, join_fee_enabled, join_fee_amount, tracking_enabled${bannermanColumnSql}, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${bannermanValueSql}, ?, ?, ?, ?, ?${guiThemeValueSql})
+            INSERT INTO guilds (id, name, description, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, is_open, join_fee_enabled, join_fee_amount, tracking_enabled${bannermanColumnSql}, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${bannermanValueSql}, ?, ?, ?, ?, ?${guiThemeValueSql})
             """.trimIndent()
         } else if (hasLfgColumns) {
             """
-            INSERT INTO guilds (id, name, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, is_open, join_fee_enabled, join_fee_amount${bannermanColumnSql}, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${bannermanValueSql}, ?, ?, ?, ?, ?${guiThemeValueSql})
+            INSERT INTO guilds (id, name, description, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, is_open, join_fee_enabled, join_fee_amount${bannermanColumnSql}, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${bannermanValueSql}, ?, ?, ?, ?, ?${guiThemeValueSql})
             """.trimIndent()
         } else if (hasTrackingColumn) {
             """
-            INSERT INTO guilds (id, name, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, tracking_enabled, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${guiThemeValueSql})
+            INSERT INTO guilds (id, name, description, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, tracking_enabled, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${guiThemeValueSql})
             """.trimIndent()
         } else {
             """
-            INSERT INTO guilds (id, name, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${guiThemeValueSql})
+            INSERT INTO guilds (id, name, description, banner, emoji, tag, home_world, home_x, home_y, home_z, level, bank_balance, mode, mode_changed_at, created_at, ally_home_world, ally_home_x, ally_home_y, ally_home_z, ally_home_allowed_guilds${guiThemeColumnSql})
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${guiThemeValueSql})
             """.trimIndent()
         }
 
@@ -752,6 +755,7 @@ class GuildRepositorySQLite(
                 writer.executeUpdate(sql,
                     guild.id.toString(),
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -782,6 +786,7 @@ class GuildRepositorySQLite(
                 writer.executeUpdate(sql,
                     guild.id.toString(),
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -811,6 +816,7 @@ class GuildRepositorySQLite(
                 writer.executeUpdate(sql,
                     guild.id.toString(),
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -839,6 +845,7 @@ class GuildRepositorySQLite(
                 writer.executeUpdate(sql,
                     guild.id.toString(),
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -864,6 +871,7 @@ class GuildRepositorySQLite(
                 writer.executeUpdate(sql,
                     guild.id.toString(),
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -929,7 +937,7 @@ class GuildRepositorySQLite(
         // Use cached column existence check
         val sql = if (hasLfgColumns && hasTrackingColumn && hasBankFrozenColumn) {
             """
-            UPDATE guilds SET name = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
+            UPDATE guilds SET name = ?, description = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
             level = ?, bank_balance = ?, mode = ?, mode_changed_at = ?,
             vault_status = ?, vault_chest_world = ?, vault_chest_x = ?, vault_chest_y = ?, vault_chest_z = ?, is_open = ?,
             join_fee_enabled = ?, join_fee_amount = ?, tracking_enabled = ?, bank_frozen = ?, ${bannermanSetSql}${guiThemeSetSql}
@@ -938,7 +946,7 @@ class GuildRepositorySQLite(
             """.trimIndent()
         } else if (hasLfgColumns && hasTrackingColumn) {
             """
-            UPDATE guilds SET name = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
+            UPDATE guilds SET name = ?, description = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
             level = ?, bank_balance = ?, mode = ?, mode_changed_at = ?,
             vault_status = ?, vault_chest_world = ?, vault_chest_x = ?, vault_chest_y = ?, vault_chest_z = ?, is_open = ?,
             join_fee_enabled = ?, join_fee_amount = ?, tracking_enabled = ?, ${bannermanSetSql}${guiThemeSetSql}
@@ -947,7 +955,7 @@ class GuildRepositorySQLite(
             """.trimIndent()
         } else if (hasLfgColumns) {
             """
-            UPDATE guilds SET name = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
+            UPDATE guilds SET name = ?, description = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
             level = ?, bank_balance = ?, mode = ?, mode_changed_at = ?,
             vault_status = ?, vault_chest_world = ?, vault_chest_x = ?, vault_chest_y = ?, vault_chest_z = ?, is_open = ?,
             join_fee_enabled = ?, join_fee_amount = ?, ${bannermanSetSql}${guiThemeSetSql}
@@ -956,7 +964,7 @@ class GuildRepositorySQLite(
             """.trimIndent()
         } else if (hasTrackingColumn) {
             """
-            UPDATE guilds SET name = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
+            UPDATE guilds SET name = ?, description = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
             level = ?, bank_balance = ?, mode = ?, mode_changed_at = ?,
             vault_status = ?, vault_chest_world = ?, vault_chest_x = ?, vault_chest_y = ?, vault_chest_z = ?, tracking_enabled = ?, ${guiThemeSetSql}
             ally_home_world = ?, ally_home_x = ?, ally_home_y = ?, ally_home_z = ?, ally_home_allowed_guilds = ?
@@ -964,7 +972,7 @@ class GuildRepositorySQLite(
             """.trimIndent()
         } else {
             """
-            UPDATE guilds SET name = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
+            UPDATE guilds SET name = ?, description = ?, banner = ?, emoji = ?, tag = ?, home_world = ?, home_x = ?, home_y = ?, home_z = ?,
             level = ?, bank_balance = ?, mode = ?, mode_changed_at = ?,
             vault_status = ?, vault_chest_world = ?, vault_chest_x = ?, vault_chest_y = ?, vault_chest_z = ?, ${guiThemeSetSql}
             ally_home_world = ?, ally_home_x = ?, ally_home_y = ?, ally_home_z = ?, ally_home_allowed_guilds = ?
@@ -984,6 +992,7 @@ class GuildRepositorySQLite(
             val rowsAffected = if (hasLfgColumns && hasTrackingColumn && hasBankFrozenColumn) {
                 storage.connection.executeUpdate(sql,
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -1017,6 +1026,7 @@ class GuildRepositorySQLite(
             } else if (hasLfgColumns && hasTrackingColumn) {
                 storage.connection.executeUpdate(sql,
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -1049,6 +1059,7 @@ class GuildRepositorySQLite(
             } else if (hasLfgColumns) {
                 storage.connection.executeUpdate(sql,
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -1080,6 +1091,7 @@ class GuildRepositorySQLite(
             } else if (hasTrackingColumn) {
                 storage.connection.executeUpdate(sql,
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,
@@ -1108,6 +1120,7 @@ class GuildRepositorySQLite(
             } else {
                 storage.connection.executeUpdate(sql,
                     guild.name,
+                    guild.description,
                     guild.banner,
                     guild.emoji,
                     guild.tag,

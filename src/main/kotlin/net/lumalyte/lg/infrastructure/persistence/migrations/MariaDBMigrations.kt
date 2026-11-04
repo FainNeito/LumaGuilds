@@ -202,6 +202,7 @@ class MariaDBMigrations(private val plugin: JavaPlugin, private val connection: 
                 updateDatabaseVersion(BankContributionSchema.VERSION)
                 currentDbVersion = BankContributionSchema.VERSION
             }
+            GuildDescriptionSchema.ensure(connection)
             connection.commit()
             val finalVersion = getCurrentDatabaseVersion()
             componentLogger.info(Component.text("✓ Database migrations completed (v$finalVersion)"))
