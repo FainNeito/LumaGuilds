@@ -2,10 +2,12 @@ package net.lumalyte.lg.infrastructure.persistence.guilds
 
 import java.nio.file.Path
 import java.util.UUID
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 import net.lumalyte.lg.domain.achievements.GuildAchievement
 import net.lumalyte.lg.domain.achievements.GuildAchievementEventId
 import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
+import net.lumalyte.lg.infrastructure.services.GuildAchievementGuildEventProcessor
 import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -112,5 +114,29 @@ class GuildAchievementProgressRepositorySQLTest {
         assertFails { repo.apply(guild, event, "CROP_BREAK", null, 2, mapOf(UUID.randomUUID() to GuildAchievementIpEligibility.Decision.UNKNOWN)) }
         assertTrue(repo.completions(guild).isEmpty())
         assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_achievement_events_v1").getInt("n"))
+    }
+
+    @Test fun `guild event pipeline ignores history and records completion participants once`() {
+        val actor = UUID.randomUUID()
+        val peer = UUID.randomUUID()
+        val distinct = UUID.randomUUID()
+        val time = Instant.parse("2026-11-04T00:00:00Z")
+        val repo = repository()
+        fun processor() = GuildAchievementGuildEventProcessor(repo, time) { time.plusSeconds(60) }
+        val histories = mapOf(actor to GuildAchievementIpEligibility.PeerHistory(setOf("same"), true),
+            peer to GuildAchievementIpEligibility.PeerHistory(setOf("same"), true),
+            distinct to GuildAchievementIpEligibility.PeerHistory(setOf("other"), true))
+        val event = GuildAchievementGuildEventProcessor.Event(guild, UUID.randomUUID(), time, "CROP_BREAK", null, 2,
+            setOf(actor, peer, distinct), setOf(actor, peer, distinct),
+            mapOf(actor to "same", peer to "same", distinct to "other"), histories)
+        assertNull(processor().process(event.copy(occurredAt = time.minusSeconds(1))))
+        assertTrue(repo.completions(guild).isEmpty())
+        assertEquals(setOf("milestone"), processor().process(event)!!.completed)
+        assertTrue(processor().process(event.copy(current = emptyMap()))!!.duplicate)
+        val checks = repo.completionChecks(guild, "milestone").associate { it.actor to it.decision }
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED, checks[actor])
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED, checks[peer])
+        assertEquals(GuildAchievementIpEligibility.Decision.ELIGIBLE, checks[distinct])
+        assertFailsWith<IllegalArgumentException> { processor().process(event.copy(occurredAt = time.plusSeconds(61))) }
     }
 }
