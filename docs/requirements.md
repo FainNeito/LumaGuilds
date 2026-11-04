@@ -602,6 +602,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-154
 **State-driven.** WHILE prestige member credits are enabled (default disabled) THE SYSTEM SHALL, whenever a guild member is online after their guild newly commits a prestige and whenever a member joins the server, dispatch the configured member commands as the console once for each applied prestige of the member's current guild whose commit time is at least the configured minimum tenure (default 24 hours) after that member's guild membership began, and additionally dispatch the configured first-reach commands for prestiges that were first server-wide to reach their tier. Placeholders SHALL be the member's UUID, current name and the resulting tier. THE SYSTEM SHALL durably record each delivered member/prestige pair after dispatch and SHALL NOT dispatch a recorded pair again, including after restart; a crash between dispatch and recording MAY repeat that pair once, so configured commands SHALL be safe to repeat. Offline members, members who joined too recently, and members who left the guild SHALL receive nothing.
 
+### REQ-155
+**Ubiquitous.** THE SYSTEM SHALL expose PlaceholderAPI values for the requesting player's guild: `guild_prestige` (tier 0 to 6, from reward ownership), `guild_prestige_roman` (I to VI, empty at 0), `guild_prestige_badge` (the operator-configured badge for the tier, empty at 0), `guild_prestige_max` (configured lifetime maximum), `guild_prestige_first_tier` (highest tier this guild was first server-wide to reach, 0 if none) and `guild_prestige_last_date` (UTC `yyyy-MM-dd` of its latest applied prestige, empty if none). Values SHALL be served from a per-guild snapshot cached for at most 30 seconds and refreshed immediately after that guild newly commits a prestige; a guild without a reward account SHALL read as tier 0, and an unreadable snapshot SHALL return empty strings rather than a fabricated tier.
+
+### REQ-156
+**Ubiquitous.** THE SYSTEM SHALL add a `prestige` category to the Top-N leaderboard placeholders and the player-guild rank placeholders, ordering guilds by prestige tier, then current-run level and XP, with `value` equal to the tier; Top-N rows SHALL also expose `prestige`, `prestige_roman` and `prestige_badge` fields for every category, using the same 30-second leaderboard cache as the existing categories.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

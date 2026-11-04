@@ -75,3 +75,12 @@ data class PrestigeCompletion(
     val appliedAt: Instant,
     val firstToReachTier: Boolean,
 )
+
+/** A guild's prestige as shown in placeholders (REQ-155). */
+data class PrestigeStanding(
+    /** Current tier, 0..6. */
+    val tier: Int,
+    val lastAppliedAt: Instant?,
+    /** Highest tier this guild was first on the server to reach, 0 if none. */
+    val firstTier: Int,
+)
