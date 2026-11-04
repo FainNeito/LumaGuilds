@@ -5,6 +5,7 @@ import java.util.UUID
 import net.lumalyte.lg.domain.achievements.AchievementRecord
 import net.lumalyte.lg.domain.achievements.GuildAchievement
 import net.lumalyte.lg.domain.achievements.GuildAchievementEngine
+import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
 import net.lumalyte.lg.infrastructure.persistence.storage.Storage
 import org.json.JSONArray
@@ -20,6 +21,7 @@ internal class GuildAchievementProgressRepositorySQL(
 
     data class Result(val progress: Map<String, Int>, val completed: Set<String>, val duplicate: Boolean)
     data class Completion(val achievementId: String, val eventId: UUID, val requirement: String, val target: String?, val amount: Int)
+    data class CompletionCheck(val actor: UUID, val decision: GuildAchievementIpEligibility.Decision)
 
     init {
         storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_achievement_progress_v1 (
@@ -34,6 +36,32 @@ internal class GuildAchievementProgressRepositorySQL(
             guild_id VARCHAR(36) NOT NULL, achievement_id VARCHAR(128) NOT NULL, event_id VARCHAR(36) NOT NULL,
             PRIMARY KEY (guild_id, achievement_id)
         )""".trimIndent())
+        storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_achievement_completion_checks_v1 (
+            guild_id VARCHAR(36) NOT NULL, achievement_id VARCHAR(128) NOT NULL, event_id VARCHAR(36) NOT NULL,
+            actor_id VARCHAR(36) NOT NULL, decision VARCHAR(16) NOT NULL,
+            PRIMARY KEY (guild_id, achievement_id, actor_id)
+        )""".trimIndent())
+    }
+
+    /** Inspection only: a caller-supplied decision is not independent proof of eligibility. */
+    fun completionChecks(guild: UUID, achievement: String): List<CompletionCheck> {
+        require(engine.definitions.any { it.id == achievement })
+        return storage.connection.connection.use { c ->
+            c.prepareStatement("""SELECT x.actor_id, x.decision FROM guild_achievement_completion_checks_v1 x
+                JOIN guild_achievement_completions_v1 c ON c.guild_id = x.guild_id
+                AND c.achievement_id = x.achievement_id AND c.event_id = x.event_id
+                WHERE x.guild_id = ? AND x.achievement_id = ? ORDER BY x.actor_id""".trimIndent()).use { s ->
+                s.setString(1, guild.toString()); s.setString(2, achievement)
+                s.executeQuery().use { rows -> buildList {
+                    while (rows.next()) {
+                        val text = rows.getString(1)
+                        val id = UUID.fromString(text)
+                        require(id.toString() == text)
+                        add(CompletionCheck(id, GuildAchievementIpEligibility.Decision.valueOf(rows.getString(2))))
+                    }
+                } }
+            }
+        }
     }
 
     /** Inspect durable completion records after a restart; these records cannot authorize an award. */
@@ -63,11 +91,13 @@ internal class GuildAchievementProgressRepositorySQL(
     }
 
     /** Call exactly once per real guild event, not once per online recipient. */
-    fun apply(guild: UUID, event: UUID, requirement: String, target: String?, amount: Int): Result {
+    fun apply(guild: UUID, event: UUID, requirement: String, target: String?, amount: Int,
+        checks: Map<UUID, GuildAchievementIpEligibility.Decision> = emptyMap()): Result {
         require(requirement.matches(Regex("[A-Z0-9_]{1,128}")))
         require(requirement in requirements)
         require(target == null || target.length <= 128)
         require(amount > 0)
+        val completionChecks = checks.toMap()
         return storage.connection.connection.use { c -> c.committingTransaction {
             if (maria) {
                 checkNotNull(c.selectOne("SELECT id FROM guilds WHERE id = ? FOR UPDATE", guild.toString()) { it.getString(1) })
@@ -101,6 +131,10 @@ internal class GuildAchievementProgressRepositorySQL(
             c.updateStatement("INSERT INTO guild_achievement_events_v1 VALUES (?, ?, ?, ?, ?)", guild.toString(), event.toString(), requirement, target, amount)
             change.completed.forEach { node ->
                 c.updateStatement("INSERT INTO guild_achievement_completions_v1 VALUES (?, ?, ?)", guild.toString(), node.id, event.toString())
+                completionChecks.forEach { (actor, decision) ->
+                    c.updateStatement("INSERT INTO guild_achievement_completion_checks_v1 VALUES (?, ?, ?, ?, ?)",
+                        guild.toString(), node.id, event.toString(), actor.toString(), decision.name)
+                }
             }
             Result(change.record.progress, change.completed.map { it.id }.toSet(), false)
         } }
