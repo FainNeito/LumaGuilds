@@ -79,4 +79,22 @@ class GuildAchievementAddressRepositorySQLTest {
         assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
             GuildAchievementIpEligibility.decideWithHistory(actor, members, "c".repeat(64), histories))
     }
+
+    @Test fun `forget removes every key generation and keeps eligibility unknown`() {
+        repository.observe(player, token, keyId, now)
+        repository.observe(player, "b".repeat(64), "2".repeat(32), now.plusSeconds(1))
+        repository.forget(player)
+        assertNull(repository.read(player, "2".repeat(32)))
+        assertEquals(emptySet(), repository.readHistory(player, keyId).observations)
+        assertEquals(emptySet(), repository.readHistory(player, "2".repeat(32)).observations)
+        assertFalse(repository.readHistory(player, keyId).complete)
+    }
+
+    @Test fun `failed forget rolls back deletion of history`() {
+        repository.observe(player, token, keyId, now)
+        storage.connection.executeUpdate("CREATE TRIGGER reject_forget BEFORE DELETE ON guild_achievement_address_observations BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        assertFailsWith<Exception> { repository.forget(player) }
+        assertEquals(setOf(token), repository.readHistory(player, keyId).observations)
+        assertEquals(GuildAchievementAddressRepositorySQL.Observation(token, now), repository.read(player, keyId))
+    }
 }
