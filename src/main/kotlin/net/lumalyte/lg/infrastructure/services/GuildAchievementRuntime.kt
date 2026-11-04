@@ -30,6 +30,8 @@ internal class GuildAchievementRuntime(
     private val failed = mutableSetOf<UUID>()
     private val records = mutableMapOf<UUID, AchievementRecord>()
     private val pendingGuildXp = mutableMapOf<UUID, List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>>()
+    // These completions could not be evaluated at completion time. They are never auto-paid.
+    private val guildXpReview = mutableMapOf<UUID, List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>>()
     private val reviewRequired = mutableSetOf<UUID>()
     private val ownershipReads = mutableSetOf<UUID>()
     private val initialized = mutableSetOf<UUID>()
@@ -124,6 +126,8 @@ internal class GuildAchievementRuntime(
         require(json.getInt("schema") == 1)
         val pending = if (json.has("guildXpPending")) json.getJSONArray("guildXpPending") else JSONArray()
         pendingGuildXp[player.uniqueId] = GuildAchievementXpOutboxCodec.decode(pending)
+        val review = if (json.has("guildXpReview")) json.getJSONArray("guildXpReview") else JSONArray()
+        guildXpReview[player.uniqueId] = GuildAchievementXpOutboxCodec.decode(review)
         check(!json.optBoolean("reviewRequired", false)) { "Ambiguous XP delivery requires administrator review" }
         val counts = json.getJSONObject("progress")
         val progress = counts.keySet().associateWith { id ->
@@ -158,28 +162,44 @@ internal class GuildAchievementRuntime(
         val change = engine.advance(before, type, target, amount, absolute, receipt)
         if (change.record == before) return
         val bridge = guildXp
+        val review = mutableListOf<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>()
         val prepared = if (newEvent && bridge != null) change.completed.mapNotNull { node ->
+            val amount = GuildAchievementXpPolicy.reward(node)
+            if (amount == 0) return@mapNotNull null
+            val candidate = net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent(
+                guildId, node.id, amount, GuildAchievementXpPolicy.transactionId(guildId, node.id))
             runCatching {
                 val result = bridge.prepare(player, guildId, node)
+                if (result is net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Prepared.Denied &&
+                    result.result in setOf(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.UNKNOWN_ADDRESS,
+                        net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.UNAVAILABLE)) review += candidate
                 (result as? net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Prepared.Eligible)?.intent?.also {
                     require(it.guildId == guildId && it.achievementId == node.id)
                     require(it.amount == GuildAchievementXpPolicy.reward(node) && it.amount > 0)
                     require(it.transactionId == GuildAchievementXpPolicy.transactionId(guildId, node.id))
                 }
-            }.onFailure { plugin.logger.warning("Guild achievement XP eligibility unavailable; personal achievement remains active") }.getOrNull()
+            }.onFailure {
+                review += candidate
+                plugin.logger.warning("Guild achievement XP eligibility unavailable; completion retained for review")
+            }.getOrNull()
         } else emptyList()
-        deliver(player, before, change, prepared)
+        deliver(player, before, change, prepared, review)
     }
 
     private fun deliver(player: Player, before: AchievementRecord, change: AchievementChange,
-        prepared: List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent> = emptyList()) {
+        prepared: List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent> = emptyList(),
+        review: List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent> = emptyList()) {
         val xp = change.completed.sumOf { it.personalXp }
         val oldXp = Triple(player.totalExperience, player.level, player.exp)
         val oldPending = pendingGuildXp[player.uniqueId].orEmpty()
+        val oldReview = guildXpReview[player.uniqueId].orEmpty()
         try {
             val pending = (oldPending + prepared).distinctBy { it.transactionId }
             GuildAchievementXpOutboxCodec.encode(pending) // validate before changing player XP
+            val reviews = (oldReview + review).distinctBy { it.transactionId }
+            GuildAchievementXpOutboxCodec.encode(reviews)
             pendingGuildXp[player.uniqueId] = pending
+            guildXpReview[player.uniqueId] = reviews
             // Claimed IDs, pending guild intents and personal experience share the player save.
             write(player, change.record)
             if (xp > 0) player.giveExp(xp)
@@ -191,6 +211,7 @@ internal class GuildAchievementRuntime(
             // Only a verified unchanged XP outcome is retryable. Ambiguous outcomes retain claimed IDs.
             if (Triple(player.totalExperience, player.level, player.exp) == oldXp) {
                 pendingGuildXp[player.uniqueId] = oldPending
+                guildXpReview[player.uniqueId] = oldReview
                 write(player, change.record.copy(rewarded = before.rewarded))
                 runCatching { flush(player) }
             } else {
@@ -232,6 +253,7 @@ internal class GuildAchievementRuntime(
         if (player.uniqueId in dirty) flush(player)
         records.remove(player.uniqueId)
         pendingGuildXp.remove(player.uniqueId)
+        guildXpReview.remove(player.uniqueId)
         initialized.remove(player.uniqueId)
         failed.remove(player.uniqueId)
     }
@@ -252,6 +274,7 @@ internal class GuildAchievementRuntime(
             .put("tracked", record.tracked ?: JSONObject.NULL)
             .put("reviewRequired", player.uniqueId in reviewRequired)
             .put("guildXpPending", GuildAchievementXpOutboxCodec.encode(pendingGuildXp[player.uniqueId].orEmpty()))
+            .put("guildXpReview", GuildAchievementXpOutboxCodec.encode(guildXpReview[player.uniqueId].orEmpty()))
         player.persistentDataContainer.set(key, PersistentDataType.STRING, json.toString())
         player.saveData()
         dirty.remove(player.uniqueId)
