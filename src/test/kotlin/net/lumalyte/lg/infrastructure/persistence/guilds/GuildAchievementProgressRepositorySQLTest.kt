@@ -1,6 +1,6 @@
 package net.lumalyte.lg.infrastructure.persistence.guilds
 
-import java.nio.file.Path
+import co.aikar.idb.Database
 import java.util.UUID
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -8,16 +8,14 @@ import net.lumalyte.lg.domain.achievements.GuildAchievement
 import net.lumalyte.lg.domain.achievements.GuildAchievementEventId
 import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 import net.lumalyte.lg.infrastructure.services.GuildAchievementGuildEventProcessor
-import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
-import org.junit.jupiter.api.AfterEach
+import net.lumalyte.lg.infrastructure.persistence.storage.Storage
+import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import kotlin.test.*
 
-class GuildAchievementProgressRepositorySQLTest {
-    @TempDir lateinit var directory: Path
-    private lateinit var storage: VirtualThreadSQLiteStorage
+class GuildAchievementProgressRepositorySQLTest : RewardSqlTestFixture() {
+    private lateinit var storage: Storage<Database>
     private val guild = UUID.randomUUID()
     private val other = UUID.randomUUID()
     private val node = GuildAchievement("milestone", null, "Milestone", emptyList(), "CROP_BREAK", null,
@@ -25,12 +23,11 @@ class GuildAchievementProgressRepositorySQLTest {
     private fun repository() = GuildAchievementProgressRepositorySQL(storage, listOf(node))
 
     @BeforeEach fun setUp() {
-        storage = VirtualThreadSQLiteStorage(directory.toFile())
+        storage = openStorage()
         storage.connection.executeUpdate("CREATE TABLE guilds (id VARCHAR(36) PRIMARY KEY)")
         storage.connection.executeUpdate("INSERT INTO guilds VALUES (?)", guild.toString())
         storage.connection.executeUpdate("INSERT INTO guilds VALUES (?)", other.toString())
     }
-    @AfterEach fun tearDown() { storage.connection.close(5, TimeUnit.SECONDS) }
 
     @Test fun `progress persists per guild and duplicate events never count twice`() {
         val first = UUID.randomUUID()
@@ -62,7 +59,8 @@ class GuildAchievementProgressRepositorySQLTest {
     @Test fun `completion write failure rolls back progress and event receipt`() {
         val repo = repository()
         val event = UUID.randomUUID()
-        storage.connection.executeUpdate("CREATE TRIGGER reject_completion BEFORE INSERT ON guild_achievement_completions_v1 BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        val body = if (storage.dialect == SqlDialect.MARIADB) "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'test failure'" else "BEGIN SELECT RAISE(ABORT, 'test failure'); END"
+        storage.connection.executeUpdate("CREATE TRIGGER reject_completion BEFORE INSERT ON guild_achievement_completions_v1 $body")
         assertFails { repo.apply(guild, event, "CROP_BREAK", null, 2) }
         assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_achievement_progress_v1").getInt("n"))
         assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_achievement_events_v1").getInt("n"))
@@ -110,7 +108,8 @@ class GuildAchievementProgressRepositorySQLTest {
     @Test fun `failed check insert rolls back event progress and completion`() {
         val repo = repository()
         val event = UUID.randomUUID()
-        storage.connection.executeUpdate("CREATE TRIGGER reject_check BEFORE INSERT ON guild_achievement_completion_checks_v1 BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        val body = if (storage.dialect == SqlDialect.MARIADB) "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'test failure'" else "BEGIN SELECT RAISE(ABORT, 'test failure'); END"
+        storage.connection.executeUpdate("CREATE TRIGGER reject_check BEFORE INSERT ON guild_achievement_completion_checks_v1 $body")
         assertFails { repo.apply(guild, event, "CROP_BREAK", null, 2, mapOf(UUID.randomUUID() to GuildAchievementIpEligibility.Decision.UNKNOWN)) }
         assertTrue(repo.completions(guild).isEmpty())
         assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_achievement_events_v1").getInt("n"))

@@ -44,11 +44,20 @@ internal class GuildAchievementXpCoordinator(nodes: List<GuildAchievement>, priv
         members: Set<UUID>,
         observations: Map<UUID, String?>,
     ): Prepared {
+        return prepareDecision(guildId, node, isNewEvent, GuildAchievementIpEligibility.decide(actor, members, observations))
+    }
+
+    fun prepareWithHistory(guildId: UUID, actor: UUID, node: GuildAchievement, isNewEvent: Boolean,
+        members: Set<UUID>, current: String?, histories: Map<UUID, GuildAchievementIpEligibility.PeerHistory?>): Prepared =
+        prepareDecision(guildId, node, isNewEvent, GuildAchievementIpEligibility.decideWithHistory(actor, members, current, histories))
+
+    private fun prepareDecision(guildId: UUID, node: GuildAchievement, isNewEvent: Boolean,
+        decision: GuildAchievementIpEligibility.Decision): Prepared {
         if (!isNewEvent) return Prepared.Denied(Result.HISTORICAL)
         require(definitions[node.id] == node)
         val amount = GuildAchievementXpPolicy.reward(node)
         if (amount == 0) return Prepared.Denied(Result.NO_REWARD)
-        when (GuildAchievementIpEligibility.decide(actor, members, observations)) {
+        when (decision) {
             GuildAchievementIpEligibility.Decision.SHARED -> return Prepared.Denied(Result.SHARED_ADDRESS)
             GuildAchievementIpEligibility.Decision.UNKNOWN -> return Prepared.Denied(Result.UNKNOWN_ADDRESS)
             GuildAchievementIpEligibility.Decision.ELIGIBLE -> Unit

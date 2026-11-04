@@ -1,23 +1,20 @@
 package net.lumalyte.lg.infrastructure.persistence.guilds
 
-import java.nio.file.Path
+import co.aikar.idb.Database
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.TimeUnit
-import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
-import org.junit.jupiter.api.AfterEach
+import net.lumalyte.lg.infrastructure.persistence.storage.Storage
+import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertFalse
 import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 
-class GuildAchievementAddressRepositorySQLTest {
-    @TempDir lateinit var directory: Path
-    private lateinit var storage: VirtualThreadSQLiteStorage
+class GuildAchievementAddressRepositorySQLTest : RewardSqlTestFixture() {
+    private lateinit var storage: Storage<Database>
     private lateinit var repository: GuildAchievementAddressRepositorySQL
     private val player = UUID.fromString("b103e306-5581-474d-a497-7371945078c7")
     private val now = Instant.parse("2026-11-03T00:00:00Z")
@@ -25,11 +22,10 @@ class GuildAchievementAddressRepositorySQLTest {
     private val keyId = "1".repeat(32)
 
     @BeforeEach fun setUp() {
-        storage = VirtualThreadSQLiteStorage(directory.toFile())
+        storage = openStorage()
         repository = GuildAchievementAddressRepositorySQL(storage)
     }
 
-    @AfterEach fun tearDown() { storage.connection.close(5, TimeUnit.SECONDS) }
 
     @Test fun `offline observation survives repository recreation and ignores stale updates`() {
         assertNull(repository.read(player, keyId))
@@ -62,7 +58,8 @@ class GuildAchievementAddressRepositorySQLTest {
     }
 
     @Test fun `last observation and history roll back together`() {
-        storage.connection.executeUpdate("CREATE TRIGGER reject_latest BEFORE INSERT ON guild_achievement_address_observations BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        val body = if (storage.dialect == SqlDialect.MARIADB) "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'test failure'" else "BEGIN SELECT RAISE(ABORT, 'test failure'); END"
+        storage.connection.executeUpdate("CREATE TRIGGER reject_latest BEFORE INSERT ON guild_achievement_address_observations $body")
         assertFailsWith<Exception> { repository.observe(player, token, keyId, now) }
         assertNull(repository.read(player, keyId))
         assertEquals(emptySet(), repository.readHistory(player, keyId).observations)
@@ -92,7 +89,8 @@ class GuildAchievementAddressRepositorySQLTest {
 
     @Test fun `failed forget rolls back deletion of history`() {
         repository.observe(player, token, keyId, now)
-        storage.connection.executeUpdate("CREATE TRIGGER reject_forget BEFORE DELETE ON guild_achievement_address_observations BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        val body = if (storage.dialect == SqlDialect.MARIADB) "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'test failure'" else "BEGIN SELECT RAISE(ABORT, 'test failure'); END"
+        storage.connection.executeUpdate("CREATE TRIGGER reject_forget BEFORE DELETE ON guild_achievement_address_observations $body")
         assertFailsWith<Exception> { repository.forget(player) }
         assertEquals(setOf(token), repository.readHistory(player, keyId).observations)
         assertEquals(GuildAchievementAddressRepositorySQL.Observation(token, now), repository.read(player, keyId))
