@@ -25,4 +25,11 @@ object GuildAchievementIpEligibility {
         if (peers.any { peerHistory[it]?.let { history -> !history.complete || history.observations.isEmpty() || history.observations.any(String::isBlank) } != false }) return Decision.UNKNOWN
         return Decision.ELIGIBLE
     }
+
+    /** Evaluate actual participants separately so a shared address does not block an unrelated member. */
+    fun decideParticipants(participants: Set<UUID>, members: Set<UUID>, current: Map<UUID, String?>,
+        peerHistory: Map<UUID, PeerHistory?>): Map<UUID, Decision> {
+        require(participants.all { it in members })
+        return participants.associateWith { decideWithHistory(it, members, current[it], peerHistory) }
+    }
 }

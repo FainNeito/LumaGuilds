@@ -3,6 +3,7 @@ package net.lumalyte.lg.domain.achievements
 import java.util.UUID
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class GuildAchievementIpEligibilityTest {
     private val actor = UUID.fromString("669803db-acb0-4d96-a24c-99ff1fda02ed")
@@ -37,5 +38,21 @@ class GuildAchievementIpEligibilityTest {
             GuildAchievementIpEligibility.decideWithHistory(actor, members, "other", mapOf(peer to GuildAchievementIpEligibility.PeerHistory(setOf(""), true))))
         assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
             GuildAchievementIpEligibility.decideWithHistory(actor, members, "other", mapOf(peer to GuildAchievementIpEligibility.PeerHistory(setOf("old"), false))))
+    }
+
+    @Test fun `shared participants are blocked without excluding unrelated participant`() {
+        val third = UUID.randomUUID()
+        val members = setOf(actor, peer, third)
+        val history = mapOf(actor to GuildAchievementIpEligibility.PeerHistory(setOf("same"), true),
+            peer to GuildAchievementIpEligibility.PeerHistory(setOf("same"), true),
+            third to GuildAchievementIpEligibility.PeerHistory(setOf("distinct"), true))
+        val decisions = GuildAchievementIpEligibility.decideParticipants(members, members,
+            mapOf(actor to "same", peer to "same", third to "distinct"), history)
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED, decisions[actor])
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED, decisions[peer])
+        assertEquals(GuildAchievementIpEligibility.Decision.ELIGIBLE, decisions[third])
+        assertFailsWith<IllegalArgumentException> {
+            GuildAchievementIpEligibility.decideParticipants(setOf(UUID.randomUUID()), members, emptyMap(), history)
+        }
     }
 }

@@ -5,6 +5,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import net.lumalyte.lg.domain.achievements.GuildAchievement
 import net.lumalyte.lg.domain.achievements.GuildAchievementEventId
+import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -90,5 +91,26 @@ class GuildAchievementProgressRepositorySQLTest {
         val afterRestart = GuildAchievementEventId.fromSource(guild, "CROP_BREAK", source)
         assertTrue(repository().apply(guild, afterRestart, "CROP_BREAK", null, 1).duplicate)
         assertTrue(repository().completions(guild).isEmpty())
+    }
+
+    @Test fun `completion checks persist with the original event and cannot be replaced by replay`() {
+        val blocked = UUID.randomUUID()
+        val eligible = UUID.randomUUID()
+        val event = UUID.randomUUID()
+        val initial = mapOf(blocked to GuildAchievementIpEligibility.Decision.SHARED, eligible to GuildAchievementIpEligibility.Decision.ELIGIBLE)
+        val repo = repository()
+        repo.apply(guild, event, "CROP_BREAK", null, 2, initial)
+        repository().apply(guild, event, "CROP_BREAK", null, 2, mapOf(blocked to GuildAchievementIpEligibility.Decision.ELIGIBLE))
+        assertEquals(initial, repository().completionChecks(guild, "milestone").associate { it.actor to it.decision })
+        assertTrue(repository().completionChecks(other, "milestone").isEmpty())
+    }
+
+    @Test fun `failed check insert rolls back event progress and completion`() {
+        val repo = repository()
+        val event = UUID.randomUUID()
+        storage.connection.executeUpdate("CREATE TRIGGER reject_check BEFORE INSERT ON guild_achievement_completion_checks_v1 BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        assertFails { repo.apply(guild, event, "CROP_BREAK", null, 2, mapOf(UUID.randomUUID() to GuildAchievementIpEligibility.Decision.UNKNOWN)) }
+        assertTrue(repo.completions(guild).isEmpty())
+        assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_achievement_events_v1").getInt("n"))
     }
 }
