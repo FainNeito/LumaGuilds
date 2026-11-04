@@ -4,6 +4,7 @@ import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import net.lumalyte.lg.domain.achievements.GuildAchievement
+import net.lumalyte.lg.domain.achievements.GuildAchievementEventId
 import net.lumalyte.lg.infrastructure.persistence.storage.VirtualThreadSQLiteStorage
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -33,8 +34,11 @@ class GuildAchievementProgressRepositorySQLTest {
         assertEquals(1, repository().apply(guild, first, "CROP_BREAK", null, 1).progress["milestone"])
         assertTrue(repository().apply(guild, first, "CROP_BREAK", null, 1).duplicate)
         assertFailsWith<IllegalArgumentException> { repository().apply(guild, first, "CROP_BREAK", null, 2) }
-        val completion = repository().apply(guild, UUID.randomUUID(), "CROP_BREAK", null, 1)
+        val completionEvent = UUID.randomUUID()
+        val completion = repository().apply(guild, completionEvent, "CROP_BREAK", null, 1)
         assertEquals(setOf("milestone"), completion.completed)
+        assertEquals(listOf(GuildAchievementProgressRepositorySQL.Completion("milestone", completionEvent, "CROP_BREAK", null, 1)), repository().completions(guild))
+        assertTrue(repository().completions(other).isEmpty())
         assertEquals(1, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_achievement_completions_v1 WHERE guild_id = ?", guild.toString()).getInt("n"))
         assertEquals(1, repository().apply(other, UUID.randomUUID(), "CROP_BREAK", null, 1).progress["milestone"])
         assertTrue(repository().apply(guild, UUID.randomUUID(), "CROP_BREAK", null, 1).completed.isEmpty())
@@ -42,6 +46,14 @@ class GuildAchievementProgressRepositorySQLTest {
 
     @Test fun `absent guild cannot acquire progress`() {
         assertFailsWith<IllegalStateException> { repository().apply(UUID.randomUUID(), UUID.randomUUID(), "CROP_BREAK", null, 1) }
+    }
+
+    @Test fun `orphaned completion cannot be read as a valid completion`() {
+        val repo = repository()
+        val event = UUID.randomUUID()
+        repo.apply(guild, event, "CROP_BREAK", null, 2)
+        storage.connection.executeUpdate("DELETE FROM guild_achievement_events_v1 WHERE guild_id = ? AND event_id = ?", guild.toString(), event.toString())
+        assertFailsWith<IllegalArgumentException> { repo.completions(guild) }
     }
 
     @Test fun `completion write failure rolls back progress and event receipt`() {
@@ -69,5 +81,14 @@ class GuildAchievementProgressRepositorySQLTest {
         assertEquals(1, results.count { it.duplicate })
         assertEquals(1, results.last().progress["milestone"])
         assertEquals(setOf("milestone"), one.apply(guild, UUID.randomUUID(), "CROP_BREAK", null, 1).completed)
+    }
+
+    @Test fun `same authoritative event replay remains stable across runtime recreation`() {
+        val source = UUID.randomUUID()
+        val firstId = GuildAchievementEventId.fromSource(guild, "CROP_BREAK", source)
+        assertFalse(repository().apply(guild, firstId, "CROP_BREAK", null, 1).duplicate)
+        val afterRestart = GuildAchievementEventId.fromSource(guild, "CROP_BREAK", source)
+        assertTrue(repository().apply(guild, afterRestart, "CROP_BREAK", null, 1).duplicate)
+        assertTrue(repository().completions(guild).isEmpty())
     }
 }

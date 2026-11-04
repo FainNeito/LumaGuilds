@@ -19,6 +19,7 @@ internal class GuildAchievementProgressRepositorySQL(
     private val maria = storage.dialect == SqlDialect.MARIADB
 
     data class Result(val progress: Map<String, Int>, val completed: Set<String>, val duplicate: Boolean)
+    data class Completion(val achievementId: String, val eventId: UUID, val requirement: String, val target: String?, val amount: Int)
 
     init {
         storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_achievement_progress_v1 (
@@ -33,6 +34,32 @@ internal class GuildAchievementProgressRepositorySQL(
             guild_id VARCHAR(36) NOT NULL, achievement_id VARCHAR(128) NOT NULL, event_id VARCHAR(36) NOT NULL,
             PRIMARY KEY (guild_id, achievement_id)
         )""".trimIndent())
+    }
+
+    /** Inspect durable completion records after a restart; these records cannot authorize an award. */
+    fun completions(guild: UUID): List<Completion> = storage.connection.connection.use { c ->
+        c.prepareStatement("""SELECT c.achievement_id, c.event_id, e.requirement, e.target, e.amount
+            FROM guild_achievement_completions_v1 c
+            LEFT JOIN guild_achievement_events_v1 e ON e.guild_id = c.guild_id AND e.event_id = c.event_id
+            WHERE c.guild_id = ? ORDER BY c.achievement_id""".trimIndent()).use { statement ->
+            statement.setString(1, guild.toString())
+            statement.executeQuery().use { rows ->
+                buildList {
+                    while (rows.next()) {
+                        val id = rows.getString(1)
+                        val node = requireNotNull(engine.definitions.find { it.id == id })
+                        val eventText = rows.getString(2)
+                        val event = UUID.fromString(eventText)
+                        require(event.toString() == eventText)
+                        val requirement = requireNotNull(rows.getString(3)) { "Completion event missing" }
+                        val target = rows.getString(4)
+                        val amount = rows.getInt(5)
+                        require(node.requirement == requirement && amount > 0)
+                        add(Completion(id, event, requirement, target, amount))
+                    }
+                }
+            }
+        }
     }
 
     /** Call exactly once per real guild event, not once per online recipient. */
