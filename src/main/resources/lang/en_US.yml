@@ -6112,6 +6112,7 @@ menu:
           fee: "<gray>Fee: <gold><fee> Gold Ore"
           reset: "<yellow>Your guild progression resets to Level 1."
           permanent: "<green>Existing permanent rewards and home-capacity purchases remain."
+          overflow: "<gray>Gold above the new bank capacity stays and can be withdrawn, but nothing can be added until capacity catches up."
         confirm: "<green>Confirm Prestige"
         cancel: "<red>Cancel"
       feedback:
