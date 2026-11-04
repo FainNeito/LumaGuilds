@@ -16,6 +16,32 @@ import kotlin.test.*
 internal class GuildAchievementRuntimeTest {
     @AfterEach fun cleanup() { unmockkAll(); MockBukkit.unmock() }
 
+    @Test fun `unknown eligibility is retained for review and never automatically paid`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        every { player.saveData() } just Runs
+        every { player.giveExp(any<Int>()) } just Runs
+        val guild = UUID.randomUUID()
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        val bridge = mockk<GuildAchievementXpCompletionPort>()
+        every { bridge.prepare(player, guild, any()) } returns GuildAchievementXpCoordinator.Prepared.Denied(GuildAchievementXpCoordinator.Result.UNKNOWN_ADDRESS)
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), guildXp = bridge)
+        runtime.signal(player, "GUILD_WAR_WON", receipt = "war-review", newEvent = true)
+        val key = NamespacedKey(plugin, "guild_achievements_v1")
+        val saved = org.json.JSONObject(player.persistentDataContainer.get(key, PersistentDataType.STRING)!!)
+        assertEquals("to_the_victor", saved.getJSONArray("guildXpReview").getJSONObject(0).getString("achievement"))
+        assertEquals(0, saved.getJSONArray("guildXpPending").length())
+        assertTrue("to_the_victor" in runtime.read(player)!!.rewarded)
+        val reopened = GuildAchievementRuntime(plugin, members, mockk(), guildXp = bridge)
+        assertTrue("to_the_victor" in reopened.read(player)!!.rewarded)
+        verify(exactly = 0) { bridge.deliver(any()) }
+        verify(exactly = 1) { player.giveExp(300) }
+    }
+
     @Test fun `initial projection waits until after the vanilla join reset`() {
         val server = MockBukkit.mock()
         val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
