@@ -1225,3 +1225,17 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
     lookups). `LocaleContractTest` caught `§` badge defaults in Kotlin; the code
     fallback is now uncoloured and `config.yml` ships the coloured `&` badges.
     Full suite 2454 tests, 0 failures, 106 pre-existing skips; `shadowJar` built.
+
+## Prestige bank overflow (REQ-157)
+
+- [x] **PRESTIGE-BANK-OVERFLOW** Tag: TDD.
+  - References: REQ-093 (capacity condition removed), REQ-157.
+  - Evidence: `PrestigeRepositorySQL.execute` post-prestige capacity guard;
+    `GuildGoldRepositorySQL.calculateNewBalance` (credits already capped, debits
+    only funds-checked); `GuildGoldRepositorySQL.compensateDebit` capacity check;
+    `PrestigeRejection.POST_PRESTIGE_CAPACITY` kept so stored receipts replay.
+  - Result: the reworked repository test failed (prestige rejected); final pass
+    proves the prestige applies with the full post-fee balance, a deposit is
+    refused, a withdrawal succeeds and its refund restores the over-capacity
+    balance. Confirmation menus (Java and Bedrock) show the overflow notice.
+    Full suite 2459 tests, 0 failures; native MariaDB profile 132 tests, 0 failures.

@@ -44,6 +44,7 @@ class BedrockPrestigeConfirmationMenu(
                 ),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.reset"),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.permanent"),
+                lang.bedrock("menu.guild_progression.prestige.confirmation.summary.overflow"),
             ).joinToString("\n")
         )
         .button1(lang.bedrock("menu.guild_progression.prestige.confirmation.confirm"))

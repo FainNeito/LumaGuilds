@@ -55,6 +55,7 @@ class GuildPrestigeConfirmationMenu(
                 ),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.reset"),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.permanent"),
+                lang.gui("menu.guild_progression.prestige.confirmation.summary.overflow"),
             ))
         } }
         pane.addItem(GuiItem(summary) { it.isCancelled = true }, 4, 0)

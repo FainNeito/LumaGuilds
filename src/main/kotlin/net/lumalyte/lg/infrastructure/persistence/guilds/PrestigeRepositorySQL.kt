@@ -229,10 +229,8 @@ class PrestigeRepositorySQL(
             settings.bank.maxBankBalance.toLong(),
             settings.guild.maxMembersPerGuild,
         )
-        val postBalance = balance - expectedFee
-        if (postBalance > postEntitlements.bankCapacity) {
-            return reject(PrestigeRejection.POST_PRESTIGE_CAPACITY)
-        }
+        // REQ-157: a balance above the post-prestige capacity is kept; the gold
+        // repository then refuses credits until capacity catches up.
 
         val mutation = mutation(request)
         val paid = gold.applyInTransaction(connection, mutation, Long.MAX_VALUE, null)

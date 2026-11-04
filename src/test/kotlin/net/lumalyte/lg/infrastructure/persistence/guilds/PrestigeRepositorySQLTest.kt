@@ -265,7 +265,7 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
     }
 
     @Test
-    fun `post prestige bank capacity guard rejects before debit`() {
+    fun `prestige above post prestige capacity keeps overflow withdraw only`() {
         val subject = open()
         val ownership = subject.snapshot().ownership
         val next = ownership.copy(
@@ -287,12 +287,39 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
             )
         }
 
+        // REQ-157: the prestige applies and the whole post-fee balance is kept.
+        val result = assertIs<PrestigeResult.Applied>(subject.repository.confirm(quote()) { null })
+        val kept = targetBalance - 10_000L
+        assertEquals(kept, result.newBalance)
+        assertEquals(postCapacity, result.postBankCapacity)
+        assertEquals(kept, subject.gold.getBalance(guildId))
+        assertEquals(1, subject.snapshot().ownership.prestigeCount)
+
+        // Credits are refused while the balance is above capacity.
         assertEquals(
-            PrestigeResult.Rejected(PrestigeRejection.POST_PRESTIGE_CAPACITY),
-            subject.repository.confirm(quote()) { null },
+            GuildGoldResult.Rejected(GuildGoldRejection.CAPACITY_EXCEEDED),
+            subject.gold.apply(
+                GuildGoldMutation(UUID.randomUUID(), guildId, actorId, GuildGoldRoute.PERSONAL_ACCOUNT,
+                    GuildGoldDirection.CREDIT, 1, 0, "overflow deposit"),
+                postCapacity,
+                null,
+            ),
         )
-        assertEquals(targetBalance, subject.gold.getBalance(guildId))
-        assertEquals(0, subject.snapshot().ownership.prestigeCount)
+        assertEquals(kept, subject.gold.getBalance(guildId))
+
+        // Debits are allowed.
+        val withdrawal = GuildGoldMutation(UUID.randomUUID(), guildId, actorId, GuildGoldRoute.PERSONAL_ACCOUNT,
+            GuildGoldDirection.DEBIT, 500, 0, "overflow withdrawal")
+        assertIs<GuildGoldResult.Applied>(subject.gold.apply(withdrawal, postCapacity, 0L))
+        assertEquals(kept - 500, subject.gold.getBalance(guildId))
+
+        // A refund of that withdrawal restores the pre-withdrawal balance, still above capacity.
+        val refund = GuildGoldMutation(UUID.randomUUID(), guildId, actorId, GuildGoldRoute.PERSONAL_ACCOUNT,
+            GuildGoldDirection.CREDIT, 500, 0, "overflow refund")
+        assertIs<GuildGoldResult.Applied>(
+            subject.gold.compensateDebit(withdrawal.transactionId, refund, postCapacity, 0L, "refund")
+        )
+        assertEquals(kept, subject.gold.getBalance(guildId))
     }
 
     @Test
