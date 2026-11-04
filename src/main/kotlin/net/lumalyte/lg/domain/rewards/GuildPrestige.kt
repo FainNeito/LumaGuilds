@@ -1,5 +1,6 @@
 package net.lumalyte.lg.domain.rewards
 
+import java.time.Instant
 import java.util.UUID
 
 data class PrestigeQuote(
@@ -53,4 +54,33 @@ data class PrestigeOverview(
     val maxPrestigeCount: Int,
     val nextFee: Long?,
     val choices: List<RewardDefinition>,
+)
+/** One applied prestige, read from its receipt and its canonical gold-journal debit. */
+data class PrestigeRecord(
+    val transactionId: UUID,
+    val guildId: UUID,
+    val actorId: UUID,
+    val tier: Int,
+    val retainedRewardId: String,
+    val appliedAt: Instant,
+)
+
+/** A newly committed prestige as published to listeners (REQ-153). */
+data class PrestigeCompletion(
+    val transactionId: UUID,
+    val guildId: UUID,
+    val actorId: UUID,
+    val tier: Int,
+    val retainedRewardId: String,
+    val appliedAt: Instant,
+    val firstToReachTier: Boolean,
+)
+
+/** A guild's prestige as shown in placeholders (REQ-155). */
+data class PrestigeStanding(
+    /** Current tier, 0..6. */
+    val tier: Int,
+    val lastAppliedAt: Instant?,
+    /** Highest tier this guild was first on the server to reach, 0 if none. */
+    val firstTier: Int,
 )

@@ -330,4 +330,97 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
         )
         assertEquals(19_000L, subject.gold.getBalance(guildId))
     }
+
+    // REQ-152: receipts joined to the canonical gold journal, no writes.
+    private fun Subject.insertAppliedReceipt(
+        guild: UUID,
+        tier: Int,
+        createdAt: Long,
+        transactionId: UUID = UUID.randomUUID(),
+        actor: UUID = actorId,
+        retained: String = "bank-1",
+    ): UUID {
+        storage.connection.executeUpdate(
+            """INSERT INTO guild_gold_operations
+               (transaction_id, guild_id, actor_id, route, direction, amount, fee, status, description, created_at)
+               VALUES (?, ?, ?, 'SYSTEM', 'DEBIT', 10000, 0, 'APPLIED', 'legacy prestige', ?)""",
+            transactionId.toString(), guild.toString(), actor.toString(), createdAt,
+        )
+        storage.connection.executeUpdate(
+            """INSERT INTO guild_prestige_transactions
+               (transaction_id, guild_id, actor_id, retained_reward_id, quoted_fee,
+                expected_version, expected_prestige_count, outcome, rejection,
+                old_balance, new_balance, ownership_version, prestige_count,
+                post_bank_capacity, home_capacity)
+               VALUES (?, ?, ?, ?, 10000, 1, ?, 'APPLIED', NULL, 20000, 10000, 2, ?, 10000, 2)""",
+            transactionId.toString(), guild.toString(), actor.toString(), retained, tier - 1, tier,
+        )
+        return transactionId
+    }
+
+    @Test
+    fun `history lists an applied prestige with its journal commit time and omits rejections`() {
+        val subject = open()
+        val before = Instant.now().toEpochMilli()
+        val request = quote()
+        assertIs<PrestigeResult.Applied>(subject.repository.confirm(request) { null })
+        val after = Instant.now().toEpochMilli()
+        assertIs<PrestigeResult.Rejected>(subject.repository.confirm(quote()) { null })
+
+        val history = subject.repository.history(guildId)
+        assertEquals(1, history.size)
+        val record = history.single()
+        assertEquals(request.transactionId, record.transactionId)
+        assertEquals(guildId, record.guildId)
+        assertEquals(actorId, record.actorId)
+        assertEquals(1, record.tier)
+        assertEquals("bank-1", record.retainedRewardId)
+        val journal = subject.storage.connection.getFirstColumn<Number>(
+            "SELECT created_at FROM guild_gold_operations WHERE transaction_id = ?",
+            request.transactionId.toString(),
+        ).toLong()
+        assertEquals(journal, record.appliedAt.toEpochMilli())
+        assertTrue(record.appliedAt.toEpochMilli() in before..after)
+        assertEquals(emptyList(), subject.repository.history(enemyGuildId))
+    }
+
+    @Test
+    fun `history includes receipts made before this change in tier order`() {
+        val subject = open()
+        val first = subject.insertAppliedReceipt(enemyGuildId, 1, 1_000L)
+        val second = subject.insertAppliedReceipt(enemyGuildId, 2, 5_000L, retained = "travel-50")
+        val history = subject.repository.history(enemyGuildId)
+        assertEquals(listOf(first, second), history.map { it.transactionId })
+        assertEquals(listOf(1, 2), history.map { it.tier })
+        assertEquals(Instant.ofEpochMilli(5_000L), history.last().appliedAt)
+        assertEquals("travel-50", history.last().retainedRewardId)
+    }
+
+    @Test
+    fun `first to reach a tier is ordered by commit time then transaction id`() {
+        val subject = open()
+        val lowId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        val highId = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff")
+        subject.insertAppliedReceipt(guildId, 1, 9_000L)
+        subject.insertAppliedReceipt(enemyGuildId, 1, 2_000L, transactionId = highId)
+        subject.insertAppliedReceipt(UUID.randomUUID(), 1, 2_000L, transactionId = lowId)
+        subject.insertAppliedReceipt(guildId, 2, 3_000L)
+
+        assertEquals(lowId, subject.repository.firstToReach(1)?.transactionId)
+        assertEquals(guildId, subject.repository.firstToReach(2)?.guildId)
+        assertNull(subject.repository.firstToReach(3))
+    }
+
+    @Test
+    fun `reading history does not write receipts or the journal`() {
+        val subject = open()
+        assertIs<PrestigeResult.Applied>(subject.repository.confirm(quote()) { null })
+        fun count(table: String) = subject.storage.connection.getFirstColumn<Number>("SELECT COUNT(*) FROM $table").toLong()
+        val receipts = count("guild_prestige_transactions")
+        val journal = count("guild_gold_operations")
+        subject.repository.history(guildId)
+        subject.repository.firstToReach(1)
+        assertEquals(receipts, count("guild_prestige_transactions"))
+        assertEquals(journal, count("guild_gold_operations"))
+    }
 }
