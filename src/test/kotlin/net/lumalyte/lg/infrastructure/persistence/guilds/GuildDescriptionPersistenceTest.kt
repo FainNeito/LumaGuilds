@@ -65,4 +65,15 @@ class GuildDescriptionPersistenceTest : RewardSqlTestFixture() {
         assertEquals("Renamed", reloaded.name)
         assertEquals("Preserved", reloaded.description)
     }
+
+    @Test fun `description remains after closing and reopening database storage`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val guild = Guild(UUID.randomUUID(), "RestartGuild", createdAt = Instant.now(), description = "Survives restart")
+        assertTrue(GuildRepositorySQLite(storage).add(guild))
+        closeStorage(storage)
+        val reopened = openStorage()
+        migrateProductionSchema(reopened)
+        assertEquals("Survives restart", GuildRepositorySQLite(reopened).getById(guild.id)?.description)
+    }
 }
