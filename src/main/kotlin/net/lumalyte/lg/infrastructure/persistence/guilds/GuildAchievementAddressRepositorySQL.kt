@@ -84,6 +84,14 @@ internal class GuildAchievementAddressRepositorySQL(private val storage: Storage
         return GuildAchievementIpEligibility.PeerHistory(fingerprints, complete = false)
     }
 
+    /** Removing observations cannot establish uniqueness; subsequent histories remain incomplete. */
+    fun forget(playerId: UUID) {
+        storage.connection.connection.use { connection -> connection.committingTransaction {
+            connection.updateStatement("DELETE FROM guild_achievement_address_history_v1 WHERE player_id = ?", playerId.toString())
+            connection.updateStatement("DELETE FROM guild_achievement_address_observations WHERE player_id = ?", playerId.toString())
+        } }
+    }
+
     fun read(playerId: UUID, expectedKeyId: String): Observation? {
         require(expectedKeyId.matches(Regex("[0-9a-f]{32}")))
         val row = storage.connection.getFirstRow(
