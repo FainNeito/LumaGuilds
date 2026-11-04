@@ -34,7 +34,6 @@ internal class GuildAchievementRuntime(
     private val guildXpReview = mutableMapOf<UUID, List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>>()
     private val reviewRequired = mutableSetOf<UUID>()
     private val ownershipReads = mutableSetOf<UUID>()
-    private val initialized = mutableSetOf<UUID>()
     private val observedStallOwnership = mutableMapOf<UUID, Boolean>()
 
     fun start() {
@@ -55,8 +54,9 @@ internal class GuildAchievementRuntime(
                     players.forEach { player ->
                         signal(player, "ROOT", newEvent = false)
                         level?.let { signal(player, "GUILD_LEVEL_UP", it.toString(), newEvent = false) }
-                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true,
-                            newEvent = player.uniqueId in initialized)
+                        // A sampled total can include historical hours or newly joined members.
+                        // It cannot prove a post-cutover guild XP event.
+                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true, newEvent = false)
                         read(player)?.let { projection.project(player, it) }
                     }
                 }
@@ -93,7 +93,6 @@ internal class GuildAchievementRuntime(
         signal(player, "GUILD_COMBINED_PLAYTIME", amount = combinedHours(guild), absolute = true, newEvent = false)
         read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
-        initialized += player.uniqueId
     }
 
     /** Existing ownership qualifies. Unavailable or late data never invents a purchase or an award. */
@@ -254,7 +253,6 @@ internal class GuildAchievementRuntime(
         records.remove(player.uniqueId)
         pendingGuildXp.remove(player.uniqueId)
         guildXpReview.remove(player.uniqueId)
-        initialized.remove(player.uniqueId)
         failed.remove(player.uniqueId)
     }
 

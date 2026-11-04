@@ -46,4 +46,6 @@ Unknown-address and eligibility exceptions now retain an unpayable review marker
 
 Review found that personal advancement completion cannot serve as a guild-level progress ledger, and a player's initialized flag cannot establish that a different guild's playtime was newly earned. Both require durable guild-scoped tracking and a reliable event/cutover model before enabling rewards. The address repository retains only the last observation, not address history; retention and comparisons must be designed and verified before satisfying the offline-member protection requirement.
 
+As a conservative safeguard, sampled playtime totals are now always treated as historical for guild XP. Personal advancement progress remains active; guild XP for playtime is intentionally unavailable until event-backed guild tracking can prove a future completion. This prevents the known false-positive route but does not implement the desired playtime reward.
+
 Hosted unit run 41766604841 failed two assertions: the boss listener test omitted the new-event argument and the icon mapping coverage omitted the new source. Updated both expectations; their focused local suites pass. This evidence does not imply the full hosted suite or MariaDB checks have passed.
