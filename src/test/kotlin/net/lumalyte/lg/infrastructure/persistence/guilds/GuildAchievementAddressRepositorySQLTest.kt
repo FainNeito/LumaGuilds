@@ -12,6 +12,8 @@ import org.junit.jupiter.api.io.TempDir
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertFalse
+import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 
 class GuildAchievementAddressRepositorySQLTest {
     @TempDir lateinit var directory: Path
@@ -45,5 +47,36 @@ class GuildAchievementAddressRepositorySQLTest {
         assertFailsWith<IllegalArgumentException> { repository.observe(player, "192.0.2.10", keyId, now) }
         assertFailsWith<IllegalArgumentException> { repository.observe(player, "X".repeat(64), keyId, now) }
         assertNull(repository.read(player, keyId))
+    }
+
+    @Test fun `retains keyed observations across restarts without claiming complete history`() {
+        val newer = "b".repeat(64)
+        repository.observe(player, token, keyId, now)
+        repository.observe(player, newer, keyId, now.plusSeconds(1))
+        val reopened = GuildAchievementAddressRepositorySQL(storage)
+        val history = reopened.readHistory(player, keyId)
+        assertEquals(setOf(token, newer), history.observations)
+        assertFalse(history.complete)
+        assertEquals(emptySet(), reopened.readHistory(player, "2".repeat(32)).observations)
+        assertFalse(reopened.readHistory(player, "2".repeat(32)).complete)
+    }
+
+    @Test fun `last observation and history roll back together`() {
+        storage.connection.executeUpdate("CREATE TRIGGER reject_latest BEFORE INSERT ON guild_achievement_address_observations BEGIN SELECT RAISE(ABORT, 'test failure'); END")
+        assertFailsWith<Exception> { repository.observe(player, token, keyId, now) }
+        assertNull(repository.read(player, keyId))
+        assertEquals(emptySet(), repository.readHistory(player, keyId).observations)
+    }
+
+    @Test fun `incomplete stored history blocks matching prior address but never proves uniqueness`() {
+        val actor = UUID.randomUUID()
+        val members = setOf(actor, player)
+        repository.observe(player, token, keyId, now)
+        repository.observe(player, "b".repeat(64), keyId, now.plusSeconds(1))
+        val histories = mapOf(player to GuildAchievementAddressRepositorySQL(storage).readHistory(player, keyId))
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, token, histories))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideWithHistory(actor, members, "c".repeat(64), histories))
     }
 }

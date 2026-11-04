@@ -5,6 +5,7 @@ import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
 import net.lumalyte.lg.infrastructure.persistence.storage.Storage
 import java.time.Instant
 import java.util.UUID
+import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 
 /** Stores only a keyed comparison fingerprint and observation time, never an address. */
 internal class GuildAchievementAddressRepositorySQL(private val storage: Storage<Database>) {
@@ -18,6 +19,12 @@ internal class GuildAchievementAddressRepositorySQL(private val storage: Storage
                 key_id VARCHAR(32) NOT NULL,
                 observed_at BIGINT NOT NULL,
                 ambiguous INTEGER NOT NULL DEFAULT 0
+            )""".trimIndent(),
+        )
+        storage.connection.executeUpdate(
+            """CREATE TABLE IF NOT EXISTS guild_achievement_address_history_v1 (
+                player_id VARCHAR(36) NOT NULL, key_id VARCHAR(32) NOT NULL, fingerprint VARCHAR(64) NOT NULL,
+                last_seen BIGINT NOT NULL, PRIMARY KEY (player_id, key_id, fingerprint)
             )""".trimIndent(),
         )
     }
@@ -45,7 +52,36 @@ internal class GuildAchievementAddressRepositorySQL(private val storage: Storage
                 key_id = CASE WHEN excluded.observed_at > observed_at THEN excluded.key_id ELSE key_id END,
                 observed_at = MAX(observed_at, excluded.observed_at)""".trimIndent()
         }
-        storage.connection.executeUpdate(sql, playerId.toString(), fingerprint, keyId, observedAt.toEpochMilli())
+        val historySql = if (storage.dialect == SqlDialect.MARIADB) {
+            """INSERT INTO guild_achievement_address_history_v1 (player_id, key_id, fingerprint, last_seen)
+                VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE last_seen = GREATEST(last_seen, VALUES(last_seen))""".trimIndent()
+        } else {
+            """INSERT INTO guild_achievement_address_history_v1 (player_id, key_id, fingerprint, last_seen)
+                VALUES (?, ?, ?, ?) ON CONFLICT(player_id, key_id, fingerprint)
+                DO UPDATE SET last_seen = MAX(last_seen, excluded.last_seen)""".trimIndent()
+        }
+        storage.connection.connection.use { connection -> connection.committingTransaction {
+            connection.updateStatement(historySql, playerId.toString(), keyId, fingerprint, observedAt.toEpochMilli())
+            connection.updateStatement(sql, playerId.toString(), fingerprint, keyId, observedAt.toEpochMilli())
+        } }
+    }
+
+    /** History alone does not prove collection was complete, including before installation. */
+    fun readHistory(playerId: UUID, expectedKeyId: String): GuildAchievementIpEligibility.PeerHistory {
+        require(expectedKeyId.matches(Regex("[0-9a-f]{32}")))
+        val fingerprints = storage.connection.connection.use { connection ->
+            connection.prepareStatement("SELECT fingerprint FROM guild_achievement_address_history_v1 WHERE player_id = ? AND key_id = ?").use { statement ->
+                statement.setString(1, playerId.toString()); statement.setString(2, expectedKeyId)
+                statement.executeQuery().use { rows -> buildSet {
+                    while (rows.next()) {
+                        val token = rows.getString(1)
+                        require(token.matches(Regex("[0-9a-f]{64}")))
+                        add(token)
+                    }
+                } }
+            }
+        }
+        return GuildAchievementIpEligibility.PeerHistory(fingerprints, complete = false)
     }
 
     fun read(playerId: UUID, expectedKeyId: String): Observation? {
