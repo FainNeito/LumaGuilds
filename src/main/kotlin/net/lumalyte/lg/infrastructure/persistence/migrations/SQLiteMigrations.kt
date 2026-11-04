@@ -282,6 +282,7 @@ class SQLiteMigrations(private val plugin: JavaPlugin, private val connection: C
                 dbVersion = GuildHomeAccessGrantSchema.VERSION
             }
             VaultCapacityUnlockSchema.create(connection, mariaDb = false, backfill = dbVersion < VaultCapacityUnlockSchema.VERSION)
+            GuildDescriptionSchema.ensure(connection)
             if (dbVersion < VaultCapacityUnlockSchema.VERSION) {
                 updateDatabaseVersion(VaultCapacityUnlockSchema.VERSION)
                 dbVersion = VaultCapacityUnlockSchema.VERSION
