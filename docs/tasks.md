@@ -1182,3 +1182,46 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     added to `GuildEventApiContractTest` (5/5). Full suite 2441 tests, 0 failures,
     106 pre-existing skips; native `mariaDbRewardTest` 127/127; `shadowJar` built.
     No layered sources changed in this task.
+
+## Prestige placeholders
+
+Plan: `plans/2026-11-04-prestige-placeholders.md`.
+
+- [x] **PRESTIGE-PLACEHOLDER-VALUES** Tag: TDD.
+  - References: REQ-155 (identifier formatting, tier 0, unavailable blank).
+  - Evidence: `infrastructure/placeholders/RewardPlaceholder.kt` pure-formatter
+    pattern and `RewardPlaceholderTest`; `RewardOwnership.prestigeCount` 0..6
+    (`domain/rewards/RewardEntitlements.kt`). Imports: `java.time.Instant`,
+    `java.time.ZoneOffset`, `java.time.format.DateTimeFormatter`.
+  - Result: blank scaffolding failed 4/5 (unavailable-blank passed trivially);
+    final 5/5. Domain `PrestigeStanding` uses stdlib only.
+
+- [x] **PRESTIGE-PLACEHOLDER-SOURCE** Tag: TDD.
+  - References: REQ-155 (30-second cache, immediate refresh, missing account = 0,
+    failed read = unavailable); plan §Decisions "Cache".
+  - Evidence: `RewardOwnershipRepository.read` returns
+    `RewardOwnershipRead.Found/Missing/Failed` (`domain/rewards/RewardOwnershipPersistence.kt`);
+    `PrestigeHistory.history/firstToReach` (REQ-152); `GuildPrestigeNotifier`
+    (REQ-153); existing `topCache` TTL pattern in `LumaGuildsExpansion`. Imports:
+    `net.lumalyte.lg.application.persistence.RewardOwnershipRepository`,
+    `net.lumalyte.lg.application.persistence.PrestigeHistory`,
+    `net.lumalyte.lg.domain.rewards.RewardOwnershipRead`,
+    `net.lumalyte.lg.application.services.GuildPrestigeNotifier`,
+    `java.util.concurrent.ConcurrentHashMap`, `java.time.Duration`.
+  - Result: null scaffolding failed 4/5 (history-failure case passed trivially);
+    final 5/5 including read counts within/after the TTL and immediate refresh on
+    prestige. Application imports are domain/application/stdlib only.
+
+- [x] **PRESTIGE-PLACEHOLDER-WIRING** Tag: TDD.
+  - References: REQ-155, REQ-156; plan §Decisions "Badges" and "Leaderboard".
+  - Evidence: `LumaGuildsExpansion.onPlaceholderRequest` dispatch,
+    `computeTop`/`formatTopField`/`rankInTop`, `TOP_CATEGORIES`; Koin `by inject()`
+    with test modules as in `LumaGuildsExpansionGuildRankTest`; config keys read in
+    `ConfigServiceBukkit.loadProgressionConfig`; `docs/placeholders.md`. Imports:
+    `org.koin.core.component.inject`, `io.mockk.every`, `io.mockk.mockk`.
+  - Result: unchanged expansion failed 3/3 (identifiers unknown); final 3/3 with
+    existing expansion tests green. `loadConfig()` rebuilds the full config, so
+    badge settings are cached on the 30-second cycle (asserted: one load across six
+    lookups). `LocaleContractTest` caught `§` badge defaults in Kotlin; the code
+    fallback is now uncoloured and `config.yml` ships the coloured `&` badges.
+    Full suite 2454 tests, 0 failures, 106 pre-existing skips; `shadowJar` built.

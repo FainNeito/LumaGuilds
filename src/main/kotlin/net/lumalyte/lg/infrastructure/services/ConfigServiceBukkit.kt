@@ -399,6 +399,11 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     commands = config.getStringList("progression.prestige.member_credits.commands"),
                     firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
                 ),
+                // REQ-155: seven entries (index 0 = none); & colour codes become section signs.
+                badges = config.getStringList("progression.prestige.badges")
+                    .takeIf { it.size >= 7 }
+                    ?.map { org.bukkit.ChatColor.translateAlternateColorCodes('&', it) }
+                    ?: net.lumalyte.lg.config.DEFAULT_PRESTIGE_BADGES,
             ),
 
             // Experience values for different activities

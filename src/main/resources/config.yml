@@ -586,6 +586,10 @@ progression:
         - "enthusiatags rewards counter {uuid} guild_prestige_{tier} 1"
       first_reach_commands:
         - "enthusiatags rewards counter {uuid} guild_prestige_first_{tier} 1"
+    # Badge text for %lumaguilds_guild_prestige_badge% and top_*_prestige_badge.
+    # Seven entries: none, then tiers I-VI. & colour codes are translated; other
+    # text (for example a Nexo glyph) passes through unchanged.
+    badges: ["", "&6✦I", "&6✦II", "&7✦III", "&7✦IV", "&e✦V", "&d✦VI"]
 
   # Experience values for different activities
   bank_deposit_xp_per_100: 1         # XP per 100 coins deposited
