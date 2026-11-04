@@ -1196,7 +1196,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
   - Result: blank scaffolding failed 4/5 (unavailable-blank passed trivially);
     final 5/5. Domain `PrestigeStanding` uses stdlib only.
 
-- [ ] **PRESTIGE-PLACEHOLDER-SOURCE** Tag: TDD.
+- [x] **PRESTIGE-PLACEHOLDER-SOURCE** Tag: TDD.
   - References: REQ-155 (30-second cache, immediate refresh, missing account = 0,
     failed read = unavailable); plan §Decisions "Cache".
   - Evidence: `RewardOwnershipRepository.read` returns
@@ -1208,6 +1208,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
     `net.lumalyte.lg.domain.rewards.RewardOwnershipRead`,
     `net.lumalyte.lg.application.services.GuildPrestigeNotifier`,
     `java.util.concurrent.ConcurrentHashMap`, `java.time.Duration`.
+  - Result: null scaffolding failed 4/5 (history-failure case passed trivially);
+    final 5/5 including read counts within/after the TTL and immediate refresh on
+    prestige. Application imports are domain/application/stdlib only.
 
 - [ ] **PRESTIGE-PLACEHOLDER-WIRING** Tag: TDD.
   - References: REQ-155, REQ-156; plan §Decisions "Badges" and "Leaderboard".
