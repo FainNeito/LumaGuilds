@@ -1147,7 +1147,7 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     The additive table pins `utf8mb4_unicode_ci` on MariaDB like the gold schema.
     Final: SQLite 1/1 and native MariaDB 1/1 (added to `mariaDbRewardTest`).
 
-- [ ] **PRESTIGE-CREDIT-DELIVERY** Tag: TDD.
+- [x] **PRESTIGE-CREDIT-DELIVERY** Tag: TDD.
   - References: REQ-154 (eligibility, tenure, first-reach, placeholders, skip rules).
   - Evidence: `Member(playerId, guildId, rankId, joinedAt: Instant)` in
     `domain/entities/Member.kt`; `MemberRepository.getGuildsByPlayer`,
@@ -1158,6 +1158,12 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     `net.lumalyte.lg.domain.entities.Member`,
     `net.lumalyte.lg.application.services.PrestigeMemberCredits`,
     `java.time.Duration`.
+  - Result: no-op scaffolding gave 4 behavioural failures in 7 tests (tenure,
+    disabled and non-member cases passed trivially). Final 7/7: owed tiers once,
+    tenure gate, first-reach commands, disabled no-op, failed dispatch not
+    recorded and retried, online-only after prestige, non-members skipped.
+    Application imports are domain/application/stdlib plus slf4j, matching the
+    existing `GuildPrestigeService` logger convention.
 
 - [ ] **PRESTIGE-CREDIT-WIRING** Tag: INFRA.
   - References: REQ-153, REQ-154; plan §Configuration.
