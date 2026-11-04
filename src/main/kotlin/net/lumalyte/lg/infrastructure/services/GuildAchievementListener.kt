@@ -23,7 +23,7 @@ import java.util.UUID
 
 /** Completed, non-cancelled game activity only. Shared events credit online guild members. */
 internal class GuildAchievementListener(private val runtime: GuildAchievementRuntime) : Listener {
-    private fun actor(id: UUID, type: String) { Bukkit.getPlayer(id)?.let { runtime.signal(it, type) } }
+    private fun actor(id: UUID, type: String) { Bukkit.getPlayer(id)?.let { runtime.signal(it, type, newEvent = true) } }
     private fun activity(player: Player, type: String, amount: Int = 1) {
         if (player.gameMode !in setOf(GameMode.SURVIVAL, GameMode.ADVENTURE)) return
         runtime.guild(player.uniqueId)?.let { runtime.shared(it, type, amount = amount) }
@@ -78,7 +78,7 @@ internal class GuildAchievementListener(private val runtime: GuildAchievementRun
 
     private fun boss(event: EntityDeathEvent, members: List<Player>, target: String) {
         members.forEach {
-            runtime.signal(it, "GUILD_COLLECTIVE_BOSS_KILL", target, receipt = "boss:${event.entity.uniqueId}")
+            runtime.signal(it, "GUILD_COLLECTIVE_BOSS_KILL", target, receipt = "boss:${event.entity.uniqueId}", newEvent = true)
         }
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true) fun friendly(e: EntityDamageByEntityEvent) {
@@ -86,7 +86,7 @@ internal class GuildAchievementListener(private val runtime: GuildAchievementRun
         val victim = e.entity as? Player ?: return
         val guild = runtime.guild(actor.uniqueId) ?: return
         if (actor.uniqueId != victim.uniqueId && runtime.guild(victim.uniqueId) == guild && e.finalDamage > 0)
-            runtime.signal(actor, "GUILD_FRIENDLY_FIRE")
+            runtime.signal(actor, "GUILD_FRIENDLY_FIRE", newEvent = true)
     }
     companion object {
         private val CROPS = setOf(Material.WHEAT, Material.CARROTS, Material.POTATOES, Material.BEETROOTS,
