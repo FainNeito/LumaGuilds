@@ -1115,7 +1115,7 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     default. The join now converts the receipt side on MariaDB. Final: 14/14 SQLite
     and the full `mariaDbRewardTest` profile 126/126, no skips. Layer scan clean.
 
-- [ ] **PRESTIGE-EVENT** Tag: TDD.
+- [x] **PRESTIGE-EVENT** Tag: TDD.
   - References: REQ-153; plan §Decisions "Event at the announcement point".
   - Evidence: `GuildPrestigeService.confirm` announces only on
     `PrestigeConfirmation.newlyCommitted`; `GuildPrestigeAnnouncementTest`
@@ -1125,6 +1125,12 @@ checkout (BadgersMC/spear-plugin 2c91bae).
     `net.lumalyte.lg.domain.rewards.PrestigeCompletion`,
     `net.lumalyte.lg.api.events.GuildPrestigeEvent`, `org.bukkit.Bukkit`,
     `org.bukkit.event.Event`, `org.bukkit.event.HandlerList`.
+  - Result: scaffolded service parameters gave 3 behavioural failures in 4 new
+    tests (silence on rejection passed trivially); the event mapping test was
+    contract-red (types absent). Final: notifier 4/4, event mapping 1/1,
+    announcement service 3/3 and Bukkit adapter 2/2. The pre-existing slf4j logger
+    in `GuildPrestigeService` is unchanged; no new non-domain imports in
+    application or domain sources.
 
 - [ ] **PRESTIGE-CREDIT-LEDGER** Tag: TDD.
   - References: REQ-154 (durable once-per-pair record); plan §Decisions

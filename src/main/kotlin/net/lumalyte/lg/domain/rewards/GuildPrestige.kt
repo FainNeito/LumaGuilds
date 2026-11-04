@@ -64,3 +64,14 @@ data class PrestigeRecord(
     val retainedRewardId: String,
     val appliedAt: Instant,
 )
+
+/** A newly committed prestige as published to listeners (REQ-153). */
+data class PrestigeCompletion(
+    val transactionId: UUID,
+    val guildId: UUID,
+    val actorId: UUID,
+    val tier: Int,
+    val retainedRewardId: String,
+    val appliedAt: Instant,
+    val firstToReachTier: Boolean,
+)
