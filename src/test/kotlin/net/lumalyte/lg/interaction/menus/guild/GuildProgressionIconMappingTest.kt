@@ -53,6 +53,7 @@ class GuildProgressionIconMappingTest {
             ExperienceSource.CLAIM_CREATED to "lg_claiming",
             ExperienceSource.CLAIM_DESTROYED to "lg_claim_removed",
             ExperienceSource.WEEKLY_ACTIVITY to "lg_weekly_activity",
+            ExperienceSource.ACHIEVEMENT to "lg_weekly_activity",
             ExperienceSource.ADMIN_BONUS to "lg_admin_bonus",
         )
 
