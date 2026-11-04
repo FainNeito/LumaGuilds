@@ -16,9 +16,11 @@ holograms can show a guild's prestige.
   prestige invalidates the guild's snapshot and the first-holder map through the
   existing `GuildPrestigeNotifier` list, so the badge updates immediately.
 - **Badges are configurable text.** `progression.prestige.badges` holds seven
-  strings (index 0 = no prestige). Defaults are legacy-coloured `✦I` to `✦VI`
-  (bronze-ish gold for I-II, grey for III-IV, yellow for V, pink for VI). Once the
-  Nexo badge glyphs are wired, operators can replace them with glyph text.
+  strings (index 0 = no prestige). The shipped `config.yml` uses `&`-coloured
+  `✦I` to `✦VI` (gold for I-II, grey for III-IV, yellow for V, pink for VI). The
+  Kotlin fallback is uncoloured, because `LocaleContractTest` keeps Kotlin sources
+  free of `§` text. Once the Nexo badge glyphs are wired, operators can replace
+  the entries with glyph text.
 - **Leaderboard.** `top_prestige_*` sorts by tier, then current-run level and XP,
   so it doubles as the "closest to next prestige" race board. `value` is the tier.
 

@@ -1212,10 +1212,16 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
     final 5/5 including read counts within/after the TTL and immediate refresh on
     prestige. Application imports are domain/application/stdlib only.
 
-- [ ] **PRESTIGE-PLACEHOLDER-WIRING** Tag: TDD.
+- [x] **PRESTIGE-PLACEHOLDER-WIRING** Tag: TDD.
   - References: REQ-155, REQ-156; plan §Decisions "Badges" and "Leaderboard".
   - Evidence: `LumaGuildsExpansion.onPlaceholderRequest` dispatch,
     `computeTop`/`formatTopField`/`rankInTop`, `TOP_CATEGORIES`; Koin `by inject()`
     with test modules as in `LumaGuildsExpansionGuildRankTest`; config keys read in
     `ConfigServiceBukkit.loadProgressionConfig`; `docs/placeholders.md`. Imports:
     `org.koin.core.component.inject`, `io.mockk.every`, `io.mockk.mockk`.
+  - Result: unchanged expansion failed 3/3 (identifiers unknown); final 3/3 with
+    existing expansion tests green. `loadConfig()` rebuilds the full config, so
+    badge settings are cached on the 30-second cycle (asserted: one load across six
+    lookups). `LocaleContractTest` caught `§` badge defaults in Kotlin; the code
+    fallback is now uncoloured and `config.yml` ships the coloured `&` badges.
+    Full suite 2454 tests, 0 failures, 106 pre-existing skips; `shadowJar` built.

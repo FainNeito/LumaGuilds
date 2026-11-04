@@ -441,11 +441,16 @@ data class PrestigeMemberCreditsConfig(
     var firstReachCommands: List<String> = emptyList(),
 )
 
+/** Uncoloured fallback; the shipped config.yml carries the coloured badges. */
+val DEFAULT_PRESTIGE_BADGES = listOf("", "✦I", "✦II", "✦III", "✦IV", "✦V", "✦VI")
+
 data class PrestigeConfig(
     var enabled: Boolean = true,
     var maxCount: Int = 6,
     var fees: List<Long> = listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L),
     var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
+    /** REQ-155 placeholder badges; index 0 is "no prestige". */
+    var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }

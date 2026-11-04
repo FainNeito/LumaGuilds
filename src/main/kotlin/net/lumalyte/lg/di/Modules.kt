@@ -716,6 +716,7 @@ fun progressionModule() = module {
         get<net.lumalyte.lg.application.persistence.PrestigeRepository>()
             as net.lumalyte.lg.application.persistence.PrestigeHistory
     }
+    single { net.lumalyte.lg.application.services.GuildPrestigeStandings(get(), get()) }
     single<net.lumalyte.lg.application.persistence.PrestigeCreditLedger> {
         net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeCreditLedgerSQL(get())
     }
@@ -740,6 +741,7 @@ fun progressionModule() = module {
             get(), get(), get(), get(), get(), get(), get(),
             history = get(),
             notifiers = listOf(
+                get<net.lumalyte.lg.application.services.GuildPrestigeStandings>(),
                 net.lumalyte.lg.infrastructure.services.GuildPrestigeEventBukkit(),
                 net.lumalyte.lg.infrastructure.listeners.PrestigeCreditNotifier(get()),
             ),
