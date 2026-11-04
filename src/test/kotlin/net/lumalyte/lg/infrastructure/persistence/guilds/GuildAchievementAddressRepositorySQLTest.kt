@@ -20,6 +20,7 @@ class GuildAchievementAddressRepositorySQLTest {
     private val player = UUID.fromString("b103e306-5581-474d-a497-7371945078c7")
     private val now = Instant.parse("2026-11-03T00:00:00Z")
     private val token = "a".repeat(64)
+    private val keyId = "1".repeat(32)
 
     @BeforeEach fun setUp() {
         storage = VirtualThreadSQLiteStorage(directory.toFile())
@@ -29,18 +30,20 @@ class GuildAchievementAddressRepositorySQLTest {
     @AfterEach fun tearDown() { storage.connection.close(5, TimeUnit.SECONDS) }
 
     @Test fun `offline observation survives repository recreation and ignores stale updates`() {
-        assertNull(repository.read(player))
-        repository.observe(player, token, now)
-        repository.observe(player, "b".repeat(64), now.minusSeconds(1))
-        repository.observe(player, "c".repeat(64), now)
-        assertEquals(GuildAchievementAddressRepositorySQL.Observation(token, now), GuildAchievementAddressRepositorySQL(storage).read(player))
-        repository.observe(player, "d".repeat(64), now.plusSeconds(1))
-        assertEquals(GuildAchievementAddressRepositorySQL.Observation("d".repeat(64), now.plusSeconds(1)), repository.read(player))
+        assertNull(repository.read(player, keyId))
+        repository.observe(player, token, keyId, now)
+        repository.observe(player, "b".repeat(64), keyId, now.minusSeconds(1))
+        assertEquals(GuildAchievementAddressRepositorySQL.Observation(token, now), GuildAchievementAddressRepositorySQL(storage).read(player, keyId))
+        assertNull(repository.read(player, "2".repeat(32)))
+        repository.observe(player, "c".repeat(64), keyId, now)
+        assertNull(repository.read(player, keyId))
+        repository.observe(player, "d".repeat(64), keyId, now.plusSeconds(1))
+        assertEquals(GuildAchievementAddressRepositorySQL.Observation("d".repeat(64), now.plusSeconds(1)), repository.read(player, keyId))
     }
 
     @Test fun `rejects raw and invalid address observations`() {
-        assertFailsWith<IllegalArgumentException> { repository.observe(player, "192.0.2.10", now) }
-        assertFailsWith<IllegalArgumentException> { repository.observe(player, "X".repeat(64), now) }
-        assertNull(repository.read(player))
+        assertFailsWith<IllegalArgumentException> { repository.observe(player, "192.0.2.10", keyId, now) }
+        assertFailsWith<IllegalArgumentException> { repository.observe(player, "X".repeat(64), keyId, now) }
+        assertNull(repository.read(player, keyId))
     }
 }

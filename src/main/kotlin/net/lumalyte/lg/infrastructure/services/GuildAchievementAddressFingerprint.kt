@@ -9,13 +9,19 @@ import javax.crypto.spec.SecretKeySpec
 internal class GuildAchievementAddressFingerprint(key: ByteArray) {
     private val secret = key.copyOf().also { require(it.size >= 32) }
 
+    /** Public key-generation marker; different secrets cannot be mixed silently. */
+    val keyId: String = mac("lumaguilds:achievement-ip:key-id:v1".toByteArray(Charsets.UTF_8)).take(32)
+
     fun fingerprint(address: InetAddress): String? {
         if (address.isAnyLocalAddress || address.isLoopbackAddress || address.isMulticastAddress) return null
         val bytes = canonicalAddress(address.address)
-        val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(secret, "HmacSHA256"))
-        mac.update("lumaguilds:achievement-ip:v1:".toByteArray(Charsets.UTF_8))
-        return HexFormat.of().formatHex(mac.doFinal(bytes))
+        return mac("lumaguilds:achievement-ip:v1:".toByteArray(Charsets.UTF_8) + bytes)
+    }
+
+    private fun mac(input: ByteArray): String {
+        val digest = Mac.getInstance("HmacSHA256")
+        digest.init(SecretKeySpec(secret, "HmacSHA256"))
+        return HexFormat.of().formatHex(digest.doFinal(input))
     }
 
     private fun canonicalAddress(bytes: ByteArray): ByteArray {
