@@ -3,6 +3,7 @@ package net.lumalyte.lg.infrastructure.persistence.guilds
 import co.aikar.idb.Database
 import net.lumalyte.lg.application.persistence.PrestigeRepository
 import net.lumalyte.lg.application.persistence.PrestigeConfirmation
+import net.lumalyte.lg.application.persistence.PrestigeHistory
 import net.lumalyte.lg.application.services.GuildActionCoordinator
 import net.lumalyte.lg.config.MainConfig
 import net.lumalyte.lg.domain.entities.WarStatus
@@ -27,7 +28,7 @@ class PrestigeRepositorySQL(
     private val gold: GuildGoldRepositorySQL,
     private val guildActions: GuildActionCoordinator,
     private val config: () -> MainConfig,
-) : PrestigeRepository {
+) : PrestigeRepository, PrestigeHistory {
     private val resolver = RewardEntitlementResolver(catalog)
     private val lockSuffix = if (storage.dialect == SqlDialect.MARIADB) " FOR UPDATE" else ""
 
@@ -58,6 +59,47 @@ class PrestigeRepositorySQL(
 
     override fun confirm(request: PrestigeQuote, guard: () -> PrestigeRejection?): PrestigeResult =
         confirmWithCommitStatus(request, guard).result
+
+    // REQ-152: receipts joined to their own canonical gold debit for the commit time.
+    override fun history(guildId: UUID): List<PrestigeRecord> =
+        records("p.guild_id = ?", guildId.toString())
+
+    override fun firstToReach(tier: Int): PrestigeRecord? =
+        records("p.prestige_count = ?", tier, limit = 1).firstOrNull()
+
+    // MariaDB: the journal pins utf8mb4_unicode_ci while receipts use the server default,
+    // so convert the receipt side; comparing them directly fails with mixed collations.
+    private val journalJoin = if (storage.dialect == SqlDialect.MARIADB)
+        "g.transaction_id = CONVERT(p.transaction_id USING utf8mb4) COLLATE utf8mb4_unicode_ci"
+    else "g.transaction_id = p.transaction_id"
+
+    private fun records(filter: String, value: Any, limit: Int? = null): List<PrestigeRecord> =
+        storage.connection.connection.use { connection ->
+            connection.prepareStatement(
+                """SELECT p.transaction_id, p.guild_id, p.actor_id, p.prestige_count,
+                          p.retained_reward_id, g.created_at
+                   FROM guild_prestige_transactions p
+                   JOIN guild_gold_operations g ON $journalJoin
+                   WHERE p.outcome = 'APPLIED' AND g.status = 'APPLIED' AND $filter
+                   ORDER BY g.created_at, p.transaction_id${limit?.let { " LIMIT $it" } ?: ""}"""
+            ).use { statement ->
+                statement.setObject(1, value)
+                statement.executeQuery().use { rows ->
+                    buildList {
+                        while (rows.next()) add(
+                            PrestigeRecord(
+                                transactionId = UUID.fromString(rows.getString("transaction_id")),
+                                guildId = UUID.fromString(rows.getString("guild_id")),
+                                actorId = UUID.fromString(rows.getString("actor_id")),
+                                tier = rows.getInt("prestige_count"),
+                                retainedRewardId = rows.getString("retained_reward_id"),
+                                appliedAt = Instant.ofEpochMilli(rows.getLong("created_at")),
+                            )
+                        )
+                    }
+                }
+            }
+        }
 
     override fun confirmWithCommitStatus(
         request: PrestigeQuote,

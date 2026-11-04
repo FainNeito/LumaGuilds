@@ -574,6 +574,18 @@ progression:
     enabled: true
     max_count: 6
     fees: [10000, 20000, 30000, 30000, 30000, 30000]
+    # Console commands run for members of a prestiging guild (REQ-154), right away
+    # for online members and on join for the rest. A member qualifies when they had
+    # been in the guild for at least min_tenure_hours before the prestige. Each
+    # member/prestige pair is recorded after it runs; a crash can repeat it once,
+    # so use commands that are safe to repeat. Placeholders: {uuid} {player} {tier}.
+    member_credits:
+      enabled: false
+      min_tenure_hours: 24
+      commands:
+        - "enthusiatags rewards counter {uuid} guild_prestige_{tier} 1"
+      first_reach_commands:
+        - "enthusiatags rewards counter {uuid} guild_prestige_first_{tier} 1"
 
   # Experience values for different activities
   bank_deposit_xp_per_100: 1         # XP per 100 coins deposited

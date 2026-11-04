@@ -712,10 +712,41 @@ fun progressionModule() = module {
     single<net.lumalyte.lg.application.services.GuildPrestigeAnnouncement> {
         net.lumalyte.lg.infrastructure.services.GuildPrestigeAnnouncementBukkit(get(), get())
     }
+    single<net.lumalyte.lg.application.persistence.PrestigeHistory> {
+        get<net.lumalyte.lg.application.persistence.PrestigeRepository>()
+            as net.lumalyte.lg.application.persistence.PrestigeHistory
+    }
+    single<net.lumalyte.lg.application.persistence.PrestigeCreditLedger> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeCreditLedgerSQL(get())
+    }
+    single {
+        val config = get<ConfigService>()
+        net.lumalyte.lg.application.services.PrestigeMemberCredits(
+            get(), get(), get(),
+            settings = {
+                val credits = config.loadConfig().progression.prestige.memberCredits
+                net.lumalyte.lg.application.services.PrestigeMemberCreditSettings(
+                    enabled = credits.enabled,
+                    minTenure = java.time.Duration.ofHours(credits.minTenureHours),
+                    commands = credits.commands,
+                    firstReachCommands = credits.firstReachCommands,
+                )
+            },
+            dispatcher = net.lumalyte.lg.infrastructure.listeners.PrestigeCreditConsoleDispatcher(),
+        )
+    }
     single {
         net.lumalyte.lg.application.services.GuildPrestigeService(
             get(), get(), get(), get(), get(), get(), get(),
+            history = get(),
+            notifiers = listOf(
+                net.lumalyte.lg.infrastructure.services.GuildPrestigeEventBukkit(),
+                net.lumalyte.lg.infrastructure.listeners.PrestigeCreditNotifier(get()),
+            ),
         )
+    }
+    single {
+        net.lumalyte.lg.infrastructure.listeners.PrestigeCreditJoinListener(get(), get())
     }
     single { net.lumalyte.lg.infrastructure.persistence.guilds.RewardStateRepositorySQL(get(), get()) }
     single {

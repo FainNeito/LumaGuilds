@@ -433,10 +433,19 @@ data class PartyConfig(
     var defaultToAllMembers: Boolean = true
 )
 
+/** REQ-154 member credits. Disabled unless an operator enables them. */
+data class PrestigeMemberCreditsConfig(
+    var enabled: Boolean = false,
+    var minTenureHours: Long = 24,
+    var commands: List<String> = emptyList(),
+    var firstReachCommands: List<String> = emptyList(),
+)
+
 data class PrestigeConfig(
     var enabled: Boolean = true,
     var maxCount: Int = 6,
     var fees: List<Long> = listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L),
+    var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }

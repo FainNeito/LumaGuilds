@@ -392,6 +392,13 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                 enabled = config.getBoolean("progression.prestige.enabled", false),
                 maxCount = prestigeMax,
                 fees = prestigeFees,
+                memberCredits = net.lumalyte.lg.config.PrestigeMemberCreditsConfig(
+                    enabled = config.getBoolean("progression.prestige.member_credits.enabled", false),
+                    minTenureHours = config.getLong("progression.prestige.member_credits.min_tenure_hours", 24L)
+                        .coerceAtLeast(0L),
+                    commands = config.getStringList("progression.prestige.member_credits.commands"),
+                    firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
+                ),
             ),
 
             // Experience values for different activities

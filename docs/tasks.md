@@ -1090,3 +1090,95 @@ Menu audit follow-up (REQ-063):
     authorization, paid SQL, concurrent admission and rollback coverage is in
     PR19. Full/exact-head verification is recorded in the plan and PR19.
     Roundtable, independent review and live TEST/client acceptance remain pending.
+
+## Prestige history, event and member credits
+
+Plan: `plans/2026-11-03-prestige-advancements.md`. Manual SPEAR evidence; the
+plugin's `state.sh` and `ears.mjs` helpers were run from a local spear-plugin
+checkout (BadgersMC/spear-plugin 2c91bae).
+
+- [x] **PRESTIGE-HISTORY** Tag: TDD.
+  - References: REQ-152; plan §Decisions "No schema change for dates".
+  - Evidence: `PrestigeRepositorySQL.kt` (receipt table `guild_prestige_transactions`,
+    `execute` calls `gold.applyInTransaction` with the quote's transaction ID);
+    `GuildGoldRepositorySQL.kt` `insertPrepared` sets `created_at` from
+    `System.currentTimeMillis()`; `GuildGoldSchema.kt` declares
+    `guild_gold_operations.created_at BIGINT NOT NULL`. Test fixture
+    `RewardSqlTestFixture` / `PrestigeRepositorySQLTest`. Imports:
+    `net.lumalyte.lg.application.persistence.PrestigeHistory`,
+    `net.lumalyte.lg.domain.rewards.PrestigeRecord`, `java.time.Instant`,
+    `java.util.UUID`, `java.sql.Connection`.
+  - Result: unchanged-behaviour scaffolding gave 3 assertion failures (no errors)
+    in 14 SQLite tests. The first implementation passed SQLite but native MariaDB
+    10.11 failed 4 tests with "Illegal mix of collations": `guild_gold_operations`
+    pins `utf8mb4_unicode_ci` while `guild_prestige_transactions` takes the server
+    default. The join now converts the receipt side on MariaDB. Final: 14/14 SQLite
+    and the full `mariaDbRewardTest` profile 126/126, no skips. Layer scan clean.
+
+- [x] **PRESTIGE-EVENT** Tag: TDD.
+  - References: REQ-153; plan §Decisions "Event at the announcement point".
+  - Evidence: `GuildPrestigeService.confirm` announces only on
+    `PrestigeConfirmation.newlyCommitted`; `GuildPrestigeAnnouncementTest`
+    replay/failure patterns; event shape from `api/events/GuildLevelUpEvent.kt`
+    (`org.bukkit.event.Event`, `org.bukkit.event.HandlerList`). Imports:
+    `net.lumalyte.lg.application.services.GuildPrestigeNotifier`,
+    `net.lumalyte.lg.domain.rewards.PrestigeCompletion`,
+    `net.lumalyte.lg.api.events.GuildPrestigeEvent`, `org.bukkit.Bukkit`,
+    `org.bukkit.event.Event`, `org.bukkit.event.HandlerList`.
+  - Result: scaffolded service parameters gave 3 behavioural failures in 4 new
+    tests (silence on rejection passed trivially); the event mapping test was
+    contract-red (types absent). Final: notifier 4/4, event mapping 1/1,
+    announcement service 3/3 and Bukkit adapter 2/2. The pre-existing slf4j logger
+    in `GuildPrestigeService` is unchanged; no new non-domain imports in
+    application or domain sources.
+
+- [x] **PRESTIGE-CREDIT-LEDGER** Tag: TDD.
+  - References: REQ-154 (durable once-per-pair record); plan §Decisions
+    "Deliver to online members, ledger after dispatch".
+  - Evidence: additive table pattern `CREATE TABLE IF NOT EXISTS` with
+    MariaDB `ENGINE=InnoDB` suffix in `PrestigeRepositorySQL.init`;
+    `Storage<Database>`, `SqlDialect` from
+    `infrastructure/persistence/storage`. Imports:
+    `net.lumalyte.lg.application.persistence.PrestigeCreditLedger`,
+    `co.aikar.idb.Database`,
+    `net.lumalyte.lg.infrastructure.persistence.storage.Storage`,
+    `net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect`.
+  - Result: empty scaffolding failed the reopen test on its first assertion.
+    The additive table pins `utf8mb4_unicode_ci` on MariaDB like the gold schema.
+    Final: SQLite 1/1 and native MariaDB 1/1 (added to `mariaDbRewardTest`).
+
+- [x] **PRESTIGE-CREDIT-DELIVERY** Tag: TDD.
+  - References: REQ-154 (eligibility, tenure, first-reach, placeholders, skip rules).
+  - Evidence: `Member(playerId, guildId, rankId, joinedAt: Instant)` in
+    `domain/entities/Member.kt`; `MemberRepository.getGuildsByPlayer`,
+    `getByPlayerAndGuild`, `getByGuild`; EnthusiaTags
+    `RewardService.queueCounterDelta` keeps unloaded deltas in memory only and
+    `PlayerLookup.findPlayer` accepts a UUID string. Imports:
+    `net.lumalyte.lg.application.persistence.MemberRepository`,
+    `net.lumalyte.lg.domain.entities.Member`,
+    `net.lumalyte.lg.application.services.PrestigeMemberCredits`,
+    `java.time.Duration`.
+  - Result: no-op scaffolding gave 4 behavioural failures in 7 tests (tenure,
+    disabled and non-member cases passed trivially). Final 7/7: owed tiers once,
+    tenure gate, first-reach commands, disabled no-op, failed dispatch not
+    recorded and retried, online-only after prestige, non-members skipped.
+    Application imports are domain/application/stdlib plus slf4j, matching the
+    existing `GuildPrestigeService` logger convention.
+
+- [x] **PRESTIGE-CREDIT-WIRING** Tag: INFRA.
+  - References: REQ-153, REQ-154; plan §Configuration.
+  - Evidence: Koin wiring in `di/Modules.kt` (`GuildPrestigeService`,
+    `GuildPrestigeAnnouncementBukkit`); prestige keys read in
+    `ConfigServiceBukkit.kt` (`progression.prestige.*`); `PrestigeConfig` in
+    `config/MainConfig.kt`; join listeners registered from the plugin bootstrap.
+    Imports: `org.bukkit.event.player.PlayerJoinEvent`,
+    `org.bukkit.event.Listener`, `org.bukkit.event.EventHandler`,
+    `org.bukkit.Bukkit`.
+  - Result: `progression.prestige.member_credits` (default disabled) parsed into
+    `PrestigeMemberCreditsConfig`; Koin binds `PrestigeHistory` to the prestige
+    repository, the SQL ledger, `PrestigeMemberCredits` with a server-thread console
+    dispatcher, and `GuildPrestigeService` with the event and credit notifiers; the
+    join listener credits owed members 100 ticks after join. `GuildPrestigeEvent`
+    added to `GuildEventApiContractTest` (5/5). Full suite 2441 tests, 0 failures,
+    106 pre-existing skips; native `mariaDbRewardTest` 127/127; `shadowJar` built.
+    No layered sources changed in this task.
