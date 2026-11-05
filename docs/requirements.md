@@ -608,6 +608,18 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-156
 **Ubiquitous.** THE SYSTEM SHALL add a `prestige` category to the Top-N leaderboard placeholders and the player-guild rank placeholders, ordering guilds by prestige tier, then current-run level and XP, with `value` equal to the tier; Top-N rows SHALL also expose `prestige`, `prestige_roman` and `prestige_badge` fields for every category, using the same 30-second leaderboard cache as the existing categories.
 
+### REQ-158
+**Event-driven.** WHEN a guild whose prestige count is between 1 and 6 first reaches level 10, 20, 30, 40, 50, 60, 70, 80, 90 or 100 on its current run THE SYSTEM SHALL grant, free and automatically, that run's cosmetic for that checkpoint as listed in `plans/2026-11-05-prestige-run-cosmetics.md`, recording it once in the guild cosmetic ledger with type `PRESTIGE_<SLOT>`, the run's key and source `prestige_run_<n>`. A repeated level-up, a retried grant or a restart SHALL NOT grant or record it twice. No cosmetic in this track SHALL change prices, XP, bank capacity, home capacity, cooldowns, fees, membership or any player item.
+
+### REQ-159
+**State-driven.** WHILE a guild owns a prestige run cosmetic THE SYSTEM SHALL keep it through prestige, chapter rollover and any change of level, and SHALL show every run's set in a Prestige collection view in the Java and Bedrock Chronicle, marking each cosmetic locked or unlocked and naming the guild's current run.
+
+### REQ-160
+**Event-driven.** WHEN a guild unlocks a prestige run cosmetic THE SYSTEM SHALL send one guild-only message to that guild's online members naming the cosmetic and the run, and SHALL NOT broadcast it server-wide.
+
+### REQ-161
+**Event-driven.** WHEN the plugin first starts with this feature THE SYSTEM SHALL grant each guild every checkpoint cosmetic of the runs it has completed and of its current run at or below its current level, recording source `prestige_run_<n>_backfill` and the upgrade time, exactly once, so that Chronicle pages present those unlocks as earned before records began rather than with invented dates.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
