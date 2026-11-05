@@ -608,6 +608,18 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-156
 **Ubiquitous.** THE SYSTEM SHALL add a `prestige` category to the Top-N leaderboard placeholders and the player-guild rank placeholders, ordering guilds by prestige tier, then current-run level and XP, with `value` equal to the tier; Top-N rows SHALL also expose `prestige`, `prestige_roman` and `prestige_badge` fields for every category, using the same 30-second leaderboard cache as the existing categories.
 
+### REQ-158
+**Event-driven.** WHEN a guild whose prestige count is between 1 and 6 first reaches level 10, 20, 30, 40, 50, 60, 70, 80, 90 or 100 on its current run THE SYSTEM SHALL record exactly one unclaimed pick for that run and checkpoint slot, with the time it was reached; WHEN the guild owner or a member whose rank has Manage guild settings then chooses an option of that slot that the guild does not own THE SYSTEM SHALL consume the pick and record the cosmetic once in the guild cosmetic ledger with type `PRESTIGE_<SLOT>`, its key and source `prestige_run_<n>`, and WHILE exactly one option of the slot remains unowned THE SYSTEM SHALL grant it in place of the choice. A repeated level-up, a retried choice or a restart SHALL NOT create or consume a pick twice. Unclaimed picks SHALL survive prestige and restarts. No cosmetic in this track SHALL change prices, XP, bank capacity, home capacity, cooldowns, fees, membership or any player item.
+
+### REQ-159
+**State-driven.** WHILE a guild owns a prestige run cosmetic THE SYSTEM SHALL keep it through prestige, chapter rollover and any change of level, and SHALL show all 60 options in a Prestige collection view in the Java and Bedrock Chronicle, by slot and theme, marking each owned or locked, naming the guild's current run and showing its unclaimed picks.
+
+### REQ-160
+**Event-driven.** WHEN a guild earns a pick or unlocks a prestige run cosmetic THE SYSTEM SHALL send one guild-only message to that guild's online members naming the slot or the cosmetic and the run, and SHALL NOT broadcast it server-wide.
+
+### REQ-161
+**Event-driven.** WHEN the plugin first starts with this feature THE SYSTEM SHALL give each guild, exactly once, one unclaimed pick for every checkpoint of the runs it has completed and of its current run at or below its current level, recording source `prestige_run_<n>_backfill` and the upgrade time, so that Chronicle pages present them as earned before records began rather than with invented dates.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
