@@ -5,7 +5,6 @@ import java.time.Instant
 import java.util.UUID
 import net.lumalyte.lg.application.services.GuildAchievementXpCoordinator
 import net.lumalyte.lg.domain.achievements.GuildAchievement
-import net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility
 import net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementAddressRepositorySQL
 import org.bukkit.entity.Player
 
@@ -13,8 +12,8 @@ import org.bukkit.entity.Player
 internal class GuildAchievementXpCompletionBridge(
     private val coordinator: GuildAchievementXpCoordinator,
     private val members: (UUID) -> Set<UUID>,
+    private val onlineMembers: (UUID) -> Set<UUID>,
     private val observations: (UUID) -> GuildAchievementAddressRepositorySQL.Observation?,
-    private val histories: (UUID) -> GuildAchievementIpEligibility.PeerHistory?,
     private val maxAge: Duration,
     private val now: () -> Instant = Instant::now,
 ) : GuildAchievementXpCompletionPort {
@@ -24,11 +23,11 @@ internal class GuildAchievementXpCompletionBridge(
         val at = now()
         val guildMembers = members(guildId)
         val actor = player.uniqueId
-        val current = observations(actor)?.takeIf {
+        val online = onlineMembers(guildId)
+        val current = online.associateWith { id -> observations(id)?.takeIf {
             !it.observedAt.isAfter(at) && Duration.between(it.observedAt, at) <= maxAge
-        }?.fingerprint
-        val peerHistories = (guildMembers - actor).associateWith(histories)
-        return coordinator.prepareWithHistory(guildId, actor, node, true, guildMembers, current, peerHistories)
+        }?.fingerprint }
+        return coordinator.prepareOnline(guildId, actor, node, true, guildMembers, online, current)
     }
 
     override fun deliver(intent: GuildAchievementXpCoordinator.Intent): GuildAchievementXpCoordinator.Result = coordinator.deliver(intent)

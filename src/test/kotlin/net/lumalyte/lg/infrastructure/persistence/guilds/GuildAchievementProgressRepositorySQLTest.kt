@@ -122,12 +122,9 @@ class GuildAchievementProgressRepositorySQLTest : RewardSqlTestFixture() {
         val time = Instant.parse("2026-11-04T00:00:00Z")
         val repo = repository()
         fun processor() = GuildAchievementGuildEventProcessor(repo, time) { time.plusSeconds(60) }
-        val histories = mapOf(actor to GuildAchievementIpEligibility.PeerHistory(setOf("same"), true),
-            peer to GuildAchievementIpEligibility.PeerHistory(setOf("same"), true),
-            distinct to GuildAchievementIpEligibility.PeerHistory(setOf("other"), true))
         val event = GuildAchievementGuildEventProcessor.Event(guild, UUID.randomUUID(), time, "CROP_BREAK", null, 2,
             setOf(actor, peer, distinct), setOf(actor, peer, distinct),
-            mapOf(actor to "same", peer to "same", distinct to "other"), histories)
+            mapOf(actor to "same", peer to "same", distinct to "other"), setOf(actor, peer, distinct))
         assertNull(processor().process(event.copy(occurredAt = time.minusSeconds(1))))
         assertTrue(repo.completions(guild).isEmpty())
         assertEquals(setOf("milestone"), processor().process(event)!!.completed)

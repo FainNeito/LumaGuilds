@@ -75,6 +75,12 @@ The achievement-award transaction now writes a durable pending cache/level-publi
 Hosted MariaDB run 41805874171 failed because the shared XP transaction wrote epoch numbers into production migration DATETIME columns. The candidate fix inspects the actual MariaDB column types once per repository and writes UTC datetime or numeric epoch values as appropriate; existing creation timestamp values are carried through without conversion. Focused SQLite tests cover successive awards, an existing progression timestamp, level-up publication, rollback and the standalone numeric schema. This changes the shared XP path, not just achievement payouts. The next exact-head hosted MariaDB and full-suite results, existing production schema compatibility and native acceptance are mandatory before merge; the previously failed run must not be reported as passing.
 
 An unbound recovery worker now reads pending publication batches and acknowledges only a caller-reported successful publication. Focused SQLite tests cover retry after an exception and duplicate award suppression. The caller must provide a transaction-ID-idempotent publisher; no live publisher, scheduler or startup recovery is wired, and a crash between side effects and acknowledgement may replay them. MariaDB and actual restart validation are still required.
+# Online-only address policy (2026-11-04)
+
+The user superseded the earlier offline-history requirement: at completion, compare a participant's current trusted address only against online guild members. A shared address denies that participant's advancement guild XP. Missing or invalid online roster/address information fails closed. Offline histories must not decide this policy. Existing history prototype methods remain unused by the revised event processor and bridge and must not be wired as award authority.
+
+Local focused tests cover online shared and distinct addresses, an offline peer, missing observations, invalid roster membership and the completion processor. The runtime still needs trustworthy completion-time online roster and client-address snapshots, durable routing, restart safety and real TEST acceptance. The feature remains disabled.
+
 # Publication recovery fairness (2026-11-04)
 
 - Requirement: a failed publication must remain retryable without preventing later pending publications from being attempted. A recovery worker scans bounded pages and wraps back to earlier pending work.

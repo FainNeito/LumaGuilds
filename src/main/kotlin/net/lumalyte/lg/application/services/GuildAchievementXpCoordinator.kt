@@ -51,6 +51,10 @@ internal class GuildAchievementXpCoordinator(nodes: List<GuildAchievement>, priv
         members: Set<UUID>, current: String?, histories: Map<UUID, GuildAchievementIpEligibility.PeerHistory?>): Prepared =
         prepareDecision(guildId, node, isNewEvent, GuildAchievementIpEligibility.decideWithHistory(actor, members, current, histories))
 
+    fun prepareOnline(guildId: UUID, actor: UUID, node: GuildAchievement, isNewEvent: Boolean,
+        members: Set<UUID>, online: Set<UUID>, observations: Map<UUID, String?>): Prepared =
+        prepareDecision(guildId, node, isNewEvent, GuildAchievementIpEligibility.decideOnline(actor, members, online, observations))
+
     private fun prepareDecision(guildId: UUID, node: GuildAchievement, isNewEvent: Boolean,
         decision: GuildAchievementIpEligibility.Decision): Prepared {
         if (!isNewEvent) return Prepared.Denied(Result.HISTORICAL)

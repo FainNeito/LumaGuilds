@@ -16,7 +16,7 @@ internal class GuildAchievementGuildEventProcessor(
         val guild: UUID, val source: UUID, val occurredAt: Instant, val requirement: String,
         val target: String?, val amount: Int, val members: Set<UUID>, val participants: Set<UUID>,
         val current: Map<UUID, String?>,
-        val history: Map<UUID, GuildAchievementIpEligibility.PeerHistory?>,
+        val online: Set<UUID>,
     )
 
     /** Historical observations are ignored; completion checks are recorded, never used as payout authority. */
@@ -24,8 +24,8 @@ internal class GuildAchievementGuildEventProcessor(
         if (event.occurredAt < cutover) return null
         require(!event.occurredAt.isAfter(now())) { "Guild event is in the future" }
         require(event.participants.isNotEmpty())
-        val decisions = GuildAchievementIpEligibility.decideParticipants(
-            event.participants.toSet(), event.members.toSet(), event.current.toMap(), event.history.toMap(),
+        val decisions = GuildAchievementIpEligibility.decideOnlineParticipants(
+            event.participants.toSet(), event.members.toSet(), event.online.toSet(), event.current.toMap(),
         )
         val id = GuildAchievementEventId.fromSource(event.guild, event.requirement, event.source)
         return repository.apply(event.guild, id, event.requirement, event.target, event.amount, decisions)

@@ -7,6 +7,18 @@ object GuildAchievementIpEligibility {
     enum class Decision { ELIGIBLE, SHARED, UNKNOWN }
     data class PeerHistory(val observations: Set<String>, val complete: Boolean)
 
+    /** The membership, online roster and observations must be captured at completion time. */
+    fun decideOnline(actor: UUID, members: Set<UUID>, online: Set<UUID>, observations: Map<UUID, String?>): Decision {
+        if (actor !in members || actor !in online || !members.containsAll(online)) return Decision.UNKNOWN
+        return decide(actor, online, observations)
+    }
+
+    fun decideOnlineParticipants(participants: Set<UUID>, members: Set<UUID>, online: Set<UUID>,
+        observations: Map<UUID, String?>): Map<UUID, Decision> {
+        require(participants.all { it in members })
+        return participants.associateWith { decideOnline(it, members, online, observations) }
+    }
+
     fun decide(actor: UUID, members: Set<UUID>, observations: Map<UUID, String?>): Decision {
         if (actor !in members) return Decision.UNKNOWN
         val fingerprint = observations[actor]?.takeIf { it.isNotBlank() } ?: return Decision.UNKNOWN

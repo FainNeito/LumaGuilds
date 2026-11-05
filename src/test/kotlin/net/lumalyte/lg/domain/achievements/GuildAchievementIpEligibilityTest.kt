@@ -9,6 +9,22 @@ class GuildAchievementIpEligibilityTest {
     private val actor = UUID.fromString("669803db-acb0-4d96-a24c-99ff1fda02ed")
     private val peer = UUID.fromString("3a6cfa52-5c73-4c26-a347-c843f0aba289")
 
+    @Test fun `only online members are compared at completion`() {
+        val members = setOf(actor, peer)
+        assertEquals(GuildAchievementIpEligibility.Decision.ELIGIBLE,
+            GuildAchievementIpEligibility.decideOnline(actor, members, setOf(actor), mapOf(actor to "same", peer to "same")))
+        assertEquals(GuildAchievementIpEligibility.Decision.SHARED,
+            GuildAchievementIpEligibility.decideOnline(actor, members, members, mapOf(actor to "same", peer to "same")))
+        assertEquals(GuildAchievementIpEligibility.Decision.ELIGIBLE,
+            GuildAchievementIpEligibility.decideOnline(actor, members, members, mapOf(actor to "one", peer to "two")))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideOnline(actor, members, members, mapOf(actor to "one")))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideOnline(actor, members, setOf(peer), mapOf(peer to "one")))
+        assertEquals(GuildAchievementIpEligibility.Decision.UNKNOWN,
+            GuildAchievementIpEligibility.decideOnline(actor, members, members + UUID.randomUUID(), mapOf(actor to "one", peer to "two")))
+    }
+
     @Test fun `offline peer with matching known observation blocks guild xp`() {
         assertEquals(GuildAchievementIpEligibility.Decision.SHARED,
             GuildAchievementIpEligibility.decide(actor, setOf(actor, peer), mapOf(actor to "h1", peer to "h1")))
