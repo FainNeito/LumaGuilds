@@ -29,7 +29,10 @@ internal class GuildAchievementListener(private val runtime: GuildAchievementRun
         runtime.guild(player.uniqueId)?.let { runtime.shared(it, type, amount = amount) }
     }
     @EventHandler(priority = EventPriority.MONITOR) fun created(e: GuildCreatedEvent) = actor(e.ownerId, "GUILD_CREATE")
-    @EventHandler(priority = EventPriority.MONITOR) fun banner(e: GuildBannerSetEvent) = actor(e.playerId, "GUILD_BANNER_SET")
+    @EventHandler(priority = EventPriority.MONITOR) fun banner(e: GuildBannerSetEvent) {
+        if (e.registeredFromDefault) runtime.confirmedBanner(e.guildId, e.playerId)
+        actor(e.playerId, "GUILD_BANNER_SET")
+    }
     @EventHandler(priority = EventPriority.MONITOR) fun home(e: GuildHomeSetEvent) = actor(e.playerId, "GUILD_HOME_SET")
     @EventHandler(priority = EventPriority.MONITOR) fun vault(e: GuildVaultPlacedEvent) = actor(e.playerId, "GUILD_VAULT_PLACED")
     @EventHandler(priority = EventPriority.MONITOR) fun kicked(e: GuildMemberRemovedEvent) {

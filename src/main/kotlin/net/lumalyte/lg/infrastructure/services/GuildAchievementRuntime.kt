@@ -25,7 +25,7 @@ internal class GuildAchievementRuntime(
     private val guildXp: GuildAchievementXpCompletionPort? = null,
     private val history: net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL? = null,
     private val guildProgressFactory: ((List<GuildAchievement>) -> GuildAchievementProgressRepositorySQL)? = null,
-    private val foundingProcessor: ((GuildAchievementProgressRepositorySQL) -> GuildAchievementGuildEventProcessor)? = null,
+    private val completionProcessor: ((GuildAchievementProgressRepositorySQL) -> GuildAchievementGuildEventProcessor)? = null,
 ) {
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
@@ -50,8 +50,8 @@ internal class GuildAchievementRuntime(
     private val observedStallOwnership = mutableMapOf<UUID, Boolean>()
 
     private val guildProgress by lazy { guildProgressFactory?.invoke(engine.definitions) }
-    private val founding by lazy { guildProgress?.let { foundingProcessor?.invoke(it) } }
-    private val foundingSessions by lazy {
+    private val completion by lazy { guildProgress?.let { completionProcessor?.invoke(it) } }
+    private val completionSessions by lazy {
         val secret = ByteArray(32).also(java.security.SecureRandom()::nextBytes)
         GuildAchievementOnlineSnapshot(
             { plugin.config.getBoolean("advancement-guild-xp.trusted-local-session-view", false) && Bukkit.isPrimaryThread() },
@@ -65,17 +65,34 @@ internal class GuildAchievementRuntime(
         val guild = result.guild
         remember(guild.id, listOf("founding"), guild.createdAt)
         if (!plugin.config.getBoolean("advancement-guild-xp.founding-test-enabled", false)) return
+        processFirstMilestone(guild.id, founder.uniqueId, "GUILD_CREATE", guild.createdAt)
+    }
+
+    fun confirmedBanner(guild: UUID, actor: UUID) {
+        if (!plugin.config.getBoolean("advancement-guild-xp.banner-test-enabled", false)) return
         try {
-            val processor = checkNotNull(founding)
-            val view = checkNotNull(foundingSessions.capture(guild.id)) { "Session view unavailable" }
-            check(founder.uniqueId in view.online) { "Founder session unavailable" }
-            val event = GuildAchievementGuildEventProcessor.Event(
-                guild.id, guild.id, guild.createdAt, "GUILD_CREATE", null, 1, view.members,
-                setOf(founder.uniqueId), view.fingerprints, view.online,
-            )
-            if (processor.process(event) != null) progression.refreshGuildProgression(guild.id)
+            // Check before the personal listener records the current banner in guild history.
+            val history = checkNotNull(history)
+            if (history.observed(guild, "founding") == null ||
+                history.observed(guild, "colors_of_the_vanguard") != null) return
+            processFirstMilestone(guild, actor, "GUILD_BANNER_SET", java.time.Instant.now())
         } catch (error: Exception) {
-            plugin.logger.warning("Founding XP requires review for guild ${guild.id}: ${error.javaClass.simpleName}")
+            plugin.logger.warning("Banner history requires review for guild $guild: ${error.javaClass.simpleName}")
+        }
+    }
+
+    private fun processFirstMilestone(guild: UUID, actor: UUID, requirement: String, at: java.time.Instant) {
+        try {
+            val processor = checkNotNull(completion)
+            val view = checkNotNull(completionSessions.capture(guild)) { "Session view unavailable" }
+            check(actor in view.online) { "Member session unavailable" }
+            // The processor namespaces this once-per-guild source by requirement.
+            val event = GuildAchievementGuildEventProcessor.Event(
+                guild, guild, at, requirement, null, 1, view.members, setOf(actor), view.fingerprints, view.online,
+            )
+            if (processor.process(event) != null) progression.refreshGuildProgression(guild)
+        } catch (error: Exception) {
+            plugin.logger.warning("$requirement XP requires review for guild $guild: ${error.javaClass.simpleName}")
         }
     }
 

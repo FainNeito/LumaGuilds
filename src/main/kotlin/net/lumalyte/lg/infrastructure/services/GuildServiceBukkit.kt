@@ -246,7 +246,7 @@ class GuildServiceBukkit(
         if (result) {
             val bannerText = if (banner != null) "${banner.type.name} with patterns" else "cleared (default white banner)"
             logger.info("Guild $guildId banner set to '$bannerText' by $actorId")
-            Bukkit.getPluginManager().callEvent(GuildBannerSetEvent(guildId, actorId))
+            Bukkit.getPluginManager().callEvent(GuildBannerSetEvent.afterSave(guildId, actorId, guild.banner == null && bannerData != null))
             Bukkit.getPluginManager().callEvent(GuildBannerChangedEvent(guildId, banner != null))
 
             bannermanListeners.onGuildBannerChanged(guildId)

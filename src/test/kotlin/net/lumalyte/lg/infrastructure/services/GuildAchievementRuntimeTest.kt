@@ -98,7 +98,7 @@ internal class GuildAchievementRuntimeTest {
         val processor = mockk<GuildAchievementGuildEventProcessor>()
         val event = slot<GuildAchievementGuildEventProcessor.Event>()
         every { processor.process(capture(event)) } returns null
-        val runtime = GuildAchievementRuntime(plugin, members, mockk(), guildProgressFactory = { mockk() }, foundingProcessor = { processor })
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), guildProgressFactory = { mockk() }, completionProcessor = { processor })
         runtime.confirmedFounding(applied, player)
         plugin.config.set("advancement-guild-xp.founding-test-enabled", true)
         runtime.confirmedFounding(applied, player)
@@ -114,6 +114,56 @@ internal class GuildAchievementRuntimeTest {
         assertNotNull(event.captured.current[player.uniqueId])
     }
 
+    @Test fun `banner uses only the setter and the completion time online roster`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val setter = spyk(server.addPlayer())
+        val peer = spyk(server.addPlayer())
+        val guild = UUID.randomUUID()
+        val roster = setOf(setter, peer).map {
+            net.lumalyte.lg.domain.entities.Member(it.uniqueId, guild, UUID.randomUUID(), java.time.Instant.EPOCH)
+        }.toSet()
+        val members = mockk<MemberRepository>()
+        every { members.getByGuild(guild) } returns roster
+        val history = mockk<net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL>()
+        every { history.observed(guild, "founding") } returns java.time.Instant.EPOCH
+        every { history.observed(guild, "colors_of_the_vanguard") } returns null
+        val processor = mockk<GuildAchievementGuildEventProcessor>()
+        val events = mutableListOf<GuildAchievementGuildEventProcessor.Event>()
+        every { processor.process(capture(events)) } returns null
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), history = history,
+            guildProgressFactory = { mockk() }, completionProcessor = { processor })
+        mockkStatic(org.bukkit.Bukkit::class)
+        every { org.bukkit.Bukkit.isPrimaryThread() } returns true
+        every { setter.isOnline } returns true
+        every { peer.isOnline } returns true
+        every { setter.address } returns java.net.InetSocketAddress("192.0.2.15", 1234)
+        every { peer.address } returns java.net.InetSocketAddress("192.0.2.15", 5678)
+        every { org.bukkit.Bukkit.getOnlinePlayers() } returns listOf(setter, peer)
+        fun setBanner() = runtime.confirmedBanner(guild, setter.uniqueId)
+        setBanner()
+        plugin.config.set("advancement-guild-xp.banner-test-enabled", true)
+        setBanner()
+        assertTrue(events.isEmpty())
+        plugin.config.set("advancement-guild-xp.trusted-local-session-view", true)
+        setBanner()
+        every { org.bukkit.Bukkit.getOnlinePlayers() } returns listOf(setter)
+        setBanner()
+        every { peer.address } returns java.net.InetSocketAddress("192.0.2.16", 5678)
+        every { org.bukkit.Bukkit.getOnlinePlayers() } returns listOf(setter, peer)
+        setBanner()
+        every { history.observed(guild, "colors_of_the_vanguard") } returns java.time.Instant.EPOCH
+        setBanner()
+        val decisions = events.map {
+            assertEquals(setOf(setter.uniqueId), it.participants)
+            assertEquals("GUILD_BANNER_SET", it.requirement)
+            assertEquals(guild, it.source)
+            net.lumalyte.lg.domain.achievements.GuildAchievementIpEligibility.decideOnline(
+                setter.uniqueId, it.members, it.online, it.current).name
+        }
+        assertEquals(listOf("SHARED", "ELIGIBLE", "ELIGIBLE"), decisions)
+    }
     @Test fun `unknown eligibility is retained for review and never automatically paid`() {
         val server = MockBukkit.mock()
         val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))

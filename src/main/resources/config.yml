@@ -1061,6 +1061,8 @@ strikes:
 # Opt-in TEST path for the Founding milestone after confirmed guild creation.
 advancement-guild-xp:
   founding-test-enabled: false
+  # Award Colors of the Vanguard on a new banner registration on TEST.
+  banner-test-enabled: false
   # Enable only on a verified single gameplay backend with trusted client address forwarding
   # and complete coverage of online guild members.
   trusted-local-session-view: false

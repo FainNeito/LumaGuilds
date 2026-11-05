@@ -678,7 +678,7 @@ fun progressionModule() = module {
             history = net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL(storage),
             guildProgressFactory = { definitions ->
                 net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL(storage, definitions)
-            }, foundingProcessor = { repository ->
+            }, completionProcessor = { repository ->
             net.lumalyte.lg.infrastructure.services.GuildAchievementGuildEventProcessor(
                 repository, started, get<net.lumalyte.lg.infrastructure.persistence.guilds.ExperienceAwardRepositorySQL>(),
             )
