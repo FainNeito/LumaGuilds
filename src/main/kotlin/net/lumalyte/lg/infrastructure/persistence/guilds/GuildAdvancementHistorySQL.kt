@@ -10,7 +10,7 @@ import net.lumalyte.lg.infrastructure.persistence.storage.Storage
 internal class GuildAdvancementHistorySQL(private val storage: Storage<Database>) {
     init {
         storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_advancement_history (
-            guild_id VARCHAR(36) NOT NULL, node VARCHAR(128) NOT NULL, observed_ms BIGINT NOT NULL,
+            guild_id VARCHAR(36)${guildIdCollation(storage)} NOT NULL, node VARCHAR(128) NOT NULL, observed_ms BIGINT NOT NULL,
             PRIMARY KEY (guild_id, node), FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
         )""".trimIndent())
     }
@@ -49,5 +49,18 @@ internal class GuildAdvancementHistorySQL(private val storage: Storage<Database>
     fun observed(guild: UUID, node: String): Instant? = storage.connection.connection.use { connection ->
         connection.selectOne("SELECT observed_ms FROM guild_advancement_history WHERE guild_id = ? AND node = ?",
             guild.toString(), node) { Instant.ofEpochMilli(it.getLong(1)) }
+    }
+}
+
+/** MariaDB requires a string foreign key to use exactly the parent column's character set and collation. */
+internal fun guildIdCollation(storage: Storage<Database>): String {
+    if (storage.dialect != SqlDialect.MARIADB) return ""
+    return storage.connection.connection.use { c ->
+        checkNotNull(c.selectOne("""SELECT CHARACTER_SET_NAME, COLLATION_NAME FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'guilds' AND COLUMN_NAME = 'id'""".trimIndent()) { row ->
+            val identifiers = listOf(row.getString(1), row.getString(2))
+            require(identifiers.all { it != null && it.matches(Regex("[a-zA-Z0-9_]+")) })
+            " CHARACTER SET ${identifiers[0]} COLLATE ${identifiers[1]}"
+        }) { "Missing guild identifier column" }
     }
 }

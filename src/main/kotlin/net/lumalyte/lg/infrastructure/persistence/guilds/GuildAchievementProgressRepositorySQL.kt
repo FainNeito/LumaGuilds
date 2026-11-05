@@ -28,7 +28,7 @@ internal class GuildAchievementProgressRepositorySQL(
 
     init {
         storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_market_advancement_delivery (
-            player_id VARCHAR(36) NOT NULL, guild_id VARCHAR(36) NOT NULL, sale_id VARCHAR(36) NOT NULL,
+            player_id VARCHAR(36) NOT NULL, guild_id VARCHAR(36)${guildIdCollation(storage)} NOT NULL, sale_id VARCHAR(36) NOT NULL,
             membership_ms BIGINT NOT NULL, PRIMARY KEY (player_id, guild_id, sale_id),
             FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
         )""".trimIndent())
