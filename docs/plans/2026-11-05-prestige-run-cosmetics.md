@@ -49,7 +49,8 @@ and each run changes only the theme.
 
 - **Poses** animate only vanilla joints: the head, the arms at the shoulder and
   a whole-body hop. No elbows, knees or waist bends. Victory is the pose already
-  prototyped in `prestige.bbmodel`.
+  prototyped in `prestige.bbmodel`. Guard holds a sword: both arms angled in to
+  rest on a sword planted point-down in front, with slow turns of the head.
 - **Display armor trim** applies to the Hall NPC's armor only. It is never an
   item and never changes a player's armor.
 - **Chronicle pages** go in the guild's Hall lectern book. "Run opened" records
