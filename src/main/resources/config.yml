@@ -1057,3 +1057,10 @@ strikes:
     # punishment time, attribute to the player's current guild instead
     # (maximizes coverage of the "most troublesome guild" ranking).
     fallback_to_current_guild: true
+
+# Opt-in TEST path for the Founding milestone after confirmed guild creation.
+advancement-guild-xp:
+  founding-test-enabled: false
+  # Enable only on a verified single gameplay backend with trusted client address forwarding
+  # and complete coverage of online guild members.
+  trusted-local-session-view: false

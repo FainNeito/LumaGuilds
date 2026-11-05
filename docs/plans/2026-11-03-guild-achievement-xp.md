@@ -95,3 +95,7 @@ Local focused tests cover online shared and distinct addresses, an offline peer,
 ## Completion and payment atomicity
 
 The event processor can now use the same guild-locked database transaction for new completion records, the XP award and pending level publication. A failed publication insert must roll back the event so the original input can be retried. A denied completion remains complete and replay with a different roster cannot produce XP. The progress and publication SQL suites passed locally on SQLite, including both failure paths. No gameplay source or trusted network adapter is connected; production and TEST activation remain pending.
+
+## Opt-in Founding gameplay path
+
+The create command may submit Founding only from GuildCreationCostResult.Applied. GuildCreatedEvent fires earlier, before payment finalization. Use the new guild ID as the stable source ID, its creation timestamp for the cutover and its founder as the only participant. The existing personal tracker stays independent. The two opt-in settings default off; network coverage and trusted proxy forwarding must be verified before enabling the TEST route. An unavailable session or write is logged for review; recovery across a crash between creation and award is outstanding. Local advancement tests passed including disabled, untrusted and trusted routing. No live payment, client or restart evidence for this route yet.

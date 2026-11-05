@@ -22,6 +22,7 @@ internal class GuildAchievementRuntime(
     private val progression: ProgressionRepository,
     private val stalls: GuildStallReadService = GuildStallReadClient(),
     private val guildXp: GuildAchievementXpCompletionPort? = null,
+    private val foundingProcessor: ((List<GuildAchievement>) -> GuildAchievementGuildEventProcessor)? = null,
 ) {
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
@@ -35,6 +36,34 @@ internal class GuildAchievementRuntime(
     private val reviewRequired = mutableSetOf<UUID>()
     private val ownershipReads = mutableSetOf<UUID>()
     private val observedStallOwnership = mutableMapOf<UUID, Boolean>()
+
+    private val founding by lazy { foundingProcessor?.invoke(engine.definitions) }
+    private val foundingSessions by lazy {
+        val secret = ByteArray(32).also(java.security.SecureRandom()::nextBytes)
+        GuildAchievementOnlineSnapshot(
+            { plugin.config.getBoolean("advancement-guild-xp.trusted-local-session-view", false) && Bukkit.isPrimaryThread() },
+            { guild -> members.getByGuild(guild).map { it.playerId }.toSet() },
+            GuildAchievementBukkitSessions()::read, GuildAchievementAddressFingerprint(secret),
+        )
+    }
+
+    /** Called by the create command only after its payment service confirms success. */
+    fun confirmedFounding(result: net.lumalyte.lg.application.services.GuildCreationCostResult.Applied, founder: Player) {
+        if (!plugin.config.getBoolean("advancement-guild-xp.founding-test-enabled", false)) return
+        val guild = result.guild
+        try {
+            val processor = checkNotNull(founding)
+            val view = checkNotNull(foundingSessions.capture(guild.id)) { "Session view unavailable" }
+            check(founder.uniqueId in view.online) { "Founder session unavailable" }
+            val event = GuildAchievementGuildEventProcessor.Event(
+                guild.id, guild.id, guild.createdAt, "GUILD_CREATE", null, 1, view.members,
+                setOf(founder.uniqueId), view.fingerprints, view.online,
+            )
+            if (processor.process(event) != null) progression.refreshGuildProgression(guild.id)
+        } catch (error: Exception) {
+            plugin.logger.warning("Founding XP requires review for guild ${guild.id}: ${error.javaClass.simpleName}")
+        }
+    }
 
     fun start() {
         projection.register()

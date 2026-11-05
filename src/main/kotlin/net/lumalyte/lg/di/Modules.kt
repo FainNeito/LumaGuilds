@@ -670,7 +670,17 @@ fun socialModule() = module {
  * Progression module - Combat, kills, wars, and guild progression
  */
 fun progressionModule() = module {
-    single { net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime(get<JavaPlugin>(), get(), get()) }
+    single {
+        val plugin = get<JavaPlugin>()
+        val storage = get<Storage<Database>>()
+        val started = java.time.Instant.now()
+        net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime(plugin, get(), get(), foundingProcessor = { definitions ->
+            net.lumalyte.lg.infrastructure.services.GuildAchievementGuildEventProcessor(
+                net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL(storage, definitions),
+                started, get<net.lumalyte.lg.infrastructure.persistence.guilds.ExperienceAwardRepositorySQL>(),
+            )
+        })
+    }
     single { net.lumalyte.lg.application.services.GuildActionCoordinator() }
     single { net.lumalyte.lg.domain.rewards.RewardCatalog.chapterTwo() }
     single<net.lumalyte.lg.application.persistence.ChronicleGoalRepository> {

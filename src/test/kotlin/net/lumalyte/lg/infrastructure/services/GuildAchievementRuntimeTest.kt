@@ -16,6 +16,40 @@ import kotlin.test.*
 internal class GuildAchievementRuntimeTest {
     @AfterEach fun cleanup() { unmockkAll(); MockBukkit.unmock() }
 
+    @Test fun `confirmed founding routes the new guild and only its founder with a trusted session`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.isOnline } returns true
+        every { player.address } returns java.net.InetSocketAddress("192.0.2.15", 25565)
+        mockkStatic(org.bukkit.Bukkit::class)
+        every { org.bukkit.Bukkit.isPrimaryThread() } returns true
+        every { org.bukkit.Bukkit.getOnlinePlayers() } returns listOf(player)
+        val guild = net.lumalyte.lg.domain.entities.Guild(UUID.randomUUID(), "FoundingTest", createdAt = java.time.Instant.now())
+        val applied = net.lumalyte.lg.application.services.GuildCreationCostResult.Applied(guild, 2000)
+        val members = mockk<MemberRepository>()
+        every { members.getByGuild(guild.id) } returns setOf(net.lumalyte.lg.domain.entities.Member(
+            player.uniqueId, guild.id, UUID.randomUUID(), guild.createdAt))
+        val processor = mockk<GuildAchievementGuildEventProcessor>()
+        val event = slot<GuildAchievementGuildEventProcessor.Event>()
+        every { processor.process(capture(event)) } returns null
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), foundingProcessor = { processor })
+        runtime.confirmedFounding(applied, player)
+        plugin.config.set("advancement-guild-xp.founding-test-enabled", true)
+        runtime.confirmedFounding(applied, player)
+        verify(exactly = 0) { processor.process(any()) }
+        plugin.config.set("advancement-guild-xp.trusted-local-session-view", true)
+        runtime.confirmedFounding(applied, player)
+        verify(exactly = 1) { processor.process(any()) }
+        assertEquals(guild.id, event.captured.guild)
+        assertEquals(guild.id, event.captured.source)
+        assertEquals(guild.createdAt, event.captured.occurredAt)
+        assertEquals(setOf(player.uniqueId), event.captured.participants)
+        assertEquals("GUILD_CREATE", event.captured.requirement)
+        assertNotNull(event.captured.current[player.uniqueId])
+    }
+
     @Test fun `unknown eligibility is retained for review and never automatically paid`() {
         val server = MockBukkit.mock()
         val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))

@@ -62,6 +62,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     private val bannermanListeners: net.lumalyte.lg.infrastructure.bukkit.bannerman.BannermanListeners by inject()
     private val strikeService: net.lumalyte.lg.application.services.StrikeService by inject()
     private val bankService: net.lumalyte.lg.application.services.BankService by inject()
+    private val achievements: net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime by inject()
     private val guildCostService: net.lumalyte.lg.application.services.GuildCostService by inject()
     private val guildHomeActivationService: net.lumalyte.lg.application.services.GuildHomeActivationService by inject()
     private val warBannerService: net.lumalyte.lg.infrastructure.services.WarBannerServiceBukkit by inject()
@@ -187,6 +188,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
                             "cost" to result.cost,
                         ))
                     }
+                    achievements.confirmedFounding(result, player)
                     result.guild
                 }
                 net.lumalyte.lg.application.services.GuildCreationCostResult.InsufficientGold -> {
