@@ -16,6 +16,33 @@ import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 class GuildAchievementPublicationSQLTest : RewardSqlTestFixture() {
+    @Test fun `failed publication does not starve later work and is retried`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val guild = UUID.randomUUID()
+        assertTrue(GuildRepositorySQLite(storage).add(Guild(guild, "FairRecovery", createdAt = Instant.now())))
+        val repository = ExperienceAwardRepositorySQL(storage, ProgressionCurve(500.0, 1.15, 150, 100))
+        val first = GuildAchievementXpPolicy.transactionId(guild, "first")
+        val second = GuildAchievementXpPolicy.transactionId(guild, "second")
+        listOf("first" to first, "second" to second).forEach { (id, transaction) ->
+            val request = ExperienceAwardRequest(guild, null, ExperienceSource.ACHIEVEMENT, 25, Instant.now(), transactionId = transaction)
+            assertIs<ExperienceAwardResult.Awarded>(repository.awardAchievementAtomically(request, id, 25))
+        }
+        val ordered = listOf(first, second).sortedBy(UUID::toString)
+        var allowFirst = false
+        val seen = mutableListOf<UUID>()
+        val worker = GuildAchievementPublicationRecovery(repository) {
+            seen += it.transactionId
+            it.transactionId != ordered.first() || allowFirst
+        }
+        assertEquals(0, worker.recover(1))
+        assertEquals(1, worker.recover(1))
+        assertNotNull(repository.pendingAchievementPublication(ordered.first()))
+        assertNull(repository.pendingAchievementPublication(ordered.last()))
+        allowFirst = true
+        assertEquals(1, worker.recover(1))
+        assertEquals(listOf(ordered.first(), ordered.last(), ordered.first()), seen)
+    }
     @Test fun `publication is durable and duplicate payment cannot repeat`() {
         val storage = openStorage()
         migrateProductionSchema(storage)

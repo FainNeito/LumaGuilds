@@ -97,11 +97,15 @@ class ExperienceAwardRepositorySQL(
         }
 
     /** A worker can drain pending rows in batches without needing the original player online. */
-    fun pendingAchievementPublications(limit: Int): List<AchievementPublication> {
+    fun pendingAchievementPublications(limit: Int, after: UUID? = null): List<AchievementPublication> {
         require(limit in 1..100)
         return storage.connection.connection.use { connection ->
-            connection.prepareStatement("SELECT transaction_id, guild_id, leveled_up_to FROM guild_achievement_xp_publications WHERE acknowledged = 0 ORDER BY transaction_id LIMIT ?").use { statement ->
-                statement.setInt(1, limit)
+            val cursor = if (after == null) "" else " AND transaction_id > ?"
+            connection.prepareStatement("SELECT transaction_id, guild_id, leveled_up_to FROM guild_achievement_xp_publications WHERE acknowledged = 0$cursor ORDER BY transaction_id LIMIT ?").use { statement ->
+                if (after == null) statement.setInt(1, limit) else {
+                    statement.setString(1, after.toString())
+                    statement.setInt(2, limit)
+                }
                 statement.executeQuery().use { rows -> buildList {
                     while (rows.next()) {
                         val level = rows.getInt("leveled_up_to").let { if (rows.wasNull()) null else it }
