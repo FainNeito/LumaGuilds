@@ -82,6 +82,8 @@ The user superseded the earlier offline-history requirement: at completion, comp
 
 The completion bridge now accepts a fresh network-session snapshot and fingerprints the supplied current addresses without retaining them in the result. A missing or explicitly untrusted view denies the award. Focused local tests cover online matches, offline peers, unknown addresses, unrelated sessions and failed/untrusted views. An unbound Bukkit adapter reads local online sessions on the server thread and rejects duplicate or inconsistent entries. It cannot prove network-wide coverage or proxy forwarding trust. Neither live snapshot acquisition nor event/payout routing has been implemented.
 
+The snapshot also rechecks guild membership and network trust after gathering sessions, and denies a changed view. This detects differing before/after rosters but does not provide an atomic membership snapshot or detect a change that is reversed between reads. The real integration must still prove its consistency boundary.
+
 Local focused tests cover online shared and distinct addresses, an offline peer, missing observations, invalid roster membership and the completion processor. The runtime still needs trustworthy completion-time online roster and client-address snapshots, durable routing, restart safety and real TEST acceptance. The feature remains disabled.
 
 ## Publication recovery fairness (2026-11-04)

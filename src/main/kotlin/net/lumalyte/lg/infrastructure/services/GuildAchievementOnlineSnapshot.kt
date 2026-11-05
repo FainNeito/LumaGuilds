@@ -18,6 +18,9 @@ internal class GuildAchievementOnlineSnapshot(
         val roster = members(guildId).toSet()
         val onlineSessions = sessions().toMap().filterKeys { it in roster }
         val fingerprints = onlineSessions.mapValues { (_, address) -> address?.let(fingerprint::fingerprint) }
+        // The roster may be backed by data outside the server thread. Do not
+        // authorize an award from a snapshot spanning a membership change.
+        if (members(guildId).toSet() != roster || !trustedNetworkView()) return null
         Snapshot(roster, onlineSessions.keys.toSet(), fingerprints)
     }.getOrNull()
 }

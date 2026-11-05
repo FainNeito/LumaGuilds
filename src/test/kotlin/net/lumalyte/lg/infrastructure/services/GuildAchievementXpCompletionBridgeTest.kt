@@ -60,4 +60,17 @@ class GuildAchievementXpCompletionBridgeTest {
         assertNull(GuildAchievementOnlineSnapshot({ false }, { error("not called") }, { error("not called") }, fingerprint).capture(guild))
         assertNull(GuildAchievementOnlineSnapshot({ true }, { setOf(actor) }, { error("offline") }, fingerprint).capture(guild))
     }
+
+    @Test fun `membership or trust changes during collection fail closed`() {
+        val fingerprint = GuildAchievementAddressFingerprint(ByteArray(32) { 4 })
+        val address = InetAddress.getByName("198.51.100.30")
+        var reads = 0
+        val changingRoster = GuildAchievementOnlineSnapshot({ true },
+            { if (reads++ == 0) setOf(actor) else setOf(actor, offline) }, { mapOf(actor to address) }, fingerprint)
+        assertNull(changingRoster.capture(guild))
+        var trustedReads = 0
+        val changingTrust = GuildAchievementOnlineSnapshot({ trustedReads++ == 0 },
+            { setOf(actor) }, { mapOf(actor to address) }, fingerprint)
+        assertNull(changingTrust.capture(guild))
+    }
 }
