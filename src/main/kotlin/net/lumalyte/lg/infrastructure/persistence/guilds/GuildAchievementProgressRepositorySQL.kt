@@ -24,7 +24,14 @@ internal class GuildAchievementProgressRepositorySQL(
     data class Completion(val achievementId: String, val eventId: UUID, val requirement: String, val target: String?, val amount: Int)
     data class CompletionCheck(val actor: UUID, val decision: GuildAchievementIpEligibility.Decision)
 
+    data class SaleCredit(val guild: UUID, val sale: UUID, val membershipMillis: Long)
+
     init {
+        storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_market_advancement_delivery (
+            player_id VARCHAR(36) NOT NULL, guild_id VARCHAR(36) NOT NULL, sale_id VARCHAR(36) NOT NULL,
+            membership_ms BIGINT NOT NULL, PRIMARY KEY (player_id, guild_id, sale_id),
+            FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE
+        )""".trimIndent())
         storage.connection.executeUpdate("""CREATE TABLE IF NOT EXISTS guild_achievement_progress_v1 (
             guild_id VARCHAR(36) PRIMARY KEY, progress_json TEXT NOT NULL, completed_json TEXT NOT NULL
         )""".trimIndent())
@@ -91,6 +98,35 @@ internal class GuildAchievementProgressRepositorySQL(
         }
     }
 
+    fun applySale(guild: UUID, sale: UUID, recipients: Map<UUID, Long>): Result {
+        val requirement = "GUILD_SHOP_SALE"
+        val event = net.lumalyte.lg.domain.achievements.GuildAchievementEventId.fromSource(guild, requirement, sale)
+        return applyEvent(guild, event, requirement, null, 1, emptyMap(), onAccepted = { c ->
+            for ((player, membershipMillis) in recipients) {
+                c.updateStatement("INSERT INTO guild_market_advancement_delivery VALUES (?, ?, ?, ?)",
+                    player.toString(), guild.toString(), sale.toString(), membershipMillis)
+            }
+        }) { _, _ -> }
+    }
+
+    fun pendingSales(player: UUID): List<SaleCredit> = storage.connection.connection.use { c ->
+        c.prepareStatement("""SELECT guild_id, sale_id, membership_ms FROM guild_market_advancement_delivery
+            WHERE player_id = ? ORDER BY guild_id, sale_id LIMIT 16""".trimIndent()).use { s ->
+            s.setString(1, player.toString())
+            s.executeQuery().use { rows -> buildList {
+                while (rows.next()) add(SaleCredit(UUID.fromString(rows.getString(1)),
+                    UUID.fromString(rows.getString(2)), rows.getLong(3)))
+            } }
+        }
+    }
+
+    fun finishSale(player: UUID, credit: SaleCredit) {
+        storage.connection.connection.use { c ->
+            c.updateStatement("DELETE FROM guild_market_advancement_delivery WHERE player_id = ? AND guild_id = ? AND sale_id = ?",
+                player.toString(), credit.guild.toString(), credit.sale.toString())
+        }
+    }
+
     /** Call exactly once per real guild event, not once per online recipient. */
     fun apply(guild: UUID, event: UUID, requirement: String, target: String?, amount: Int,
         checks: Map<UUID, GuildAchievementIpEligibility.Decision> = emptyMap()): Result {
@@ -99,6 +135,7 @@ internal class GuildAchievementProgressRepositorySQL(
 
     internal fun applyEvent(guild: UUID, event: UUID, requirement: String, target: String?, amount: Int,
         checks: Map<UUID, GuildAchievementIpEligibility.Decision>,
+        onAccepted: (Connection) -> Unit = {},
         onCompleted: (Connection, GuildAchievement) -> Unit): Result {
         require(requirement.matches(Regex("[A-Z0-9_]{1,128}")))
         require(requirement in requirements)
@@ -136,6 +173,7 @@ internal class GuildAchievementProgressRepositorySQL(
                 else "INSERT INTO guild_achievement_progress_v1 VALUES (?, ?, ?) ON CONFLICT(guild_id) DO UPDATE SET progress_json = excluded.progress_json, completed_json = excluded.completed_json"
             c.updateStatement(upsert, guild.toString(), progress, completed)
             c.updateStatement("INSERT INTO guild_achievement_events_v1 VALUES (?, ?, ?, ?, ?)", guild.toString(), event.toString(), requirement, target, amount)
+            onAccepted(c)
             change.completed.forEach { node ->
                 c.updateStatement("INSERT INTO guild_achievement_completions_v1 VALUES (?, ?, ?)", guild.toString(), node.id, event.toString())
                 completionChecks.forEach { (actor, decision) ->

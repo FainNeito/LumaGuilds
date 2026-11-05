@@ -88,6 +88,7 @@ internal class GuildAchievementRuntime(
             Bukkit.getOnlinePlayers().forEach { player ->
                 if (player.uniqueId in dirty) runCatching { flush(player) }
                 retryGuildXp(player)
+                recoverSales(player)
             }
             Bukkit.getOnlinePlayers().groupBy { guild(it.uniqueId) }.forEach { (guild, players) ->
                 if (guild != null) {
@@ -374,18 +375,37 @@ internal class GuildAchievementRuntime(
         val started = checkNotNull(history?.saleStartedAt(guild, sale)) { "Market sale receipt unavailable" }
         val repository = checkNotNull(guildProgress)
         val requirement = "GUILD_SHOP_SALE"
-        val event = GuildAchievementEventId.fromSource(guild, requirement, sale)
-        val result = repository.apply(guild, event, requirement, null, 1)
+        val recipients = members.getByGuild(guild).filter {
+            it.joinedAt <= started && Bukkit.getPlayer(it.playerId)?.isOnline == true && guild(it.playerId) == guild
+        }.associate { it.playerId to it.joinedAt.toEpochMilli() }
+        val result = repository.applySale(guild, sale, recipients)
         // A replay can repair a missed history write without advancing personal progress.
         remember(guild, engine.definitions.filter {
             it.requirement == requirement && result.progress.getOrDefault(it.id, 0) >= it.goal
         }.map { it.id })
-        if (result.duplicate) return
-        for (member in members.getByGuild(guild)) {
-            if (member.joinedAt > started) continue
-            Bukkit.getPlayer(member.playerId)?.let { player ->
-                if (guild(player.uniqueId) == guild) signal(player, requirement, receipt = "market:$sale", newEvent = true)
+        recipients.keys.forEach { Bukkit.getPlayer(it)?.let(::recoverSales) }
+    }
+
+    private fun recoverSales(player: Player) {
+        try {
+            val repository = guildProgress ?: return
+            for (credit in repository.pendingSales(player.uniqueId)) {
+                val membership = members.getByPlayerAndGuild(player.uniqueId, credit.guild)
+                if (membership?.joinedAt?.toEpochMilli() != credit.membershipMillis) {
+                    repository.finishSale(player.uniqueId, credit)
+                    continue
+                }
+                if (guild(player.uniqueId) != credit.guild) continue
+                val receipt = "market:${credit.sale}"
+                signal(player, "GUILD_SHOP_SALE", receipt = receipt)
+                val record = read(player) ?: return
+                val capped = engine.definitions.filter { it.requirement == "GUILD_SHOP_SALE" }.all { it.id in record.rewarded }
+                if (receipt !in record.receipts && !capped) return
+                if (player.uniqueId in dirty) flush(player)
+                repository.finishSale(player.uniqueId, credit)
             }
+        } catch (error: Exception) {
+            plugin.logger.warning("Market advancement delivery pending for ${player.uniqueId}: ${error.javaClass.simpleName}")
         }
     }
 

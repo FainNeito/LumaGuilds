@@ -70,7 +70,11 @@ class GuildCreationFeedbackTest {
         verify(exactly = 1) { lang.msg("command.migrated.guild.create.raw_gold_unavailable") }
     }
 
-    @Test fun freeCommandCreatesAndAnnouncesWithoutCharging() {
+    @Test fun freeCommandCreatesAndAnnouncesWithoutCharging() = assertSuccessfulCreation(false)
+
+    @Test fun advancementFailureDoesNotHideSuccessfulCreation() = assertSuccessfulCreation(true)
+
+    private fun assertSuccessfulCreation(advancementFails: Boolean) {
         stopKoin()
         val guilds = mockk<GuildService>()
         val repository = mockk<GuildRepository>()
@@ -93,10 +97,14 @@ class GuildCreationFeedbackTest {
         mockkObject(net.lumalyte.lg.utils.ChatUtils)
         every { net.lumalyte.lg.utils.ChatUtils.broadcastMessage(any<String>(), any()) } just Runs
         every { net.lumalyte.lg.utils.ChatUtils.broadcastMessage(any<net.kyori.adventure.text.Component>(), any()) } just Runs
+        val advancements = mockk<net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime>(relaxed = true)
+        if (advancementFails) every { advancements.confirmedFounding(any(), player) } throws IllegalStateException("unavailable")
         startKoin { modules(module {
             single { guilds }; single { repository }; single { costs }; single { config }; single { lang }
+            single { advancements }
         }) }
         GuildCommand().onCreate(player, "Valid Name", null)
+        verify(exactly = 1) { advancements.confirmedFounding(GuildCreationCostResult.Applied(guild, 0), player) }
         verify(exactly = 1) { guilds.createGuild("Valid Name", playerId, null) }
         verify(exactly = 0) { payments.reserve(any(), any(), any()) }
         verify(exactly = 0) { lang.msg("command.migrated.guild.create.raw_gold_paid", *anyVararg()) }

@@ -29,6 +29,21 @@ class GuildAchievementProgressRepositorySQLTest : RewardSqlTestFixture() {
         storage.connection.executeUpdate("INSERT INTO guilds VALUES (?)", other.toString())
     }
 
+    @Test fun `sale credit survives restart and replay cannot replace original recipients`() {
+        fun sales() = GuildAchievementProgressRepositorySQL(storage, listOf(node.copy(requirement = "GUILD_SHOP_SALE")))
+        val original = UUID.randomUUID()
+        val later = UUID.randomUUID()
+        val sale = UUID.randomUUID()
+        assertFalse(sales().applySale(guild, sale, mapOf(original to 11L)).duplicate)
+        assertTrue(sales().applySale(guild, sale, mapOf(later to 22L)).duplicate)
+        val credit = sales().pendingSales(original).single()
+        assertEquals(GuildAchievementProgressRepositorySQL.SaleCredit(guild, sale, 11L), credit)
+        assertTrue(sales().pendingSales(later).isEmpty())
+        sales().finishSale(original, credit)
+        assertTrue(sales().applySale(guild, sale, mapOf(original to 11L)).duplicate)
+        assertTrue(sales().pendingSales(original).isEmpty())
+    }
+
     @Test fun `progress persists per guild and duplicate events never count twice`() {
         val first = UUID.randomUUID()
         assertEquals(1, repository().apply(guild, first, "CROP_BREAK", null, 1).progress["milestone"])

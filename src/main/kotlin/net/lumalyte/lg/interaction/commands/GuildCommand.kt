@@ -188,7 +188,11 @@ class GuildCommand : BaseCommand(), KoinComponent {
                             "cost" to result.cost,
                         ))
                     }
-                    achievements.confirmedFounding(result, player)
+                    try {
+                        achievements.confirmedFounding(result, player)
+                    } catch (error: Exception) {
+                        player.server.logger.warning("Guild ${result.guild.id} was created but Founding needs review: ${error.javaClass.simpleName}")
+                    }
                     result.guild
                 }
                 net.lumalyte.lg.application.services.GuildCreationCostResult.InsufficientGold -> {

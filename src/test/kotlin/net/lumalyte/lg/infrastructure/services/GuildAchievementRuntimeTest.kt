@@ -16,6 +16,46 @@ import kotlin.test.*
 internal class GuildAchievementRuntimeTest {
     @AfterEach fun cleanup() { unmockkAll(); MockBukkit.unmock() }
 
+    @Test fun `market credit saved before failed acknowledgment survives runtime recreation without duplicate XP`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        val actor = player.uniqueId
+        every { player.saveData() } just Runs
+        every { player.isOnline } returns true
+        every { player.giveExp(any<Int>()) } just Runs
+        mockkStatic(org.bukkit.Bukkit::class)
+        every { org.bukkit.Bukkit.getPlayer(actor) } returns player
+        val guild = UUID.randomUUID()
+        val sale = UUID.randomUUID()
+        val member = net.lumalyte.lg.domain.entities.Member(actor, guild, UUID.randomUUID(), java.time.Instant.EPOCH)
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(actor) } returns setOf(guild)
+        every { members.getByGuild(guild) } returns setOf(member)
+        every { members.getByPlayerAndGuild(actor, guild) } returns member
+        val history = mockk<net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL>(relaxed = true)
+        every { history.saleStartedAt(guild, sale) } returns java.time.Instant.now()
+        val repo = mockk<net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL>()
+        val receipt = net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL.SaleCredit(guild, sale, 0L)
+        every { repo.applySale(guild, sale, mapOf(actor to 0L)) } returns
+            net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL.Result(emptyMap(), emptySet(), true)
+        every { repo.pendingSales(actor) } returns listOf(receipt)
+        every { repo.finishSale(actor, receipt) } throws IllegalStateException("interrupted")
+        fun runtime() = GuildAchievementRuntime(plugin, members, mockk(), history = history, guildProgressFactory = { repo })
+        val key = NamespacedKey(plugin, "guild_achievements_v1")
+        val saved = """{"schema":1,"progress":{"art_of_the_deal":1,"supply_chain":100,"market_dominance":999},"rewarded":["art_of_the_deal","supply_chain"],"receipts":[]}"""
+        player.persistentDataContainer.set(key, PersistentDataType.STRING, saved)
+        runtime().confirmedMarketSale(guild, sale)
+        every { repo.finishSale(actor, receipt) } just Runs
+        val reopened = runtime()
+        reopened.confirmedMarketSale(guild, sale)
+        assertEquals(1000, reopened.read(player)!!.progress["market_dominance"])
+        assertTrue("market:$sale" in reopened.read(player)!!.receipts)
+        verify(exactly = 2) { repo.finishSale(actor, receipt) }
+        verify(exactly = 1) { player.giveExp(500) }
+    }
+
     @Test fun `market replay and joining after sale cannot grant personal sale credit`() {
         val server = MockBukkit.mock()
         val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
@@ -32,11 +72,11 @@ internal class GuildAchievementRuntimeTest {
         val progress = mockk<net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL>()
         val reached = net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL.Result(
             mapOf("art_of_the_deal" to 1, "supply_chain" to 100), setOf("supply_chain"), false)
-        every { progress.apply(guild, any(), "GUILD_SHOP_SALE", null, 1) } returnsMany listOf(reached, reached.copy(duplicate = true))
+        every { progress.applySale(guild, sale, emptyMap()) } returnsMany listOf(reached, reached.copy(duplicate = true))
         val runtime = GuildAchievementRuntime(plugin, members, mockk(), history = history, guildProgressFactory = { progress })
         repeat(2) { runtime.confirmedMarketSale(guild, sale) }
         verify(exactly = 1) { history.remember(guild, listOf("art_of_the_deal", "supply_chain"), any()) }
-        verify(exactly = 1) { members.getByGuild(guild) }
+        verify(exactly = 2) { members.getByGuild(guild) }
         assertTrue(runtime.read(player)!!.progress.isEmpty())
     }
 
