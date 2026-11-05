@@ -79,6 +79,8 @@ An unbound recovery worker now reads pending publication batches and acknowledge
 
 The user superseded the earlier offline-history requirement: at completion, compare a participant's current trusted address only against online guild members. A shared address denies that participant's advancement guild XP. Missing or invalid online roster/address information fails closed. Offline histories must not decide this policy. Existing history prototype methods remain unused by the revised event processor and bridge and must not be wired as award authority.
 
+The completion bridge now accepts a fresh network-session snapshot and fingerprints the supplied current addresses without retaining them in the result. A missing or explicitly untrusted view denies the award. Focused local tests cover online matches, offline peers, unknown addresses, unrelated sessions and failed/untrusted views. This interface is unbound: its trust flag is an assertion, not proof that the roster covers the network or that proxy forwarding is trustworthy. Neither live snapshot acquisition nor event/payout routing has been implemented.
+
 Local focused tests cover online shared and distinct addresses, an offline peer, missing observations, invalid roster membership and the completion processor. The runtime still needs trustworthy completion-time online roster and client-address snapshots, durable routing, restart safety and real TEST acceptance. The feature remains disabled.
 
 # Publication recovery fairness (2026-11-04)
