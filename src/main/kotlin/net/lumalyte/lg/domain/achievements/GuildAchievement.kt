@@ -53,12 +53,13 @@ class GuildAchievementEngine(val definitions: List<GuildAchievement>) {
         amount: Int = 1,
         absolute: Boolean = false,
         receipt: String? = null,
+        allowedNodes: Set<String>? = null,
     ): AchievementChange {
         require(amount >= 0)
         if (amount == 0 || receipt != null && receipt in before.receipts) return AchievementChange(before, emptyList())
         val progress = before.progress.toMutableMap()
         val completed = mutableListOf<GuildAchievement>()
-        for (node in definitions.filter { it.requirement == requirement && matches(it, target) }) {
+        for (node in definitions.filter { it.requirement == requirement && (allowedNodes == null || it.id in allowedNodes) && matches(it, target) }) {
             val old = progress[node.id] ?: 0
             val next = nextCount(old, amount, absolute, node.goal)
             progress[node.id] = next
@@ -90,7 +91,7 @@ class GuildAchievementEngine(val definitions: List<GuildAchievement>) {
         )
     }
 
-    private fun matches(node: GuildAchievement, target: String?): Boolean = when (node.requirement) {
+    internal fun matches(node: GuildAchievement, target: String?): Boolean = when (node.requirement) {
         "GUILD_LEVEL_UP" -> levelMatches(node, target)
         "GUILD_LEADERBOARD_RANK" -> rankMatches(node, target)
         else -> node.target == null || node.target == target

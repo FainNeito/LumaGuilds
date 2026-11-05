@@ -88,7 +88,7 @@ internal class GuildAchievementRuntimeTest {
         every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
         every { members.getByGuild(guild) } returns emptySet()
         val progression = mockk<ProgressionRepository>()
-        every { progression.getGuildProgression(guild) } returns null
+        every { progression.getGuildProgression(guild) } returns mockk { every { currentLevel } returns 20 }
         val stalls = mockk<net.lumalyte.lg.application.services.GuildStallReadService>()
         every { stalls.read(guild, player.uniqueId) } returns java.util.concurrent.CompletableFuture.completedFuture(
             net.lumalyte.lg.application.services.StallReadResult.Unavailable)
@@ -98,7 +98,12 @@ internal class GuildAchievementRuntimeTest {
         server.scheduler.performTicks(19L)
         assertTrue(runtime.read(player)!!.progress.isEmpty())
         server.scheduler.performTicks(2L)
-        assertEquals(1, runtime.read(player)!!.progress["guilds_root"])
+        assertEquals(setOf("guilds_root"), runtime.read(player)!!.rewarded)
+        runtime.levelReached(guild, 21)
+        runtime.leave(player)
+        runtime.initialize(player)
+        assertEquals(setOf("guilds_root"), runtime.read(player)!!.rewarded)
+        verify(exactly = 0) { player.sendMessage(any<net.kyori.adventure.text.Component>()) }
         verify(exactly = 0) { player.giveExp(any<Int>()) }
     }
 
@@ -129,6 +134,8 @@ internal class GuildAchievementRuntimeTest {
             server.scheduler.performOneTick()
             next = java.util.concurrent.CompletableFuture()
         }
+        complete(result("OWNED"))
+        assertNull(runtime.read(player)!!.progress["prime_real_estate"])
         complete(net.lumalyte.lg.application.services.StallReadResult.Unavailable)
         complete(result("UNOWNED"))
         assertNull(runtime.read(player)!!.progress["prime_real_estate"])

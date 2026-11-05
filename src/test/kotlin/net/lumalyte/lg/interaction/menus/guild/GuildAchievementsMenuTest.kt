@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.infrastructure.i18n.gui
 import io.mockk.every
 import io.mockk.mockk
 import net.kyori.adventure.text.Component
@@ -17,7 +18,7 @@ import java.util.UUID
 import kotlin.test.*
 
 internal class GuildAchievementsMenuTest : RecruitmentDialogFixture() {
-    private fun openPersonalTree(available: Boolean): MenuNavigator {
+    private fun openPersonalTree(available: Boolean, observed: Instant? = null): MenuNavigator {
         every { lang.msg(any(), *anyVararg()) } answers { Component.text(firstArg<String>()) }
         val actor = UUID.randomUUID()
         val guild = Guild(UUID.randomUUID(), "Mastery", createdAt = Instant.EPOCH)
@@ -25,8 +26,9 @@ internal class GuildAchievementsMenuTest : RecruitmentDialogFixture() {
         every { player.isOnline } returns true
         every { guilds.getGuild(guild.id) } returns guild
         val members = mockk<MemberService>()
-        every { members.getMember(actor, guild.id) } returns mockk()
+        every { members.getMember(actor, guild.id) } returns mockk { every { joinedAt } returns Instant.ofEpochSecond(20) }
         val runtime = mockk<GuildAchievementRuntime>()
+        every { runtime.guildUnlockObserved(any(), any()) } returns observed
         every { runtime.engine } returns GuildAchievementEngine(listOf(GuildAchievement(
             "one", null, "A complete milestone title that must remain visible", emptyList(),
             "EVENT", null, 1, 0, emptyList(), "Foundations", "BOOK", "TASK", 0f, 0f,
@@ -39,6 +41,15 @@ internal class GuildAchievementsMenuTest : RecruitmentDialogFixture() {
             presenter.show(p, page, valid, failure)
         }
         return MenuNavigator(player).also { it.openMenu(GuildAchievementsMenu(it, player, guild, observedPresenter)) }
+    }
+
+    @Test fun `inspector distinguishes a prior guild unlock from personal completion`() {
+        openPersonalTree(false, Instant.ofEpochSecond(10))
+        val text = PlainTextComponentSerializer.plainText().serialize(renderedPage!!.items.single().text)
+        val plain = PlainTextComponentSerializer.plainText()
+        assertTrue(plain.serialize(lang.gui("achievements.before_join")) in text, text)
+        assertTrue(plain.serialize(lang.gui("achievements.progress")) in text, text)
+        assertFalse(plain.serialize(lang.gui("achievements.completed")) in text, text)
     }
 
     @Test fun `available native tree handoff closes dialog and invalidates old callbacks`() {
@@ -85,6 +96,7 @@ internal class GuildAchievementsMenuTest : RecruitmentDialogFixture() {
         val wars = mockk<net.lumalyte.lg.application.services.WarService>()
         every { wars.getWarHistory(guild.id, 100) } returns emptyList()
         val runtime = mockk<GuildAchievementRuntime>()
+        every { runtime.guildUnlockObserved(any(), any()) } returns null
         every { runtime.engine } returns GuildAchievementEngine(listOf(GuildAchievement("one", null, "Personal", emptyList(),
             "EVENT", null, 1, 0, emptyList(), "Foundations", "BOOK", "TASK", 0f, 0f)))
         every { runtime.read(player) } returns AchievementRecord()
@@ -112,6 +124,7 @@ internal class GuildAchievementsMenuTest : RecruitmentDialogFixture() {
         val members = mockk<MemberService>()
         every { members.getMember(actor, guild.id) } returns mockk()
         val runtime = mockk<GuildAchievementRuntime>()
+        every { runtime.guildUnlockObserved(any(), any()) } returns null
         val nodes = (1..6).map { i -> GuildAchievement("milestone_$i", null, "Milestone $i",
             listOf("Earn milestone $i"), "EVENT", null, 3, 0, emptyList(), "Foundations", "BOOK", "TASK", i.toFloat(), 0f) }
         every { runtime.engine } returns GuildAchievementEngine(nodes)

@@ -8011,6 +8011,8 @@ achievements:
   reward: '<gold>Completion reward</gold>'
   personal_xp: '<green><amount> personal Minecraft XP, once per player.</green>'
   no_extra: '<gray>Achievement completion; no extra XP configured.</gray>'
+  before_join: '<gold>Your guild earned this before you joined.</gold>'
+  guild_unlocked: '<gold>Unlocked by your guild.</gold>'
   no_guild_xp: '<gray>These XP rewards are personal experience, not guild progression XP.</gray>'
   record_rules: '<gold>Saved personal achievement record</gold>'
   offline: '<gray>Shared activities credit online guild members. Offline activity is not replayed; current guild level and combined playtime are checked again when online.</gray>'

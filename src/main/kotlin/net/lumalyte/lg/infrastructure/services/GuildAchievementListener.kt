@@ -36,7 +36,7 @@ internal class GuildAchievementListener(private val runtime: GuildAchievementRun
         if (e.wasKicked) actor(e.actorId, "GUILD_MEMBER_REMOVED")
     }
     @EventHandler(priority = EventPriority.MONITOR) fun transferred(e: GuildOwnershipTransferEvent) = actor(e.newOwnerId, "GUILD_OWNERSHIP_TRANSFER")
-    @EventHandler(priority = EventPriority.MONITOR) fun level(e: GuildLevelUpEvent) = runtime.shared(e.guildId, "GUILD_LEVEL_UP", e.newLevel.toString())
+    @EventHandler(priority = EventPriority.MONITOR) fun level(e: GuildLevelUpEvent) = runtime.levelReached(e.guildId, e.newLevel)
     @EventHandler(priority = EventPriority.MONITOR) fun declared(e: GuildWarDeclaredEvent) = runtime.shared(e.declaringGuildId, "GUILD_WAR_DECLARED")
     @EventHandler(priority = EventPriority.MONITOR) fun won(e: GuildWarEndEvent) {
         e.winnerGuildId?.let { runtime.shared(it, "GUILD_WAR_WON", receipt = "war:${e.warId}") }
@@ -47,6 +47,9 @@ internal class GuildAchievementListener(private val runtime: GuildAchievementRun
     }
     @EventHandler(priority = EventPriority.MONITOR) fun rank(e: GuildLeaderboardRankChangeEvent) =
         runtime.shared(e.guildId, "GUILD_LEADERBOARD_RANK", e.newRank.toString())
+    @EventHandler(priority = EventPriority.MONITOR) fun memberJoined(e: GuildMemberJoinEvent) {
+        Bukkit.getPlayer(e.playerId)?.let { runtime.memberJoined(it, e.guildId) }
+    }
     @EventHandler(priority = EventPriority.MONITOR) fun joined(e: PlayerJoinEvent) { runtime.initializeAfterJoin(e.player) }
     @EventHandler(priority = EventPriority.MONITOR) fun left(e: PlayerQuitEvent) { runtime.leave(e.player) }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true) fun smelt(e: FurnaceExtractEvent) = activity(e.player, "GUILD_COLLECTIVE_SMELT", e.itemAmount)

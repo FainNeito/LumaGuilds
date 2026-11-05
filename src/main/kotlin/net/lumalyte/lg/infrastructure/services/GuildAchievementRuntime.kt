@@ -22,6 +22,7 @@ internal class GuildAchievementRuntime(
     private val progression: ProgressionRepository,
     private val stalls: GuildStallReadService = GuildStallReadClient(),
     private val guildXp: GuildAchievementXpCompletionPort? = null,
+    private val history: net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL? = null,
     private val foundingProcessor: ((List<GuildAchievement>) -> GuildAchievementGuildEventProcessor)? = null,
 ) {
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
@@ -35,6 +36,15 @@ internal class GuildAchievementRuntime(
     private val guildXpReview = mutableMapOf<UUID, List<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>>()
     private val reviewRequired = mutableSetOf<UUID>()
     private val ownershipReads = mutableSetOf<UUID>()
+    private data class TimeSample(val roster: Map<UUID, java.time.Instant>, val ticks: Map<UUID, Long>) {
+        val hours = (ticks.values.sum() / 72000L).coerceAtMost(1000L).toInt()
+    }
+    private val timeSamples = mutableMapOf<UUID, TimeSample>()
+    // Bound repeat writes for stable milestones; the database remains authoritative after eviction.
+    private val observedUnlocks = object : LinkedHashMap<Pair<UUID, String>, java.time.Instant>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Pair<UUID, String>, java.time.Instant>?) = size > 4096
+    }
+    private val observedLevels = mutableMapOf<UUID, Int>()
     private val observedStallOwnership = mutableMapOf<UUID, Boolean>()
 
     private val founding by lazy { foundingProcessor?.invoke(engine.definitions) }
@@ -49,8 +59,9 @@ internal class GuildAchievementRuntime(
 
     /** Called by the create command only after its payment service confirms success. */
     fun confirmedFounding(result: net.lumalyte.lg.application.services.GuildCreationCostResult.Applied, founder: Player) {
-        if (!plugin.config.getBoolean("advancement-guild-xp.founding-test-enabled", false)) return
         val guild = result.guild
+        remember(guild.id, listOf("founding"), guild.createdAt)
+        if (!plugin.config.getBoolean("advancement-guild-xp.founding-test-enabled", false)) return
         try {
             val processor = checkNotNull(founding)
             val view = checkNotNull(foundingSessions.capture(guild.id)) { "Session view unavailable" }
@@ -78,14 +89,9 @@ internal class GuildAchievementRuntime(
             Bukkit.getOnlinePlayers().groupBy { guild(it.uniqueId) }.forEach { (guild, players) ->
                 if (guild != null) {
                     refreshStallOwnership(players.first(), guild)
-                    val hours = combinedHours(guild)
-                    val level = progression.getGuildProgression(guild)?.currentLevel
+                    observeGuildTotals(guild)
                     players.forEach { player ->
-                        signal(player, "ROOT", newEvent = false)
-                        level?.let { signal(player, "GUILD_LEVEL_UP", it.toString(), newEvent = false) }
-                        // A sampled total can include historical hours or newly joined members.
-                        // It cannot prove a post-cutover guild XP event.
-                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true, newEvent = false)
+                        initializeRoot(player)
                         read(player)?.let { projection.project(player, it) }
                     }
                 }
@@ -117,11 +123,89 @@ internal class GuildAchievementRuntime(
             val pending = engine.pending(record)
             if (pending.completed.isNotEmpty()) deliver(player, record, pending)
         }
-        signal(player, "ROOT", newEvent = false)
-        progression.getGuildProgression(guild)?.let { signal(player, "GUILD_LEVEL_UP", it.currentLevel.toString(), newEvent = false) }
-        signal(player, "GUILD_COMBINED_PLAYTIME", amount = combinedHours(guild), absolute = true, newEvent = false)
+        initializeRoot(player)
+        observeGuildTotals(guild, creditCrossing = false)
         read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
+    }
+
+    private fun initializeRoot(player: Player) {
+        val record = read(player) ?: return
+        val root = engine.advance(record, "ROOT")
+        if (root.record != record) {
+            write(player, root.record)
+            flush(player)
+        }
+    }
+
+    private fun remember(guild: UUID, nodes: List<String>, at: java.time.Instant = java.time.Instant.now()) {
+        try {
+            val store = history ?: return
+            val missing = nodes.filter { id -> observedUnlocks[guild to id]?.let { at < it } ?: true }
+            if (missing.isEmpty()) return
+            store.remember(guild, missing, at)
+            missing.forEach { observedUnlocks[guild to it] = at }
+        } catch (error: Exception) {
+            plugin.logger.warning("Could not record guild advancement history for $guild: ${error.javaClass.simpleName}")
+        }
+    }
+
+    fun memberJoined(player: Player, guild: UUID) {
+        if (!isMember(player.uniqueId, guild)) return
+        observeGuildTotals(guild, creditCrossing = false)
+        val count = try {
+            history?.count(guild) ?: return
+        } catch (error: Exception) {
+            plugin.logger.warning("Guild advancement summary unavailable for $guild: ${error.javaClass.simpleName}")
+            return
+        }
+        if (count > 0) player.sendMessage(net.kyori.adventure.text.Component.text(
+            "Guild advancements already unlocked: $count. View them in Guild Advancements.",
+            net.kyori.adventure.text.format.NamedTextColor.GRAY,
+        ))
+    }
+
+    fun guildUnlockObserved(guild: UUID, node: String): java.time.Instant? = try {
+        history?.observed(guild, node)
+    } catch (error: Exception) {
+        plugin.logger.warning("Guild advancement history unavailable for $guild: ${error.javaClass.simpleName}")
+        null
+    }
+
+    /** Only events sufficient on their own prove a guild unlock; personal totals can span guilds. */
+    private val eventMilestones by lazy { engine.definitions.filter { it.goal == 1 || it.requirement == "KOTH_CONSECUTIVE_CAPTURE" }
+        .groupBy { it.requirement } }
+
+    private fun observeEvent(guild: UUID, type: String, target: String?, amount: Int) {
+        if (history == null || type == "GUILD_CREATE" || type == "ROOT") return
+        val nodes = eventMilestones[type] ?: return
+        val unlocked = nodes.filter { it.goal <= amount && engine.matches(it, target) }
+        remember(guild, unlocked.map { it.id })
+    }
+
+    private fun observeGuildTotals(guild: UUID, creditCrossing: Boolean = true) {
+        val level = progression.getGuildProgression(guild)?.currentLevel
+        if (level != null) observedLevels.putIfAbsent(guild, level)
+        val roster = members.getByGuild(guild).associate { it.playerId to it.joinedAt }
+        val sample = TimeSample(roster, roster.keys.associateWith {
+            Bukkit.getOfflinePlayer(it).getStatistic(Statistic.PLAY_ONE_MINUTE).toLong()
+        })
+        val previous = timeSamples[guild]
+        if (creditCrossing || previous?.roster != roster) timeSamples[guild] = sample
+        val hours = sample.hours
+        if (creditCrossing && previous != null && previous.roster == roster && previous.hours < 1000 && hours >= 1000) {
+            online(guild).filter { sample.ticks.getValue(it.uniqueId) > previous.ticks.getValue(it.uniqueId) }.forEach {
+                signal(it, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true, newEvent = true)
+            }
+        }
+        val unlocked = engine.definitions.filter { node ->
+            when (node.requirement) {
+                "GUILD_LEVEL_UP" -> level != null && level >= (node.target?.toIntOrNull() ?: Int.MAX_VALUE)
+                "GUILD_COMBINED_PLAYTIME" -> hours >= node.goal
+                else -> false
+            }
+        }
+        remember(guild, unlocked.map { it.id })
     }
 
     /** Existing ownership qualifies. Unavailable or late data never invents a purchase or an award. */
@@ -137,6 +221,8 @@ internal class GuildAchievementRuntime(
                     val owned = result.stalls.any { it.state in setOf("OWNED", "GRACE") }
                     val previous = observedStallOwnership.put(guildId, owned)
                     if (!owned) return@Runnable
+                    remember(guildId, listOf("prime_real_estate"))
+                    if (previous != false) return@Runnable
                     online(guildId).filter { isMember(it.uniqueId, guildId) }.forEach {
                         signal(it, "GUILD_STALL_OWNED", absolute = true, newEvent = previous == false)
                     }
@@ -179,15 +265,16 @@ internal class GuildAchievementRuntime(
     }
 
     fun signal(player: Player, type: String, target: String? = null, amount: Int = 1,
-        absolute: Boolean = false, receipt: String? = null, newEvent: Boolean = false) {
+        absolute: Boolean = false, receipt: String? = null, newEvent: Boolean = false, allowedNodes: Set<String>? = null) {
         if (!Bukkit.isPrimaryThread()) {
-            plugin.server.scheduler.runTask(plugin, Runnable { if (player.isOnline) signal(player, type, target, amount, absolute, receipt, newEvent) })
+            plugin.server.scheduler.runTask(plugin, Runnable { if (player.isOnline) signal(player, type, target, amount, absolute, receipt, newEvent, allowedNodes) })
             return
         }
         if (!player.isOnline) return
         val guildId = guild(player.uniqueId) ?: return
+        if (newEvent) observeEvent(guildId, type, target, amount)
         val before = read(player) ?: return
-        val change = engine.advance(before, type, target, amount, absolute, receipt)
+        val change = engine.advance(before, type, target, amount, absolute, receipt, allowedNodes)
         if (change.record == before) return
         val bridge = guildXp
         val review = mutableListOf<net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Intent>()
@@ -264,12 +351,24 @@ internal class GuildAchievementRuntime(
         }
     }
 
+    fun levelReached(guildId: UUID, level: Int) {
+        val previous = observedLevels.put(guildId, level) ?: (level - 1)
+        val earned = engine.definitions.filter {
+            it.requirement == "GUILD_LEVEL_UP" && (it.target?.toIntOrNull() ?: 0) in (previous + 1)..level
+        }
+        remember(guildId, earned.map { it.id })
+        if (earned.isEmpty()) return
+        online(guildId).forEach { signal(it, "GUILD_LEVEL_UP", level.toString(), newEvent = true,
+            allowedNodes = earned.mapTo(mutableSetOf()) { node -> node.id }) }
+    }
+
     fun shared(guildId: UUID, type: String, target: String? = null, amount: Int = 1,
         absolute: Boolean = false, receipt: String? = null) {
         if (!Bukkit.isPrimaryThread()) {
             plugin.server.scheduler.runTask(plugin, Runnable { shared(guildId, type, target, amount, absolute, receipt) })
             return
         }
+        observeEvent(guildId, type, target, amount)
         online(guildId).forEach { signal(it, type, target, amount, absolute, receipt, newEvent = true) }
     }
 
@@ -284,10 +383,6 @@ internal class GuildAchievementRuntime(
         guildXpReview.remove(player.uniqueId)
         failed.remove(player.uniqueId)
     }
-
-    private fun combinedHours(guild: UUID): Int = (members.getByGuild(guild).sumOf {
-        Bukkit.getOfflinePlayer(it.playerId).getStatistic(Statistic.PLAY_ONE_MINUTE).toLong()
-    } / 72000L).coerceAtMost(1000L).toInt()
 
     private fun write(player: Player, record: AchievementRecord) {
         records[player.uniqueId] = record

@@ -18,6 +18,23 @@ import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 class GuildAchievementPublicationSQLTest : RewardSqlTestFixture() {
+    @Test fun `guild unlock history retains earliest evidence across restarts without paying XP`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val guild = UUID.randomUUID()
+        val at = Instant.parse("2026-11-01T10:00:00Z")
+        assertTrue(GuildRepositorySQLite(storage).add(Guild(guild, "GuildHistory", createdAt = at)))
+        val history = GuildAdvancementHistorySQL(storage)
+        history.remember(guild, listOf("founding"), at)
+        val reopened = GuildAdvancementHistorySQL(storage)
+        reopened.remember(guild, listOf("founding", "prime_real_estate"), at.plusSeconds(60))
+        assertEquals(2, reopened.count(guild))
+        assertEquals(at, reopened.observed(guild, "founding"))
+        assertNull(reopened.observed(UUID.randomUUID(), "founding"))
+        val awards = ExperienceAwardRepositorySQL(storage, ProgressionCurve(500.0, 1.15, 150, 100))
+        assertTrue(awards.pendingAchievementPublications(10).isEmpty())
+    }
+
     @Test fun `completion and payment survive retry together and shared peers cannot pay on replay`() {
         val storage = openStorage()
         migrateProductionSchema(storage)

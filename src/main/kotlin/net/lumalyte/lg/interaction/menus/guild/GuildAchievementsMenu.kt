@@ -95,12 +95,18 @@ internal class GuildAchievementsMenu(
     private fun inspectorCards(node: GuildAchievement, record: AchievementRecord): List<GuildDialogItem> {
         val progress = record.progress[node.id] ?: 0
         val complete = progress >= node.goal
+        val observed = if (detailTab == 0) runtime.guildUnlockObserved(guild.id, node.id) else null
+        val guildStatus = observed?.let {
+            val joined = members.getMember(player.uniqueId, guild.id)?.joinedAt
+            if (joined != null && it.toEpochMilli() < joined.toEpochMilli()) lang.gui("achievements.before_join")
+            else lang.gui("achievements.guild_unlocked")
+        }
         // One inspector section at a time keeps the underlay and actions inside the native viewport.
         return listOf(
             referenceItem(icon(node), listOf(Component.text(node.title),
                 if (complete) lang.gui("achievements.completed", "current" to progress, "goal" to node.goal)
                 else lang.gui("achievements.progress", "current" to progress, "goal" to node.goal),
-            ) + node.description.map { Component.text(it) }),
+            ) + listOfNotNull(guildStatus) + node.description.map { Component.text(it) }),
             referenceItem("lg_sources", listOf(lang.gui("achievements.how"),
                 Component.text(earning(node)), Component.text(credit(node)))),
             referenceItem("lg_reward", listOf(lang.gui("achievements.reward"),
@@ -177,9 +183,9 @@ internal class GuildAchievementsMenu(
         else -> "lg_banner"
     }
     private fun earning(node: GuildAchievement): String = when (node.requirement) {
-        "GUILD_STALL_OWNED" -> "Market must confirm your guild owns a stall (active or rent grace). Existing ownership qualifies; checked on join and each minute. No purchase receipt is required."
+        "GUILD_STALL_OWNED" -> "Market must confirm your guild owns a stall (active or rent grace). Existing ownership counts for guild history. A confirmed change to owned can grant personal credit. No purchase receipt is required."
         "GUILD_SHOP_SALE" -> "Complete ${node.goal} paid guild SELL shop sales confirmed by Market. Own-guild, personal, free, BUY and barter transactions do not count."
-        "GUILD_LEVEL_UP" -> "Reach guild level ${node.target}; current level is checked when joining."
+        "GUILD_LEVEL_UP" -> "Reach guild level ${node.target}; current guild level is shown on join. Personal credit comes from crossing the milestone while online."
         "GUILD_COMBINED_PLAYTIME" -> "Accumulate 1,000 combined vanilla playtime hours among current guild members."
         "GUILD_COLLECTIVE_CROP_HARVEST" -> "Break mature eligible crops, melons or pumpkins in Survival or Adventure."
         "GUILD_COLLECTIVE_SMELT" -> "Collect smelted or cooked furnace output in Survival or Adventure."
