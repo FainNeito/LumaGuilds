@@ -35,6 +35,12 @@ internal class GuildAdvancementHistorySQL(private val storage: Storage<Database>
         }
     }
 
+    /** Used only from Market's post-payment callback. A quote by itself is never an unlock. */
+    fun saleStartedAt(guild: UUID, sale: UUID): Instant? = storage.connection.connection.use { connection ->
+        connection.selectOne("SELECT occurred_at FROM guild_shop_xp_sales WHERE guild_id = ? AND id = ?",
+            guild.toString(), sale.toString()) { Instant.ofEpochMilli(it.getLong(1)) }
+    }
+
     fun count(guild: UUID): Int = storage.connection.connection.use { connection ->
         connection.selectOne("SELECT COUNT(*) FROM guild_advancement_history WHERE guild_id = ?",
             guild.toString()) { it.getInt(1) } ?: 0

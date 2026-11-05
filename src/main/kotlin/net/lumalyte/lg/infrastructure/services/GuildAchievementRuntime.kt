@@ -13,6 +13,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
 import org.json.JSONArray
 import org.json.JSONObject
+import net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL
 import java.util.UUID
 
 /** Server-thread adapter. Progress, claimed IDs and personal XP share Minecraft's player-data save. */
@@ -23,7 +24,8 @@ internal class GuildAchievementRuntime(
     private val stalls: GuildStallReadService = GuildStallReadClient(),
     private val guildXp: GuildAchievementXpCompletionPort? = null,
     private val history: net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL? = null,
-    private val foundingProcessor: ((List<GuildAchievement>) -> GuildAchievementGuildEventProcessor)? = null,
+    private val guildProgressFactory: ((List<GuildAchievement>) -> GuildAchievementProgressRepositorySQL)? = null,
+    private val foundingProcessor: ((GuildAchievementProgressRepositorySQL) -> GuildAchievementGuildEventProcessor)? = null,
 ) {
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
@@ -47,7 +49,8 @@ internal class GuildAchievementRuntime(
     private val observedLevels = mutableMapOf<UUID, Int>()
     private val observedStallOwnership = mutableMapOf<UUID, Boolean>()
 
-    private val founding by lazy { foundingProcessor?.invoke(engine.definitions) }
+    private val guildProgress by lazy { guildProgressFactory?.invoke(engine.definitions) }
+    private val founding by lazy { guildProgress?.let { foundingProcessor?.invoke(it) } }
     private val foundingSessions by lazy {
         val secret = ByteArray(32).also(java.security.SecureRandom()::nextBytes)
         GuildAchievementOnlineSnapshot(
@@ -360,6 +363,30 @@ internal class GuildAchievementRuntime(
         if (earned.isEmpty()) return
         online(guildId).forEach { signal(it, "GUILD_LEVEL_UP", level.toString(), newEvent = true,
             allowedNodes = earned.mapTo(mutableSetOf()) { node -> node.id }) }
+    }
+
+    /** A repeated Market complete callback is the same sale, including after a server restart. */
+    fun confirmedMarketSale(guild: UUID, sale: UUID) {
+        if (!Bukkit.isPrimaryThread()) {
+            plugin.server.scheduler.runTask(plugin, Runnable { confirmedMarketSale(guild, sale) })
+            return
+        }
+        val started = checkNotNull(history?.saleStartedAt(guild, sale)) { "Market sale receipt unavailable" }
+        val repository = checkNotNull(guildProgress)
+        val requirement = "GUILD_SHOP_SALE"
+        val event = GuildAchievementEventId.fromSource(guild, requirement, sale)
+        val result = repository.apply(guild, event, requirement, null, 1)
+        // A replay can repair a missed history write without advancing personal progress.
+        remember(guild, engine.definitions.filter {
+            it.requirement == requirement && result.progress.getOrDefault(it.id, 0) >= it.goal
+        }.map { it.id })
+        if (result.duplicate) return
+        for (member in members.getByGuild(guild)) {
+            if (member.joinedAt > started) continue
+            Bukkit.getPlayer(member.playerId)?.let { player ->
+                if (guild(player.uniqueId) == guild) signal(player, requirement, receipt = "market:$sale", newEvent = true)
+            }
+        }
     }
 
     fun shared(guildId: UUID, type: String, target: String? = null, amount: Int = 1,

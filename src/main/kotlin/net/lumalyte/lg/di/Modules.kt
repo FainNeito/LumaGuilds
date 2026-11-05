@@ -675,10 +675,12 @@ fun progressionModule() = module {
         val storage = get<Storage<Database>>()
         val started = java.time.Instant.now()
         net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime(plugin, get(), get(),
-            history = net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL(storage), foundingProcessor = { definitions ->
+            history = net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL(storage),
+            guildProgressFactory = { definitions ->
+                net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL(storage, definitions)
+            }, foundingProcessor = { repository ->
             net.lumalyte.lg.infrastructure.services.GuildAchievementGuildEventProcessor(
-                net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL(storage, definitions),
-                started, get<net.lumalyte.lg.infrastructure.persistence.guilds.ExperienceAwardRepositorySQL>(),
+                repository, started, get<net.lumalyte.lg.infrastructure.persistence.guilds.ExperienceAwardRepositorySQL>(),
             )
         })
     }

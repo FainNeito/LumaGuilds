@@ -16,6 +16,30 @@ import kotlin.test.*
 internal class GuildAchievementRuntimeTest {
     @AfterEach fun cleanup() { unmockkAll(); MockBukkit.unmock() }
 
+    @Test fun `market replay and joining after sale cannot grant personal sale credit`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val guild = UUID.randomUUID()
+        val sale = UUID.randomUUID()
+        val player = server.addPlayer()
+        val at = java.time.Instant.now()
+        val members = mockk<MemberRepository>()
+        every { members.getByGuild(guild) } returns setOf(net.lumalyte.lg.domain.entities.Member(
+            player.uniqueId, guild, UUID.randomUUID(), at.plusSeconds(1)))
+        val history = mockk<net.lumalyte.lg.infrastructure.persistence.guilds.GuildAdvancementHistorySQL>(relaxed = true)
+        every { history.saleStartedAt(guild, sale) } returns at
+        val progress = mockk<net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL>()
+        val reached = net.lumalyte.lg.infrastructure.persistence.guilds.GuildAchievementProgressRepositorySQL.Result(
+            mapOf("art_of_the_deal" to 1, "supply_chain" to 100), setOf("supply_chain"), false)
+        every { progress.apply(guild, any(), "GUILD_SHOP_SALE", null, 1) } returnsMany listOf(reached, reached.copy(duplicate = true))
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), history = history, guildProgressFactory = { progress })
+        repeat(2) { runtime.confirmedMarketSale(guild, sale) }
+        verify(exactly = 1) { history.remember(guild, listOf("art_of_the_deal", "supply_chain"), any()) }
+        verify(exactly = 1) { members.getByGuild(guild) }
+        assertTrue(runtime.read(player)!!.progress.isEmpty())
+    }
+
     @Test fun `confirmed founding routes the new guild and only its founder with a trusted session`() {
         val server = MockBukkit.mock()
         val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
@@ -34,7 +58,7 @@ internal class GuildAchievementRuntimeTest {
         val processor = mockk<GuildAchievementGuildEventProcessor>()
         val event = slot<GuildAchievementGuildEventProcessor.Event>()
         every { processor.process(capture(event)) } returns null
-        val runtime = GuildAchievementRuntime(plugin, members, mockk(), foundingProcessor = { processor })
+        val runtime = GuildAchievementRuntime(plugin, members, mockk(), guildProgressFactory = { mockk() }, foundingProcessor = { processor })
         runtime.confirmedFounding(applied, player)
         plugin.config.set("advancement-guild-xp.founding-test-enabled", true)
         runtime.confirmedFounding(applied, player)
