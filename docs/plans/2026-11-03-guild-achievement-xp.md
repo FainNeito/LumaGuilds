@@ -91,3 +91,7 @@ Local focused tests cover online shared and distinct addresses, an offline peer,
 - Requirement: a failed publication must remain retryable without preventing later pending publications from being attempted. A recovery worker scans bounded pages and wraps back to earlier pending work.
 - Evidence: the prior worker always fetched the same first page; a permanently failing first item could starve every later item when the page was full.
 - Implementation and proof: a per-worker keyset cursor advances after attempted items and wraps once exhausted. The SQLite `GuildAchievementPublicationSQLTest` covers failure, later delivery, wraparound, and eventual retry. MariaDB/hosted verification is pending for this revision. Publication remains unbound and requires an idempotent publisher; this change does not enable guild XP or establish live acceptance.
+
+## Completion and payment atomicity
+
+The event processor can now use the same guild-locked database transaction for new completion records, the XP award and pending level publication. A failed publication insert must roll back the event so the original input can be retried. A denied completion remains complete and replay with a different roster cannot produce XP. The progress and publication SQL suites passed locally on SQLite, including both failure paths. No gameplay source or trusted network adapter is connected; production and TEST activation remain pending.

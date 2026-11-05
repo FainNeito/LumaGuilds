@@ -1,6 +1,7 @@
 package net.lumalyte.lg.infrastructure.persistence.guilds
 
 import co.aikar.idb.Database
+import java.sql.Connection
 import java.util.UUID
 import net.lumalyte.lg.domain.achievements.AchievementRecord
 import net.lumalyte.lg.domain.achievements.GuildAchievement
@@ -93,6 +94,12 @@ internal class GuildAchievementProgressRepositorySQL(
     /** Call exactly once per real guild event, not once per online recipient. */
     fun apply(guild: UUID, event: UUID, requirement: String, target: String?, amount: Int,
         checks: Map<UUID, GuildAchievementIpEligibility.Decision> = emptyMap()): Result {
+        return applyEvent(guild, event, requirement, target, amount, checks) { _, _ -> }
+    }
+
+    internal fun applyEvent(guild: UUID, event: UUID, requirement: String, target: String?, amount: Int,
+        checks: Map<UUID, GuildAchievementIpEligibility.Decision>,
+        onCompleted: (Connection, GuildAchievement) -> Unit): Result {
         require(requirement.matches(Regex("[A-Z0-9_]{1,128}")))
         require(requirement in requirements)
         require(target == null || target.length <= 128)
@@ -135,6 +142,7 @@ internal class GuildAchievementProgressRepositorySQL(
                     c.updateStatement("INSERT INTO guild_achievement_completion_checks_v1 VALUES (?, ?, ?, ?, ?)",
                         guild.toString(), node.id, event.toString(), actor.toString(), decision.name)
                 }
+                onCompleted(c, node)
             }
             Result(change.record.progress, change.completed.map { it.id }.toSet(), false)
         } }

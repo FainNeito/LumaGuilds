@@ -1,5 +1,7 @@
 package net.lumalyte.lg.infrastructure.persistence.guilds
 
+import net.lumalyte.lg.domain.achievements.GuildAchievement
+import net.lumalyte.lg.infrastructure.services.GuildAchievementGuildEventProcessor
 import java.time.Instant
 import java.util.UUID
 import net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy
@@ -16,6 +18,36 @@ import org.junit.jupiter.api.Test
 import kotlin.test.*
 
 class GuildAchievementPublicationSQLTest : RewardSqlTestFixture() {
+    @Test fun `completion and payment survive retry together and shared peers cannot pay on replay`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val guild = UUID.randomUUID()
+        val now = Instant.now()
+        assertTrue(GuildRepositorySQLite(storage).add(Guild(guild, "AtomicAward", createdAt = now)))
+        val node = GuildAchievement("milestone", null, "Milestone", emptyList(), "CROP_BREAK", null,
+            1, 0, emptyList(), "guild", "WHEAT", "TASK", 0f, 0f)
+        val progress = GuildAchievementProgressRepositorySQL(storage, listOf(node, node.copy(id = "shared", requirement = "SMELT")))
+        val awards = ExperienceAwardRepositorySQL(storage, ProgressionCurve(500.0, 1.15, 150, 100))
+        val processor = GuildAchievementGuildEventProcessor(progress, now, awards) { now }
+        val actor = UUID.randomUUID()
+        val peer = UUID.randomUUID()
+        val event = GuildAchievementGuildEventProcessor.Event(guild, UUID.randomUUID(), now, "CROP_BREAK",
+            null, 1, setOf(actor, peer), setOf(actor), mapOf(actor to "a"), setOf(actor))
+        val body = if (storage.dialect == SqlDialect.MARIADB) "FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'test failure'" else "BEGIN SELECT RAISE(ABORT, 'test failure'); END"
+        storage.connection.executeUpdate("CREATE TRIGGER reject_publication BEFORE INSERT ON guild_achievement_xp_publications $body")
+        assertFails { processor.process(event) }
+        assertTrue(progress.completions(guild).isEmpty())
+        storage.connection.executeUpdate("DROP TRIGGER reject_publication")
+        assertEquals(setOf("milestone"), processor.process(event)?.completed)
+        assertTrue(processor.process(event)!!.duplicate)
+        val shared = event.copy(source = UUID.randomUUID(), requirement = "SMELT",
+            current = mapOf(actor to "a", peer to "a"), online = setOf(actor, peer))
+        assertEquals(setOf("shared"), processor.process(shared)?.completed)
+        assertTrue(processor.process(shared.copy(online = setOf(actor)))!!.duplicate)
+        assertEquals(listOf(GuildAchievementXpPolicy.transactionId(guild, "milestone")),
+            awards.pendingAchievementPublications(10).map { it.transactionId })
+    }
+
     @Test fun `failed publication does not starve later work and is retried`() {
         val storage = openStorage()
         migrateProductionSchema(storage)

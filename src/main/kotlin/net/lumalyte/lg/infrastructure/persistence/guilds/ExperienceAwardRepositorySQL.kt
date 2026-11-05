@@ -57,31 +57,39 @@ class ExperienceAwardRepositorySQL(
         achievementId: String,
         amount: Int,
     ): ExperienceAwardResult {
+        return storage.connection.connection.use { connection ->
+            connection.committingTransaction {
+                reserveWriter(connection, request.guildId)
+                awardAchievementInTransaction(connection, request, achievementId, amount)
+            }
+        }
+    }
+
+    /** Caller owns the transaction and has reserved the guild writer. */
+    internal fun awardAchievementInTransaction(
+        connection: Connection, request: ExperienceAwardRequest, achievementId: String, amount: Int,
+    ): ExperienceAwardResult {
+        check(!connection.autoCommit)
         require(request.source == ExperienceSource.ACHIEVEMENT && amount > 0)
         require(achievementId.matches(Regex("[a-z0-9_]+")))
         require(request.transactionId == net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(request.guildId, achievementId))
         val policy = ExperiencePolicy(ExperienceSource.ACHIEVEMENT, "ACHIEVEMENT", 1, 0, CapPeriod.UNLIMITED, true)
-        return storage.connection.connection.use { connection ->
-            connection.committingTransaction {
-                reserveWriter(connection, request.guildId)
-                val claimed = connection.selectOne(
-                    "SELECT 1 FROM guild_achievement_xp_awards WHERE guild_id = ? AND achievement_id = ?",
-                    request.guildId.toString(), achievementId,
-                ) { true } ?: false
-                if (claimed) return@committingTransaction ExperienceAwardResult.Duplicate
-                val result = ExperienceAwardTransaction(connection, mariaDb, curveProvider(), timestampFormats).award(request, policy, amount, null)
-                check(result is ExperienceAwardResult.Awarded) { "Achievement award receipt conflicts with XP history" }
-                connection.updateStatement(
-                    "INSERT INTO guild_achievement_xp_awards (guild_id, achievement_id, transaction_id) VALUES (?, ?, ?)",
-                    request.guildId.toString(), achievementId, request.transactionId.toString(),
-                )
-                connection.updateStatement(
-                    "INSERT INTO guild_achievement_xp_publications (transaction_id, guild_id, leveled_up_to, acknowledged) VALUES (?, ?, ?, 0)",
-                    request.transactionId.toString(), request.guildId.toString(), result.leveledUpTo,
-                )
-                result
-            }
-        }
+        val claimed = connection.selectOne(
+            "SELECT 1 FROM guild_achievement_xp_awards WHERE guild_id = ? AND achievement_id = ?",
+            request.guildId.toString(), achievementId,
+        ) { true } ?: false
+        if (claimed) return ExperienceAwardResult.Duplicate
+        val result = ExperienceAwardTransaction(connection, mariaDb, curveProvider(), timestampFormats).award(request, policy, amount, null)
+        check(result is ExperienceAwardResult.Awarded) { "Achievement award receipt conflicts with XP history" }
+        connection.updateStatement(
+            "INSERT INTO guild_achievement_xp_awards (guild_id, achievement_id, transaction_id) VALUES (?, ?, ?)",
+            request.guildId.toString(), achievementId, request.transactionId.toString(),
+        )
+        connection.updateStatement(
+            "INSERT INTO guild_achievement_xp_publications (transaction_id, guild_id, leveled_up_to, acknowledged) VALUES (?, ?, ?, 0)",
+            request.transactionId.toString(), request.guildId.toString(), result.leveledUpTo,
+        )
+        return result
     }
 
     /** Read-only recovery record; acknowledgment belongs after successful cache and notification handling. */
