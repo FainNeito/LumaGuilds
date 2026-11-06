@@ -125,3 +125,7 @@ Local verification: 37 focused runtime, public API, SQLite persistence and payou
 ## Confirmed Founding personal credit
 
 Personal Founding now advances after the creation cost service returns Applied, rather than during the earlier GuildCreatedEvent. A runtime regression test verifies no personal completion at that early event, successful completion after confirmation, and idempotent replay. Existing API event behavior remains in place for other listeners. Unconfirmed or interrupted creations require review; the current confirmed command callback is not a durable outbox. The existing network-wide online-roster requirement remains unresolved and payout settings remain off.
+
+## Server-local eligibility (2026-11-06)
+
+The owner clarified that the same-IP rule applies only to guildmates online on the SMP server where the advancement is earned. Players connected to other network servers are outside the rule. The existing Bukkit session snapshot is the intended source. Trusted client-address forwarding must still be verified on each backend before enabling payouts. TEST uses the same local scope for acceptance. No network-wide session integration is required.

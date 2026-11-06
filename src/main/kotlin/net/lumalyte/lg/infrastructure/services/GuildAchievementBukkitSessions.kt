@@ -5,7 +5,7 @@ import java.util.UUID
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 
-/** Unbound adapter; it cannot establish whether proxy forwarding or network coverage is trustworthy. */
+/** Local session adapter; proxy forwarding must be verified separately. */
 internal class GuildAchievementBukkitSessions(
     private val onServerThread: () -> Boolean = Bukkit::isPrimaryThread,
     private val onlinePlayers: () -> Collection<Player> = { Bukkit.getOnlinePlayers() },

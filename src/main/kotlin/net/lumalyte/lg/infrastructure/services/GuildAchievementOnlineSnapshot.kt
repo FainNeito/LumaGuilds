@@ -3,7 +3,7 @@ package net.lumalyte.lg.infrastructure.services
 import java.net.InetAddress
 import java.util.UUID
 
-/** A caller must attest that both the network roster and forwarded client addresses are trustworthy. */
+/** A caller must attest that local sessions and forwarded client addresses are trustworthy. */
 internal class GuildAchievementOnlineSnapshot(
     private val trustedNetworkView: () -> Boolean,
     private val members: (UUID) -> Set<UUID>,
