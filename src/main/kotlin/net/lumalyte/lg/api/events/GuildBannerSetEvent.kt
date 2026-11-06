@@ -9,9 +9,15 @@ import java.util.UUID
  */
 class GuildBannerSetEvent(
     val guildId: UUID,
-    val playerId: UUID
+    val playerId: UUID,
 ) : Event() {
+    internal var registeredFromDefault: Boolean = false
+        private set
+
     companion object {
+        internal fun afterSave(guildId: UUID, playerId: UUID, registeredFromDefault: Boolean) =
+            GuildBannerSetEvent(guildId, playerId).also { it.registeredFromDefault = registeredFromDefault }
+
         @JvmStatic
         private val handlers = HandlerList()
         @JvmStatic

@@ -63,7 +63,7 @@ class LumaGuilds : JavaPlugin() {
 
     private fun recordCompletedGuildSale(sale: java.util.UUID, guild: java.util.UUID) {
         get().get<net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime>()
-            .shared(guild, "GUILD_SHOP_SALE", receipt = "market:$sale")
+            .confirmedMarketSale(guild, sale)
     }
 
 

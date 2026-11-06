@@ -62,6 +62,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     private val bannermanListeners: net.lumalyte.lg.infrastructure.bukkit.bannerman.BannermanListeners by inject()
     private val strikeService: net.lumalyte.lg.application.services.StrikeService by inject()
     private val bankService: net.lumalyte.lg.application.services.BankService by inject()
+    private val achievements: net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime by inject()
     private val guildCostService: net.lumalyte.lg.application.services.GuildCostService by inject()
     private val guildHomeActivationService: net.lumalyte.lg.application.services.GuildHomeActivationService by inject()
     private val warBannerService: net.lumalyte.lg.infrastructure.services.WarBannerServiceBukkit by inject()
@@ -186,6 +187,11 @@ class GuildCommand : BaseCommand(), KoinComponent {
                             "command.migrated.guild.create.raw_gold_paid",
                             "cost" to result.cost,
                         ))
+                    }
+                    try {
+                        achievements.confirmedFounding(result, player)
+                    } catch (error: Exception) {
+                        player.server.logger.warning("Guild ${result.guild.id} was created but Founding needs review: ${error.javaClass.simpleName}")
                     }
                     result.guild
                 }

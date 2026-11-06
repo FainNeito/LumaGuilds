@@ -11,6 +11,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -228,6 +231,102 @@ class ExperienceAwardRepositorySQLTest {
         assertEquals(ExperienceAwardResult.Duplicate, replay)
         assertEquals(2, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
         assertEquals(1, rowCount("experience_transactions"))
+    }
+
+    @Test
+    fun `guild achievement payout remains unique after ordinary xp history is pruned`() {
+        val achievement = "first_war"
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, achievement)
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+        assertEquals(ExperienceAwardResult.Awarded(50, 50, false), repository.awardAchievementAtomically(award, achievement, 50))
+        storage.connection.executeUpdate("DELETE FROM experience_transactions WHERE id = ?", transaction.toString())
+        val reopened = ExperienceAwardRepositorySQL(storage, curve)
+        assertEquals(ExperienceAwardResult.Duplicate, reopened.awardAchievementAtomically(award, achievement, 50))
+        assertEquals(50, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
+    }
+
+    @Test
+    fun `failed achievement ledger insert rolls back progression and audit`() {
+        storage.connection.executeUpdate("CREATE TRIGGER reject_achievement BEFORE INSERT ON guild_achievement_xp_awards BEGIN SELECT RAISE(ABORT, 'ledger rejected'); END")
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, "first_war"))
+        assertThrows(SQLException::class.java) { repository.awardAchievementAtomically(award, "first_war", 50) }
+        assertEquals(0, rowCount("guild_progression"))
+        assertEquals(0, rowCount("experience_transactions"))
+        assertEquals(0, rowCount("guild_achievement_xp_awards"))
+    }
+
+    @Test
+    fun `achievement publication survives recreation and duplicate award until acknowledged`() {
+        val achievement = "first_war"
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, achievement)
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+        repository.awardAtomically(request(), policy, curve.experienceForNextLevel(1) - 25, policy.windowContaining(instant))
+        val result = repository.awardAchievementAtomically(award, achievement, 50) as ExperienceAwardResult.Awarded
+        assertNotNull(result.leveledUpTo)
+        val reopened = ExperienceAwardRepositorySQL(storage, curve)
+        assertEquals(ExperienceAwardRepositorySQL.AchievementPublication(transaction, guildId, result.leveledUpTo), reopened.pendingAchievementPublication(transaction))
+        assertEquals(ExperienceAwardResult.Duplicate, reopened.awardAchievementAtomically(award, achievement, 50))
+        assertTrue(reopened.acknowledgeAchievementPublication(transaction))
+        assertFalse(reopened.acknowledgeAchievementPublication(transaction))
+        assertNull(ExperienceAwardRepositorySQL(storage, curve).pendingAchievementPublication(transaction))
+    }
+
+    @Test
+    fun `failed achievement publication rolls back award and receipt`() {
+        storage.connection.executeUpdate("CREATE TRIGGER reject_publication BEFORE INSERT ON guild_achievement_xp_publications BEGIN SELECT RAISE(ABORT, 'publication rejected'); END")
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, "first_war")
+        val award = request().copy(source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+        assertThrows(SQLException::class.java) { repository.awardAchievementAtomically(award, "first_war", 50) }
+        assertEquals(0, rowCount("guild_progression"))
+        assertEquals(0, rowCount("experience_transactions"))
+        assertEquals(0, rowCount("guild_achievement_xp_awards"))
+        assertNull(repository.pendingAchievementPublication(transaction))
+    }
+
+    @Test
+    fun `concurrent members award a guild achievement only once`() {
+        val achievement = "first_war"
+        val transaction = net.lumalyte.lg.domain.achievements.GuildAchievementXpPolicy.transactionId(guildId, achievement)
+        val start = CountDownLatch(1)
+        val awards = List(8) {
+            CompletableFuture.supplyAsync {
+                start.await()
+                val award = request().copy(actorId = UUID.randomUUID(), source = ExperienceSource.ACHIEVEMENT, transactionId = transaction)
+                repository.awardAchievementAtomically(award, achievement, 50)
+            }
+        }
+        start.countDown()
+        val results = awards.map { it.get(10, TimeUnit.SECONDS) }
+        assertEquals(1, results.filterIsInstance<ExperienceAwardResult.Awarded>().size)
+        assertEquals(7, results.count { it == ExperienceAwardResult.Duplicate })
+        assertEquals(50, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
+        assertEquals(1, rowCount("guild_achievement_xp_awards"))
+    }
+
+    @Test
+    fun `coordinator pays only eligible future completion through actual ledger`() {
+        val peer = UUID.randomUUID()
+        val node = net.lumalyte.lg.domain.achievements.GuildAchievement(
+            "first_war", null, "First War", listOf("Win"), "WAR", null, 1, 50,
+            emptyList(), "Combat", "SHIELD", "GOAL", 0f, 0f,
+        )
+        val sink = net.lumalyte.lg.infrastructure.services.GuildAchievementXpSqlSink(repository) { instant }
+        val coordinator = net.lumalyte.lg.application.services.GuildAchievementXpCoordinator(listOf(node), sink)
+        val members = setOf(actorId, peer)
+        val distinct = mapOf(actorId to "a", peer to "b")
+        val shared = mapOf(actorId to "a", peer to "a")
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.HISTORICAL,
+            coordinator.complete(guildId, actorId, node, false, members, distinct))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.SHARED_ADDRESS,
+            coordinator.complete(guildId, actorId, node, true, members, shared))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.UNKNOWN_ADDRESS,
+            coordinator.complete(guildId, actorId, node, true, members, mapOf(actorId to "a")))
+        assertEquals(0, rowCount("guild_progression"))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.AWARDED,
+            coordinator.complete(guildId, actorId, node, true, members, distinct))
+        assertEquals(net.lumalyte.lg.application.services.GuildAchievementXpCoordinator.Result.DUPLICATE,
+            coordinator.complete(guildId, peer, node, true, members, distinct))
+        assertEquals(50, intValue("SELECT total_experience AS value FROM guild_progression WHERE guild_id = ?", guildId))
     }
 
     private fun request() = ExperienceAwardRequest(

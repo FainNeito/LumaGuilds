@@ -37,18 +37,18 @@ internal class GuildAchievementBossEligibilityTest {
 
         every { world.environment } returns World.Environment.NORMAL
         listener.death(event)
-        verify(exactly = 0) { runtime.signal(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { runtime.signal(any(), any(), any(), any(), any(), any(), any()) }
 
         every { world.environment } returns World.Environment.THE_END
         every { members.last().world } returns otherWorld
         listener.death(event)
-        verify(exactly = 0) { runtime.signal(any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { runtime.signal(any(), any(), any(), any(), any(), any(), any()) }
 
         every { members.last().world } returns world
         listener.death(event)
         members.forEach { member ->
             verify(exactly = 1) {
-                runtime.signal(member, "GUILD_COLLECTIVE_BOSS_KILL", "ENDER_DRAGON", receipt = "boss:$bossId")
+                runtime.signal(member, "GUILD_COLLECTIVE_BOSS_KILL", "ENDER_DRAGON", receipt = "boss:$bossId", newEvent = true)
             }
         }
     }

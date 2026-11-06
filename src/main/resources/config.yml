@@ -1057,3 +1057,12 @@ strikes:
     # punishment time, attribute to the player's current guild instead
     # (maximizes coverage of the "most troublesome guild" ranking).
     fallback_to_current_guild: true
+
+# Opt-in TEST path for the Founding milestone after confirmed guild creation.
+advancement-guild-xp:
+  founding-test-enabled: false
+  # Award Colors of the Vanguard on a new banner registration on TEST.
+  banner-test-enabled: false
+  # Enable only when this server receives trusted client addresses.
+  # Eligibility compares guild members online on this server.
+  trusted-local-session-view: false

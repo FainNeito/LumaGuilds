@@ -35,7 +35,7 @@ internal class GuildAchievementCompanions(private val plugin: JavaPlugin, privat
 
     private fun shopCreated(event: Event) {
         val owner = value(event, "OwnerId") as? UUID ?: return
-        Bukkit.getPlayer(owner)?.let { runtime.signal(it, "SHOP_CREATED") }
+        Bukkit.getPlayer(owner)?.let { runtime.signal(it, "SHOP_CREATED", newEvent = true) }
     }
 
     private data class Capture(val guild: UUID, val eventId: UUID, val arena: String)

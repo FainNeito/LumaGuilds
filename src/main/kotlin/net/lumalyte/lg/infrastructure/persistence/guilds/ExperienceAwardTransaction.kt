@@ -12,6 +12,7 @@ internal class ExperienceAwardTransaction(
     private val connection: Connection,
     private val mariaDb: Boolean,
     private val curve: ProgressionCurve,
+    private val timestamps: ExperienceTimestampFormats,
 ) {
     fun award(
         request: ExperienceAwardRequest,
@@ -101,12 +102,12 @@ internal class ExperienceAwardTransaction(
         val total = Math.addExact(existing.totalExperience, accepted)
         val level = curve.levelFromExperience(total)
         val changed = level > existing.currentLevel
-        val lastLevelUp = if (changed) request.occurredAt.toEpochMilli() else null
+        val lastLevelUp = if (changed) timestamps.value(request.occurredAt, timestamps.lastLevelUpDateTime) else null
         val levelUps = existing.totalLevelUps + (level - existing.currentLevel).coerceAtLeast(0)
         connection.updateStatement(
             progressionUpsertSql(mariaDb), request.guildId.toString(), total, level,
             curve.experienceInCurrentLevel(total), curve.experienceForNextLevel(level), lastLevelUp,
-            levelUps, "[]", existing.createdAt, request.occurredAt.toEpochMilli(),
+            levelUps, "[]", existing.createdAt, timestamps.value(request.occurredAt, timestamps.lastUpdatedDateTime),
         )
         connection.updateStatement("UPDATE guilds SET level = ? WHERE id = ?", level, request.guildId.toString())
         return level.takeIf { changed }
@@ -117,7 +118,7 @@ internal class ExperienceAwardTransaction(
             "SELECT total_experience, current_level, total_level_ups, created_at " +
                 "FROM guild_progression WHERE guild_id = ?"
         return connection.selectOne(sql, request.guildId.toString(), mapper = ::mapProgression)
-            ?: ExistingProgression(0, 1, 0, request.occurredAt.toEpochMilli())
+            ?: ExistingProgression(0, 1, 0, timestamps.value(request.occurredAt, timestamps.createdAtDateTime))
     }
 
     private fun mapProgression(row: java.sql.ResultSet): ExistingProgression {
@@ -125,7 +126,7 @@ internal class ExperienceAwardTransaction(
             row.getInt("total_experience"),
             row.getInt("current_level"),
             row.getInt("total_level_ups"),
-            row.getLong("created_at"),
+            requireNotNull(row.getObject("created_at")),
         )
     }
 
@@ -141,7 +142,7 @@ internal class ExperienceAwardTransaction(
             request.source.name,
             "XP from ${request.source.name}",
             request.actorId?.toString(),
-            request.occurredAt.toEpochMilli(),
+            timestamps.value(request.occurredAt, timestamps.transactionDateTime),
         )
     }
 
@@ -149,6 +150,6 @@ internal class ExperienceAwardTransaction(
         val totalExperience: Int,
         val currentLevel: Int,
         val totalLevelUps: Int,
-        val createdAt: Long,
+        val createdAt: Any,
     )
 }
