@@ -80,6 +80,28 @@ internal class GuildAchievementRuntimeTest {
         assertTrue(runtime.read(player)!!.progress.isEmpty())
     }
 
+    @Test fun `creation event does not credit founding before confirmed payment`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val player = spyk(server.addPlayer())
+        every { player.saveData() } just Runs
+        mockkStatic(org.bukkit.Bukkit::class)
+        every { org.bukkit.Bukkit.isPrimaryThread() } returns true
+        every { player.isOnline } returns true
+        val guild = net.lumalyte.lg.domain.entities.Guild(UUID.randomUUID(), "FounderTest", createdAt = java.time.Instant.now())
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild.id)
+        val runtime = GuildAchievementRuntime(plugin, members, mockk())
+        server.pluginManager.registerEvents(GuildAchievementListener(runtime), plugin)
+        server.pluginManager.callEvent(net.lumalyte.lg.api.events.GuildCreatedEvent(guild, player.uniqueId))
+        assertFalse("founding" in runtime.read(player)!!.rewarded)
+        runtime.confirmedFounding(net.lumalyte.lg.application.services.GuildCreationCostResult.Applied(guild, 0), player)
+        assertTrue("founding" in runtime.read(player)!!.rewarded)
+        runtime.confirmedFounding(net.lumalyte.lg.application.services.GuildCreationCostResult.Applied(guild, 0), player)
+        assertEquals(1, runtime.read(player)!!.progress["founding"])
+    }
+
     @Test fun `confirmed founding routes the new guild and only its founder with a trusted session`() {
         val server = MockBukkit.mock()
         val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
@@ -93,6 +115,8 @@ internal class GuildAchievementRuntimeTest {
         val guild = net.lumalyte.lg.domain.entities.Guild(UUID.randomUUID(), "FoundingTest", createdAt = java.time.Instant.now())
         val applied = net.lumalyte.lg.application.services.GuildCreationCostResult.Applied(guild, 2000)
         val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild.id)
+        every { player.saveData() } just Runs
         every { members.getByGuild(guild.id) } returns setOf(net.lumalyte.lg.domain.entities.Member(
             player.uniqueId, guild.id, UUID.randomUUID(), guild.createdAt))
         val processor = mockk<GuildAchievementGuildEventProcessor>()
@@ -112,6 +136,7 @@ internal class GuildAchievementRuntimeTest {
         assertEquals(setOf(player.uniqueId), event.captured.participants)
         assertEquals("GUILD_CREATE", event.captured.requirement)
         assertNotNull(event.captured.current[player.uniqueId])
+        assertTrue("founding" in runtime.read(player)!!.rewarded)
     }
 
     @Test fun `banner uses only the setter and the completion time online roster`() {

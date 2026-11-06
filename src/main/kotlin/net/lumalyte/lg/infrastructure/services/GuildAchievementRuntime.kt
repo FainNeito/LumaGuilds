@@ -64,6 +64,9 @@ internal class GuildAchievementRuntime(
     fun confirmedFounding(result: net.lumalyte.lg.application.services.GuildCreationCostResult.Applied, founder: Player) {
         val guild = result.guild
         remember(guild.id, listOf("founding"), guild.createdAt)
+        if (guild(founder.uniqueId) == guild.id) {
+            signal(founder, "GUILD_CREATE")
+        }
         if (!plugin.config.getBoolean("advancement-guild-xp.founding-test-enabled", false)) return
         processFirstMilestone(guild.id, founder.uniqueId, "GUILD_CREATE", guild.createdAt)
     }
