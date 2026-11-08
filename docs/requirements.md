@@ -611,6 +611,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-157
 **State-driven.** WHILE a guild's canonical gold balance exceeds its current bank capacity (for example after a prestige resets level-based capacity), THE SYSTEM SHALL keep the full balance, SHALL reject every credit that would leave the balance above capacity (deposits, transfers in and interest), SHALL allow debits that the balance can fund, and SHALL allow a refund of a debit to restore the balance up to the larger of current capacity and the balance before that debit. A prestige SHALL NOT be rejected because its post-fee balance exceeds the post-prestige capacity, and the prestige confirmation SHALL tell the leader that gold above the new capacity stays withdrawable but cannot be added to until capacity catches up. Receipts recorded with the earlier `POST_PRESTIGE_CAPACITY` rejection SHALL still replay with their original message.
 
+### REQ-162
+**Event-driven.** WHEN the owner of a guild whose prestige count is at least 1 starts a disband, through the Java or Bedrock confirmation or `/g disband`, THE SYSTEM SHALL show before anything is deleted a warning naming the guild's prestige tier, stating that the tier and its permanent rewards are lost for good, that members keep the advancements and tags they earned, and that the guild's server-firsts stay in the history under its name; `/g disband` SHALL then open the platform confirmation instead of disbanding at once. WHERE the prestige tier cannot be read THE SYSTEM SHALL show the same warning without the tier. Guilds that have never prestiged SHALL keep the existing disband flow.
+
+### REQ-163
+**Event-driven.** WHEN a guild whose prestige count is at least 1 is disbanded THE SYSTEM SHALL, in the same transaction as the deletion, record the guild's id, its name and prestige count at that moment and the disband time, SHALL keep its prestige receipts and gold journal, and SHALL keep every server-first it holds, so that `PrestigeHistory` can still name it as disbanded. A disband that fails SHALL record nothing. Re-founding a guild with the same name SHALL create a new guild with no prestige history.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

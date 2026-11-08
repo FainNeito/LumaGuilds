@@ -84,3 +84,11 @@ data class PrestigeStanding(
     /** Highest tier this guild was first on the server to reach, 0 if none. */
     val firstTier: Int,
 )
+
+/** A prestiged guild as it stood when it was disbanded (REQ-163). */
+data class DisbandedPrestigeGuild(
+    val guildId: UUID,
+    val name: String,
+    val prestigeCount: Int,
+    val disbandedAt: Instant,
+)
