@@ -400,6 +400,11 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
                 ),
                 // REQ-155: seven entries (index 0 = none); & colour codes become section signs.
+                fanfare = net.lumalyte.lg.config.PrestigeFanfareConfig(
+                    enabled = config.getBoolean("progression.prestige.fanfare.enabled", true),
+                    serverWide = config.getBoolean("progression.prestige.fanfare.server_wide", true),
+                    memberTitle = config.getBoolean("progression.prestige.fanfare.member_title", true),
+                ),
                 badges = config.getStringList("progression.prestige.badges")
                     .takeIf { it.size >= 7 }
                     ?.map { org.bukkit.ChatColor.translateAlternateColorCodes('&', it) }

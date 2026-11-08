@@ -611,6 +611,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-157
 **State-driven.** WHILE a guild's canonical gold balance exceeds its current bank capacity (for example after a prestige resets level-based capacity), THE SYSTEM SHALL keep the full balance, SHALL reject every credit that would leave the balance above capacity (deposits, transfers in and interest), SHALL allow debits that the balance can fund, and SHALL allow a refund of a debit to restore the balance up to the larger of current capacity and the balance before that debit. A prestige SHALL NOT be rejected because its post-fee balance exceeds the post-prestige capacity, and the prestige confirmation SHALL tell the leader that gold above the new capacity stays withdrawable but cannot be added to until capacity catches up. Receipts recorded with the earlier `POST_PRESTIGE_CAPACITY` rejection SHALL still replay with their original message.
 
+### REQ-164
+**Event-driven.** WHEN a prestige is newly committed and the prestige fanfare is enabled THE SYSTEM SHALL play, from vanilla sounds only and scheduled in server ticks after the public announcement, the member fanfare to that guild's online members (the longer legacy fanfare for Prestige VI, with the opening horn pitched by tier), SHALL show those members a title naming the prestige tier and the guild, and, WHILE the server-wide option is on, SHALL play the short distant fanfare to every other online player. A player who logs out during the fanfare SHALL simply stop receiving its remaining cues, a replayed prestige receipt SHALL NOT play it again, and no failure in the fanfare SHALL affect the prestige.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

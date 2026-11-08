@@ -1239,3 +1239,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
     refused, a withdrawal succeeds and its refund restores the over-capacity
     balance. Confirmation menus (Java and Bedrock) show the overflow notice.
     Full suite 2459 tests, 0 failures; native MariaDB profile 132 tests, 0 failures.
+
+## Prestige fanfare (REQ-164)
+
+- [x] **PRESTIGE-FANFARE** Tag: TDD.
+  - References: REQ-164; the approved mockup v3 cue lists (members, Prestige VI legacy, server).
+  - Evidence: `GuildPrestigeService` notifies `GuildPrestigeNotifier`s only for a newly committed prestige (REQ-153), so a notifier is the hook and replays stay silent.
+  - Result: `PrestigeFanfareScoreTest` and `PrestigeFanfareTest` failed against scaffolds (6 of 8), then passed. Full suite 2467 tests, 0 failures. Sounds are vanilla keys played through `Player.playSound(Entity, String, …)`; in-game listening is a TEST check.

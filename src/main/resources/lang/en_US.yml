@@ -7431,6 +7431,9 @@ notification:
         description: '<gold><objective> <gray>— <gold><xp> Guild EXP awarded'
         fallback: '<green>Quest complete: <gold><objective> <gray>(<gold><xp> Guild EXP<gray>)'
   progression:
+    prestige:
+      title: '<gold><bold>PRESTIGE <tier></bold>'
+      subtitle: '<yellow><guild> <gray>has prestiged'
     level_up:
       title: '<gold>⭐ <bold>GUILD LEVEL UP!</bold> ⭐'
       subtitle: '<yellow><guild> <gray>reached level <yellow><level>'

@@ -590,6 +590,13 @@ progression:
     # Seven entries: none, then tiers I-VI. & colour codes are translated; other
     # text (for example a Nexo glyph) passes through unchanged.
     badges: ["", "&6✦I", "&6✦II", "&7✦III", "&7✦IV", "&e✦V", "&d✦VI"]
+    # REQ-164: a fanfare from vanilla sounds when a guild prestiges. Online members
+    # hear the full fanfare (a longer one at Prestige VI) and see a title; with
+    # server_wide, everyone else online hears a short distant version.
+    fanfare:
+      enabled: true
+      server_wide: true
+      member_title: true
 
   # Experience values for different activities
   bank_deposit_xp_per_100: 1         # XP per 100 coins deposited
