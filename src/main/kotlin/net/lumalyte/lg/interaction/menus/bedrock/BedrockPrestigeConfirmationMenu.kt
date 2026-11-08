@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.badgersmc.nexus.i18n.LangService
 import net.kyori.adventure.text.Component
 import net.lumalyte.lg.application.services.GuildPrestigeService
@@ -80,7 +81,7 @@ class BedrockPrestigeConfirmationMenu(
             "menu.guild_progression.prestige.feedback.applied",
             "reward" to retainedRewardName,
             "fee" to result.fee,
-            "count" to result.prestigeCount,
+            "count" to PrestigeNumeral.of(result.prestigeCount),
         )
         is PrestigeResult.Failed ->
             lang.msg("menu.guild_progression.prestige.feedback.failed")

@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import com.github.stefvanschie.inventoryframework.gui.GuiItem
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui
 import net.badgersmc.nexus.i18n.LangService
@@ -541,8 +542,8 @@ class GuildProgressionMenu(
                 overview.prestigeCount >= overview.maxPrestigeCount ->
                     lore += lang.gui(
                         "menu.guild_progression.prestige.state.maximum",
-                        "count" to overview.prestigeCount,
-                        "max" to overview.maxPrestigeCount,
+                        "count" to PrestigeNumeral.of(overview.prestigeCount),
+                        "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
                     )
                 overview.currentLevel < 100 -> lore += lang.gui(
                     "menu.guild_progression.prestige.state.level",
@@ -553,8 +554,8 @@ class GuildProgressionMenu(
                 else -> {
                     lore += lang.gui(
                         "menu.guild_progression.prestige.state.ready",
-                        "count" to overview.prestigeCount,
-                        "max" to overview.maxPrestigeCount,
+                        "count" to PrestigeNumeral.of(overview.prestigeCount),
+                        "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
                         "fee" to (overview.nextFee ?: 0L),
                         "choices" to overview.choices.size,
                     )

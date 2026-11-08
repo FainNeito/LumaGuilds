@@ -611,6 +611,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-157
 **State-driven.** WHILE a guild's canonical gold balance exceeds its current bank capacity (for example after a prestige resets level-based capacity), THE SYSTEM SHALL keep the full balance, SHALL reject every credit that would leave the balance above capacity (deposits, transfers in and interest), SHALL allow debits that the balance can fund, and SHALL allow a refund of a debit to restore the balance up to the larger of current capacity and the balance before that debit. A prestige SHALL NOT be rejected because its post-fee balance exceeds the post-prestige capacity, and the prestige confirmation SHALL tell the leader that gold above the new capacity stays withdrawable but cannot be added to until capacity catches up. Receipts recorded with the earlier `POST_PRESTIGE_CAPACITY` rejection SHALL still replay with their original message.
 
+### REQ-165
+**Ubiquitous.** THE SYSTEM SHALL show every prestige tier and prestige count it puts in front of players (the server-wide prestige announcement, the prestige-applied message, the Java and Bedrock progression and prestige menus, and the Chronicle prestige page) as a Roman numeral from I to VI, with a count of zero shown as 0; counts of things other than prestige tiers, such as home slots, SHALL stay as ordinary numbers.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

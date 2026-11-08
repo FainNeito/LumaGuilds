@@ -1239,3 +1239,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
     refused, a withdrawal succeeds and its refund restores the over-capacity
     balance. Confirmation menus (Java and Bedrock) show the overflow notice.
     Full suite 2459 tests, 0 failures; native MariaDB profile 132 tests, 0 failures.
+
+## Prestige Roman numerals (REQ-165)
+
+- [x] **PRESTIGE-ROMAN** Tag: TDD.
+  - References: REQ-165; Fain's TEST screenshot ("has reached Guild Prestige 4", "Prestige count: 4").
+  - Evidence: the announcement only mapped I to III and printed 4 and up as numbers; menus and the applied message passed raw counts.
+  - Result: `PrestigeNumeralTest` and the announcement tests failed (3 of 5), then passed. `PrestigeNumeral.of` now feeds the broadcast, the applied message (reworded to "Your guild is now Prestige IV."), the Java and Bedrock progression, selection and confirmation menus, the Chronicle milestones and progress, and the `guild_prestige_roman` placeholder. The home-slot bonus stays a number. Full suite 2462 tests, 0 failures.
