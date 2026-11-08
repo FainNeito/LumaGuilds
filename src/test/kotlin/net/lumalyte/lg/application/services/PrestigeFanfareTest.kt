@@ -46,33 +46,27 @@ class PrestigeFanfareTest {
         fanfare(stage).prestiged(completion(2))
         stage.runAll()
 
-        assertEquals(19, stage.played.count { it.first == memberA })
-        assertEquals(19, stage.played.count { it.first == memberB })
-        assertEquals(6, stage.played.count { it.first == outsider })
+        assertEquals(5, stage.played.count { it.first == memberA })
+        assertEquals(5, stage.played.count { it.first == memberB })
+        assertEquals(5, stage.played.count { it.first == outsider })
+        assertTrue(stage.played.filter { it.first == outsider }.all { it.second.volume <= 0.3f })
         assertTrue(stage.played.none { it.first == offlineMember })
         assertEquals(setOf(Triple(memberA, 2, "Everlights"), Triple(memberB, 2, "Everlights")), stage.titles.toSet())
-        assertEquals(0.9f, stage.played.first { it.first == memberA }.second.pitch)
+        assertEquals(0.849f, stage.played.first { it.first == memberA }.second.pitch)
     }
 
     @Test
     fun `cues land on their ticks and a player who leaves stops hearing them`() {
         val stage = Stage(mutableSetOf(memberA, memberB))
         fanfare(stage).prestiged(completion(1))
-        stage.runUntil(20)
+        stage.runUntil(4)
         val beforeLeaving = stage.played.count { it.first == memberB }
         stage.onlinePlayers.remove(memberB)
         stage.runAll()
         assertEquals(beforeLeaving, stage.played.count { it.first == memberB })
-        assertTrue(stage.played.filter { it.first == memberA }.all { it.second.tick in 0..42 })
-        assertEquals(19, stage.played.count { it.first == memberA })
-    }
-
-    @Test
-    fun `prestige six plays the legacy fanfare`() {
-        val stage = Stage(mutableSetOf(memberA))
-        fanfare(stage).prestiged(completion(6))
-        stage.runAll()
-        assertEquals(26, stage.played.count { it.first == memberA })
+        assertEquals(2, beforeLeaving)
+        assertTrue(stage.played.filter { it.first == memberA }.all { it.second.tick in 0..9 })
+        assertEquals(5, stage.played.count { it.first == memberA })
     }
 
     @Test

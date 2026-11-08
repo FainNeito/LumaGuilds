@@ -4,45 +4,45 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** REQ-164: the approved v3 fanfare, cue for cue. */
+/** REQ-164: the bell climb into the challenge chime (TEST preview 8), cue for cue. */
 class PrestigeFanfareScoreTest {
-    private val vanilla = setOf(
-        "item.goat_horn.sound.0", "item.goat_horn.sound.1", "ui.toast.challenge_complete",
-        "block.bell.use", "block.bell.resonate", "block.note_block.bell", "block.note_block.chime",
-        "block.note_block.flute", "block.note_block.bass", "block.beacon.power_select",
-        "block.beacon.activate", "entity.firework_rocket.large_blast", "block.end_gateway.spawn",
-    )
+    private val bell = "block.note_block.bell"
+    private val chime = "ui.toast.challenge_complete"
 
     @Test
-    fun `member fanfare for tiers one to five`() {
+    fun `members hear three rising bells into the challenge chime`() {
         val cues = PrestigeFanfareScore.cues(tier = 1, audience = FanfareAudience.MEMBERS)
-        assertEquals(19, cues.size)
-        assertEquals(42, cues.maxOf { it.tick })
-        assertEquals(FanfareCue(0, "item.goat_horn.sound.1", 0.6f, 0.85f), cues.first())
-        assertEquals(1.05f, PrestigeFanfareScore.cues(5, FanfareAudience.MEMBERS).first().pitch)
+        assertEquals(
+            listOf(
+                FanfareCue(0, bell, 0.55f, 0.849f),
+                FanfareCue(3, bell, 0.55f, 1.07f),
+                FanfareCue(6, bell, 0.6f, 1.273f),
+                FanfareCue(9, chime, 1.0f, 0.9f),
+                FanfareCue(9, bell, 0.5f, 1.699f),
+            ),
+            cues,
+        )
     }
 
     @Test
-    fun `prestige six gets the longer legacy fanfare`() {
-        val cues = PrestigeFanfareScore.cues(tier = 6, audience = FanfareAudience.MEMBERS)
-        assertEquals(26, cues.size)
-        assertEquals(66, cues.maxOf { it.tick })
-        assertEquals(FanfareCue(0, "item.goat_horn.sound.0", 0.7f, 0.8f), cues.first())
+    fun `every tier hears the same fanfare`() {
+        val first = PrestigeFanfareScore.cues(1, FanfareAudience.MEMBERS)
+        for (tier in 2..6) assertEquals(first, PrestigeFanfareScore.cues(tier, FanfareAudience.MEMBERS))
     }
 
     @Test
-    fun `everyone else hears a short distant version`() {
-        val cues = PrestigeFanfareScore.cues(tier = 3, audience = FanfareAudience.SERVER)
-        assertEquals(6, cues.size)
-        assertEquals(20, cues.maxOf { it.tick })
-        assertTrue(cues.all { it.volume <= 0.3f })
+    fun `everyone else hears the same fanfare quietly`() {
+        val members = PrestigeFanfareScore.cues(3, FanfareAudience.MEMBERS)
+        val server = PrestigeFanfareScore.cues(3, FanfareAudience.SERVER)
+        assertEquals(members.map { it.tick to it.sound to it.pitch }, server.map { it.tick to it.sound to it.pitch })
+        assertTrue(server.all { it.volume <= 0.3f })
     }
 
     @Test
-    fun `only vanilla sounds at audible volumes and valid pitches`() {
+    fun `no flute, horn or beacon, at audible volumes and valid pitches`() {
         for (tier in 1..6) for (audience in FanfareAudience.entries) {
             PrestigeFanfareScore.cues(tier, audience).forEach { cue ->
-                assertTrue(cue.sound in vanilla, cue.sound)
+                assertTrue(cue.sound in setOf(bell, chime), cue.sound)
                 assertTrue(cue.volume in 0.05f..1f && cue.pitch in 0.5f..2f, cue.toString())
             }
         }
