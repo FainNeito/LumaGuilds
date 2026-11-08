@@ -3,6 +3,10 @@
 Requirements REQ-158 to REQ-161 in `../requirements.md`. Status: spec for
 operator approval; nothing is implemented yet.
 
+Decisions (Fain, 2026-11-08): levels 60 and 80 are visible picks instead of
+Chronicle pages; the track ships in the same release as the Hall of Prestige;
+nameplate styles apply to the Hall statue only.
+
 ## Why
 
 Guild Outposts are permanent once bought (`RewardDefinition.permanentOnPurchase`
@@ -47,9 +51,9 @@ theme, six in all:
 | 30 | Celebration pose | Victory | Rally | Salute | Guard | Toast | Coronation |
 | 40 | Display armor trim | Wayfinder, gold | Rib, redstone | Flow, quartz | Tide, lapis | Raiser, resin | Silence, amethyst |
 | 50 | Spotlight colour | Gold | Red | White | Blue | Yellow | Purple |
-| 60 | Chronicle page | Run opened | Run opened | Run opened | Run opened | Run opened | Run opened |
+| 60 | Hall sound | Bell toll | Fire charge | Wing flaps | Conduit pulse | Amethyst chime | Enchanting |
 | 70 | Display aura | Gold sparkle | Embers | Drifting feathers | Bubbles | Glow | Enchant runes |
-| 80 | Chronicle page | Milestones | Milestones | Milestones | Milestones | Milestones | Milestones |
+| 80 | Title flourish | `✦ Name ✦` | `» Name «` | `❦ Name ❦` | `≈ Name ≈` | `☀ Name ☀` | `♛ Name ♛` |
 | 90 | Plinth block | Gilded blackstone | Nether bricks | Quartz | Prismarine bricks | Shroomlight | Purpur |
 | 100 | Run trophy | Run II completed | Run III completed | Run IV completed | Run V completed | Run VI completed | Run VII completed |
 
@@ -59,10 +63,21 @@ theme, six in all:
   rest on a sword planted point-down in front, with slow turns of the head.
 - **Display armor trim** applies to the Hall NPC's armor only. It is never an
   item and never changes a player's armor.
-- **Chronicle pages** go in the guild's Hall lectern book. "Run opened" records
-  the run number, the date the prestige that started it was committed, and the
-  member count then. "Milestones" lists the dates this run reached levels 10
-  to 80. The run trophy page adds the completion date.
+- **Nameplate styles** colour the guild name above the Hall statue only. They
+  never change chat, tab or EnthusiaTags tags.
+- **Hall sounds** are one vanilla sound that plays to a player who clicks the
+  guild's statue: `block.bell.use`, `item.firecharge.use`,
+  `entity.phantom.flap`, `block.conduit.activate`,
+  `block.amethyst_block.resonate` or `block.enchantment_table.use`, at a volume
+  that reaches only nearby players.
+- **Title flourishes** are symbols around the guild name on the statue nameplate
+  and in the title the guild's members see at their next prestige. The symbols
+  are in Minecraft's default font, so no resource pack is needed.
+- **Chronicle pages** are no longer picks. The Hall lectern book records them
+  for every run automatically: "Run opened" (run number, the date of the
+  prestige that started it and the member count then), "Milestones" (the dates
+  this run reached levels 10 to 90) and the run trophy page with the completion
+  date.
 - **Auras** are a few ambient vanilla particles around the NPC, shown only to
   players near the Hall.
 
@@ -94,7 +109,9 @@ theme, six in all:
   Bedrock) shows all 60 cosmetics by slot and theme, owned or locked, the
   guild's current run, and any picks waiting to be chosen.
 - **Using them.** Choosing which unlocked cosmetics the guild's Hall display
-  wears belongs to the Hall of Prestige work, not this spec.
+  wears belongs to the Hall of Prestige work. Because almost every cosmetic is
+  only visible in the Hall, this track ships in the same release as the Hall
+  and is not enabled on its own.
 
 ## Guilds that prestiged before this ships
 
@@ -113,7 +130,9 @@ prestiged, so they get one pick per checkpoint they have passed on Run II.
 ## Out of scope
 
 - The Hall of Prestige itself (NPCs, lectern, armor-set registration) and
-  applying these cosmetics to it.
+  applying these cosmetics to it. It is specified separately but released
+  together with this track.
+- Nameplate styles or flourishes on player chat, tab or EnthusiaTags tags.
 - Any power, price, XP or capacity change.
 - A track after Run VII.
 - The display NPC's animation files other than the existing Victory prototype.
