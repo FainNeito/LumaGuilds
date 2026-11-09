@@ -49,6 +49,23 @@ class WarRestartRecoveryTest {
             })
     }
 
+    @Test fun objectiveWarPersistsAndSettlesAfterKillTarget() {
+        var wars = service()
+        val declaration = assertNotNull(wars.createObjectiveWarDeclaration(first, second, emptySet(), 100, null, UUID.randomUUID(), false))
+        assertTrue(declaration.objectiveBased)
+        val active = assertNotNull(wars.acceptWarDeclaration(declaration.id, UUID.randomUUID()))
+        assertTrue(active.objectiveBased)
+        wars = service()
+        assertTrue(requireNotNull(wars.getWar(active.id)).objectiveBased)
+        repeat(25) { assertNotNull(wars.recordOpposingGuildKill(active.id, first, second)) }
+        assertTrue(wars.resolveReachedKillTarget(active.id, first))
+        wars = service()
+        assertEquals(WarStatus.ENDED, wars.getWar(active.id)?.status)
+        assertEquals(first, wars.getWar(active.id)?.winner)
+        assertEquals(1_100, gold.balance(first))
+        assertEquals(900, gold.balance(second))
+    }
+
     @Test fun `paid war keeps identity statistics and one settlement across service restarts`() {
         var wars = service()
         val declaration = assertNotNull(wars.createWarDeclaration(first, second, Duration.ofDays(1), emptySet(),

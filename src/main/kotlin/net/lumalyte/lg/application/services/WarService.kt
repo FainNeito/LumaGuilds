@@ -43,6 +43,19 @@ interface WarService {
     ): WarDeclaration?
 
     /**
+     * Creates a declaration with no time limit. The kill target decides victory.
+     */
+    fun createObjectiveWarDeclaration(
+        declaringGuildId: UUID,
+        defendingGuildId: UUID,
+        objectives: Set<WarObjective>,
+        wagerAmount: Int,
+        terms: String?,
+        actorId: UUID,
+        rated: Boolean,
+    ): WarDeclaration? = null
+
+    /**
      * Accepts a war declaration.
      *
      * @param declarationId The ID of the war declaration.

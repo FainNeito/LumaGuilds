@@ -315,7 +315,7 @@ data class CombatConfig(
     // War System
     var warDeclarationCooldownHours: Int = 24,
     var warFarmingCooldownHours: Int = 1,
-    var warDurationHours: Int = 168, // 1 week
+    var warDurationHours: Int = 720, // 30-day maximum for timed wars
     var warEndGracePeriodMinutes: Int = 30,
     var maxSimultaneousWars: Int = 3,
     var warKillWinTarget: Int = 25,

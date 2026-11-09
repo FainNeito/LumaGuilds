@@ -1,0 +1,23 @@
+# War duration and objective ending
+
+## Requirements
+
+- A declaring guild can select longer finite durations subject to an explicitly configured maximum. The receiver sees the actual duration before accepting.
+- A declaration can explicitly request a war with no time limit. Both guilds see this before acceptance.
+- No-time-limit wars must remain active across restarts until a supported victory condition, a mutually accepted peace, or an authorized cancellation resolves them.
+- Existing serialized wars and declarations retain their timed expiration semantics.
+- Kills are currently the only objective with a live, guild-attributed victory path. A no-time-limit option must clearly state this and must not imply that unsupported objective types can end a war.
+- Existing wager funding, settlement, chapter cutover, and notifications remain consistent for both modes.
+- Java and Bedrock duration and active-war displays must identify an unlimited duration without presenting a zero-day remaining time.
+
+## Evidence
+
+Production uses a 168-hour cap and a 25-kill target. Java offers 14 days but the service clamps it to 7 days. WarRecordCodec validates canonical JSON and requires compatibility work when record fields change. Non-kill addObjectiveProgress has no gameplay callers and does not select a winner.
+
+## Verification required
+
+Unit and serialization tests for legacy records, new timed and unlimited records, restart, pending declarations, acceptance, no expiry, supported kill victory and wager settlement. Validate Java/Bedrock rendering and declaration terms. Run repository checks and inspect exact PR head. Obtain live TEST verification separately.
+
+## Current state
+
+Investigation only. No runtime behavior changed. A migration-safe representation, supported victory semantics and preview remain to implement.

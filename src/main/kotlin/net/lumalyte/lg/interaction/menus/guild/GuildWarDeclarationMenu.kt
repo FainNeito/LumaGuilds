@@ -61,6 +61,7 @@ class GuildWarDeclarationMenu(
     
     // War configuration state
     private var selectedDuration: Duration = Duration.ofDays(7) // Default 7 days
+    private var objectiveBased = false
     private var selectedObjectives: MutableSet<WarObjective> = mutableSetOf()
     private var warTerms: String? = null
     private var inputMode: String? = null // Track what input mode we're in ("war_terms")
@@ -241,12 +242,10 @@ class GuildWarDeclarationMenu(
     private fun addDurationSelection(pane: StaticPane) {
         val durationItem = ItemStack.of(Material.CLOCK)
             .name(lang.gui("menu.war_declaration.item.duration.name"))
-            .lore(lang.gui("menu.war_declaration.item.duration.lore.current", "days" to selectedDuration.toDays()))
+            .lore(if (objectiveBased) lang.gui("war_duration.objective") else lang.gui("menu.war_declaration.item.duration.lore.current", "days" to selectedDuration.toDays()))
             .lore(lang.gui("menu.common.blank"))
             .lore(lang.gui("menu.war_declaration.item.duration.lore.available"))
-            .lore(lang.gui("menu.war_declaration.item.duration.lore.quick"))
-            .lore(lang.gui("menu.war_declaration.item.duration.lore.standard"))
-            .lore(lang.gui("menu.war_declaration.item.duration.lore.extended"))
+            .lore(lang.gui("war_duration.selection_help"))
             .lore(lang.gui("menu.common.blank"))
             .lore(lang.gui("menu.war_declaration.item.duration.lore.action"))
 
@@ -517,7 +516,7 @@ class GuildWarDeclarationMenu(
             ItemStack.of(Material.DIAMOND_SWORD)
                 .name(lang.gui("menu.war_declaration.item.declare.name"))
                 .lore(lang.gui("menu.war_declaration.item.declare.lore.target", "guild" to target.name))
-                .lore(lang.gui("menu.war_declaration.item.declare.lore.duration", "days" to selectedDuration.toDays()))
+                .lore(if (objectiveBased) lang.gui("war_duration.objective") else lang.gui("menu.war_declaration.item.declare.lore.duration", "days" to selectedDuration.toDays()))
                 .lore(lang.gui("menu.war_declaration.item.declare.lore.objectives", "count" to selectedObjectives.size))
                 .lore(if (wagerAmount > 0) {
                     lang.gui("menu.war_declaration.item.declare.lore.wager", "amount" to wagerAmount)
@@ -590,20 +589,19 @@ class GuildWarDeclarationMenu(
             // accept/decline flow. REQ-039: escrow is handled by the war service
             // (createWager deducts both guilds on acceptance); the menu no longer
             // moves bank funds itself.
-            val declaration = warService.createWarDeclaration(
-                declaringGuildId = guild.id,
-                defendingGuildId = target.id,
-                duration = selectedDuration,
-                objectives = selectedObjectives,
-                wagerAmount = wagerAmount,
-                terms = warTerms,
-                actorId = player.uniqueId,
-                rated = selectedRated,
-            )
+            val declaration = if (objectiveBased) {
+                warService.createObjectiveWarDeclaration(
+                    guild.id, target.id, selectedObjectives, wagerAmount, warTerms, player.uniqueId, selectedRated,
+                )
+            } else {
+                warService.createWarDeclaration(
+                    guild.id, target.id, selectedDuration, selectedObjectives, wagerAmount, warTerms, player.uniqueId, selectedRated,
+                )
+            }
 
             if (declaration != null) {
                 player.sendMessage(lang.msg("menu.war_declaration.feedback.sent", "guild" to target.name))
-                player.sendMessage(lang.msg("menu.war_declaration.feedback.duration", "days" to selectedDuration.toDays()))
+                player.sendMessage(if (declaration.objectiveBased) lang.msg("war_duration.objective") else lang.msg("menu.war_declaration.feedback.duration", "days" to declaration.proposedDuration.toDays()))
                 if (declaration.isRated) {
                     player.sendMessage(lang.msg("menu.war_declaration.feedback.rated_created"))
                 } else {
@@ -644,10 +642,15 @@ class GuildWarDeclarationMenu(
     }
 
     private fun cycleDuration() {
-        selectedDuration = when (selectedDuration.toDays()) {
-            3L -> Duration.ofDays(7)
-            7L -> Duration.ofDays(14)
-            else -> Duration.ofDays(3)
+        val maxHours = configService.loadConfig().combat.warDurationHours.coerceAtLeast(1)
+        val durations = listOf(3L, 7L, 14L, 30L).map(Duration::ofDays)
+            .filter { it <= Duration.ofHours(maxHours.toLong()) }
+        if (objectiveBased) {
+            objectiveBased = false
+            selectedDuration = durations.firstOrNull() ?: Duration.ofHours(maxHours.toLong())
+        } else {
+            val next = durations.firstOrNull { it > selectedDuration }
+            if (next == null) objectiveBased = true else selectedDuration = next
         }
         player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 1.0f)
     }

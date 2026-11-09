@@ -172,6 +172,32 @@ class WarServiceBukkit(
         terms: String?,
         actorId: UUID,
         rated: Boolean,
+    ): WarDeclaration? = createDeclaration(
+        declaringGuildId, defendingGuildId, duration, objectives, wagerAmount, terms, actorId, rated, false,
+    )
+
+    override fun createObjectiveWarDeclaration(
+        declaringGuildId: UUID,
+        defendingGuildId: UUID,
+        objectives: Set<WarObjective>,
+        wagerAmount: Int,
+        terms: String?,
+        actorId: UUID,
+        rated: Boolean,
+    ): WarDeclaration? = createDeclaration(
+        declaringGuildId, defendingGuildId, Duration.ofDays(7), objectives, wagerAmount, terms, actorId, rated, true,
+    )
+
+    private fun createDeclaration(
+        declaringGuildId: UUID,
+        defendingGuildId: UUID,
+        duration: Duration,
+        objectives: Set<WarObjective>,
+        wagerAmount: Int,
+        terms: String?,
+        actorId: UUID,
+        rated: Boolean,
+        objectiveBased: Boolean,
     ): WarDeclaration? {
         if (!canPlayerManageWars(actorId, declaringGuildId)) {
             logger.warn("Player $actorId attempted to declare war for guild $declaringGuildId without permission")
@@ -260,6 +286,7 @@ class WarServiceBukkit(
                 declaringGuildId = declaringGuildId,
                 defendingGuildId = defendingGuildId,
                 proposedDuration = effectiveWarDuration(duration),
+                objectiveBased = objectiveBased,
                 objectives = objectives,
                 terms = terms,
                 wagerAmount = wagerAmount,
@@ -349,7 +376,8 @@ class WarServiceBukkit(
             if (record.war == null) {
                 val pending = War(id = declarationId, declaringGuildId = declaration.declaringGuildId,
                     defendingGuildId = declaration.defendingGuildId, duration = declaration.proposedDuration,
-                    objectives = declaration.objectives, ratedChapterId = declaration.ratedChapterId)
+                    objectives = declaration.objectives, ratedChapterId = declaration.ratedChapterId,
+                    objectiveBased = declaration.objectiveBased)
                 persist(record.copy(war = pending, stats = WarStats(declarationId)))
             }
             if (declaration.wagerAmount > 0 && createWager(declarationId, declaration.wagerAmount, declaration.wagerAmount) == null) {

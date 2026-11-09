@@ -130,7 +130,7 @@ class BedrockGuildWarManagementMenu(
 
             form.addButtonWithImage(
                 config,
-                    "⚔ vs $opponentName\n${lang.bedrock("bedrock.war_management.management_started")}: $startedDate\n${lang.bedrock("bedrock.war_management.management_remaining_days", "days" to remainingDays)}",
+                    "⚔ vs $opponentName\n${lang.bedrock("bedrock.war_management.management_started")}: $startedDate\n${if (war.objectiveBased) lang.bedrock("war_duration.bedrock_objective") else lang.bedrock("bedrock.war_management.management_remaining_days", "days" to remainingDays)}",
                 config.guildWarsIconUrl,
                 config.guildWarsIconPath
             )
@@ -373,7 +373,7 @@ class BedrockGuildWarManagementMenu(
                 |${lang.bedrock("bedrock.war_management.management_started")}: ${war.startedAt?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm")) ?: "Not Started"}
                 |${lang.bedrock("bedrock.war_management.management_ended")}: ${war.endedAt?.atZone(ZoneId.systemDefault())?.format(DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm")) ?: lang.bedrock("bedrock.war_management.management_ongoing")}
                 |${lang.bedrock("bedrock.war_management.management_result")}: $status
-                |${lang.bedrock("bedrock.war_management.management_duration")}: ${war.duration.toDays()} days
+                |${lang.bedrock("bedrock.war_management.management_duration")}: ${if (war.objectiveBased) lang.bedrock("war_duration.bedrock_objective") else "${war.duration.toDays()} days"}
                 |${lang.bedrock("bedrock.war_management.management_rating")}: ${if (war.isRated) "RATED" else "UNRATED"}
                 |${lang.bedrock("bedrock.war_management.management_kill_progress")}: $kills/$killTarget
                 |${lang.bedrock("bedrock.war_management.management_enemy_kill_progress")}: $enemyKills/$killTarget
@@ -414,7 +414,7 @@ class BedrockGuildWarManagementMenu(
 
             form.addButtonWithImage(
                 config,
-                "${lang.bedrock("bedrock.war_management.management_from")}: $declaringName\n${lang.bedrock("bedrock.war_management.management_duration")}: ${declaration.proposedDuration.toDays()} days",
+                "${lang.bedrock("bedrock.war_management.management_from")}: $declaringName\n${lang.bedrock("bedrock.war_management.management_duration")}: ${if (declaration.objectiveBased) lang.bedrock("war_duration.bedrock_objective") else "${declaration.proposedDuration.toDays()} days"}",
                 config.guildMembersIconUrl,
                 config.guildMembersIconPath
             )
@@ -466,7 +466,7 @@ class BedrockGuildWarManagementMenu(
 
             form.addButtonWithImage(
                 config,
-                "${lang.bedrock("bedrock.war_management.management_to")}: $targetName\n${lang.bedrock("bedrock.war_management.management_duration")}: ${declaration.proposedDuration.toDays()} days",
+                "${lang.bedrock("bedrock.war_management.management_to")}: $targetName\n${lang.bedrock("bedrock.war_management.management_duration")}: ${if (declaration.objectiveBased) lang.bedrock("war_duration.bedrock_objective") else "${declaration.proposedDuration.toDays()} days"}",
                 config.editIconUrl,
                 config.editIconPath
             )
@@ -511,7 +511,7 @@ class BedrockGuildWarManagementMenu(
         val contentBuilder = StringBuilder()
         contentBuilder.append(lang.bedrock("bedrock.war_management.management_declaration_action_description"))
         contentBuilder.append("\n\n")
-        contentBuilder.append(lang.bedrock("bedrock.war_management.declaration_duration", "days" to warDeclaration.proposedDuration.toDays()) + "\n")
+        contentBuilder.append((if (warDeclaration.objectiveBased) lang.bedrock("war_duration.bedrock_objective") else lang.bedrock("bedrock.war_management.declaration_duration", "days" to warDeclaration.proposedDuration.toDays())) + "\n")
         contentBuilder.append(
             if (warDeclaration.isRated) {
                 lang.bedrock("bedrock.war_management.declaration_rated")
