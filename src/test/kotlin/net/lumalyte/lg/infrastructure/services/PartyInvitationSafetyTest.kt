@@ -109,6 +109,7 @@ class PartyInvitationSafetyTest {
         val requests = mockk<PartyRequestRepository>(relaxed = true)
         val members = mockk<MemberService>(relaxed = true)
         every { members.hasPermission(accepter, to, RankPermission.MANAGE_RELATIONS) } returns true
+        every { members.hasPermission(inviter, from, RankPermission.MANAGE_RELATIONS) } returns true
         every { requests.getById(request.id) } returns request
         every { requests.update(any()) } returnsMany listOf(false, true)
         every { parties.getById(party.id) } answers { party }
@@ -118,9 +119,12 @@ class PartyInvitationSafetyTest {
         val service = PartyServiceBukkit(parties, requests, members, mockk<GuildService>(relaxed = true), mockk<LangService>(relaxed = true))
         assertNull(service.acceptPartyRequest(request.id, to, accepter))
         assertEquals(setOf(from, to), party.guildIds)
+        assertEquals(false, service.rejectPartyRequest(request.id, to, accepter))
+        assertEquals(false, service.cancelPartyRequest(request.id, from, inviter))
         assertNotNull(service.acceptPartyRequest(request.id, to, accepter))
         assertEquals(setOf(from, to), party.guildIds)
         verify(exactly = 2) { requests.update(any()) }
+        verify(exactly = 0) { requests.remove(any()) }
     }
     @Test fun `invitation remains pending and records exact shared party`() {
         val from = UUID.randomUUID()
@@ -144,5 +148,22 @@ class PartyInvitationSafetyTest {
         assertEquals(setOf(from), party.guildIds)
         verify(exactly = 0) { parties.update(any()) }
         verify(exactly = 1) { requests.add(match { it.partyId == party.id && it.toGuildId == to }) }
+    }
+    @Test fun `applied acceptance cannot be expired while status reconciliation fails`() {
+        val from = UUID.randomUUID()
+        val to = UUID.randomUUID()
+        val actor = UUID.randomUUID()
+        val party = Party(id = UUID.randomUUID(), guildIds = setOf(from, to), leaderId = actor, createdAt = Instant.now(), shared = true)
+        val now = Instant.now()
+        val request = PartyRequest.create(from, to, actor).copy(partyId = party.id, createdAt = now.minusSeconds(7200), expiresAt = now.minusSeconds(3600))
+        val parties = mockk<PartyRepository>(relaxed = true)
+        val requests = mockk<PartyRequestRepository>(relaxed = true)
+        every { parties.getById(party.id) } returns party
+        every { requests.getRequestsByStatus(net.lumalyte.lg.domain.entities.PartyRequestStatus.PENDING) } returns setOf(request)
+        every { requests.getExpiredRequests() } returns setOf(request)
+        every { requests.update(any()) } returns false
+        val service = PartyServiceBukkit(parties, requests, mockk<MemberService>(relaxed = true), mockk<GuildService>(relaxed = true), mockk<LangService>(relaxed = true))
+        service.processExpiredItems()
+        verify(exactly = 0) { requests.update(match { it.status == net.lumalyte.lg.domain.entities.PartyRequestStatus.EXPIRED }) }
     }
 }

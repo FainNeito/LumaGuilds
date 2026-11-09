@@ -28,13 +28,17 @@ class PartyServiceBukkit(
         reconcileAppliedAcceptances()
     }
 
+    private fun hasAppliedAcceptance(request: PartyRequest): Boolean {
+        val destination = request.partyId?.let(partyRepository::getById) ?: return false
+        return !destination.isPrivateParty() && destination.includesGuild(request.fromGuildId) &&
+            destination.includesGuild(request.toGuildId)
+    }
+
     /** A party update may have committed just before its request status write failed. */
     private fun reconcileAppliedAcceptances() {
         try {
             partyRequestRepository.getRequestsByStatus(PartyRequestStatus.PENDING).forEach { request ->
-                val destination = request.partyId?.let(partyRepository::getById) ?: return@forEach
-                if (!destination.isPrivateParty() && destination.includesGuild(request.fromGuildId) &&
-                    destination.includesGuild(request.toGuildId)) {
+                if (hasAppliedAcceptance(request)) {
                     if (!partyRequestRepository.update(request.copy(status = PartyRequestStatus.ACCEPTED))) {
                         logger.warn("Could not reconcile applied party request ${request.id}")
                     }
@@ -255,6 +259,7 @@ class PartyServiceBukkit(
         }
     }
     
+    @Synchronized
     override fun rejectPartyRequest(requestId: UUID, rejectingGuildId: UUID, rejecterId: UUID): Boolean {
         try {
             // Validate rejecter has permission
@@ -274,6 +279,8 @@ class PartyServiceBukkit(
                 logger.warn("Guild $rejectingGuildId cannot reject request $requestId (not addressed to them)")
                 return false
             }
+
+            if (!request.isValid() || hasAppliedAcceptance(request)) return false
             
             // Update request status
             val rejectedRequest = request.copy(status = PartyRequestStatus.REJECTED)
@@ -291,6 +298,7 @@ class PartyServiceBukkit(
         }
     }
     
+    @Synchronized
     override fun cancelPartyRequest(requestId: UUID, cancellingGuildId: UUID, cancellerId: UUID): Boolean {
         try {
             // Validate canceller has permission
@@ -310,6 +318,8 @@ class PartyServiceBukkit(
                 logger.warn("Guild $cancellingGuildId cannot cancel request $requestId (not their request)")
                 return false
             }
+
+            if (!request.isValid() || hasAppliedAcceptance(request)) return false
             
             // Remove the request
             val success = partyRequestRepository.remove(requestId)
@@ -544,6 +554,7 @@ class PartyServiceBukkit(
         return memberService.hasPermission(playerId, guildId, RankPermission.MANAGE_RELATIONS)
     }
     
+    @Synchronized
     override fun processExpiredItems(): Int {
         var processedCount = 0
         
@@ -552,6 +563,7 @@ class PartyServiceBukkit(
             // Process expired party requests
             val expiredRequests = partyRequestRepository.getExpiredRequests()
             for (request in expiredRequests) {
+                if (hasAppliedAcceptance(request)) continue
                 val expiredRequest = request.copy(status = PartyRequestStatus.EXPIRED)
                 if (partyRequestRepository.update(expiredRequest)) {
                     processedCount++
