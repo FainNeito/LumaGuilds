@@ -18,4 +18,4 @@ Reproduce both entry points; test pending/accepted/declined/expired states, exac
 
 ## Status
 
-Investigation and requirements only. No gameplay behavior has been changed. A durable association and atomic or recoverable acceptance design must be established before implementation.
+A narrow safeguard excludes internal single-guild channels when accepting a legacy request; a focused test reproduced the prior behavior and passes with the safeguard. The Java and Bedrock creation flows remain unsafe and require a durable association and atomic or recoverable acceptance design. This draft is not ready to merge or deploy.
