@@ -6136,7 +6136,9 @@ menu:
           name: "<light_purple>Prestige Summary"
           reward: "<gray>Retain permanently: <white><reward>"
           fee: "<gray>Fee: <gold><fee> Gold Ore"
-          reset: "<yellow>Your guild goes back to Level 1 with 0 XP. Level perks and every other purchased reward reset, so you buy them again as you climb."
+          reset: "<yellow>Your guild goes back to Level 1. Level perks and every other purchased reward reset, so you buy them again as you climb."
+          xp_reset: "<yellow>Guild XP goes back to 0."
+          carry: "<aqua>XP earned past Level 100 carries over, up to the start of Level <level>."
           permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
           home_slot: "<green>Your guild also gains one permanent home slot."
           badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."
@@ -6146,6 +6148,7 @@ menu:
       feedback:
         quote_failed: "<red>Prestige conditions changed. Review the current progression state and try again."
         applied: "<green>Guild prestige complete. <reward> is now permanent. Fee: <fee> Gold Ore. Your guild is now Prestige <count>."
+        carried: "<aqua><xp> XP carried over, so your guild starts this climb at Level <level>."
         failed: "<red>The prestige result could not be confirmed. Retry this same confirmation; you will not be charged twice."
         rejected:
           unavailable: "<red>Prestige is currently unavailable."
@@ -8016,7 +8019,7 @@ chronicle:
     preserved_title: '<gold>What stays and what resets</gold>'
     preserved_homes: '<green>Purchased home slots, saved homes and paid home activations stay.</green>'
     preserved_rewards: '<green>Rewards kept from earlier prestiges stay, and the one you choose now joins them. Members and gold stay too.</green>'
-    reset: '<gray>Your level goes back to 1 and XP to 0. Level perks and other purchased rewards reset, so you buy them again as you climb. Prestige gives no gold or XP.</gray>'
+    reset: '<gray>Your level goes back to 1. Level perks and other purchased rewards reset, so you buy them again as you climb. The confirmation shows whether XP carries over.</gray>'
     chapter: '<gray>Chapter rollover follows server policy separately from prestige.</gray>'
     none: '<gray>No rewards kept from prestige yet. Purchased home slots are kept on their own.</gray>'
     retained: '<gold>Kept forever from an earlier prestige.</gold>'

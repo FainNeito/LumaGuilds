@@ -1277,3 +1277,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
   - References: REQ-173, REQ-174; the Discord "Prestige Suggestions" thread summary (players unsure what prestige and perks do; parties, the vault and bank interest not discovered).
   - Evidence: a full prestige guide already existed in the Chronicle, in legal-sounding copy; reward choices showed no effect; the confirmation said nothing about the home slot, the badge or rebuying perks.
   - Result: Java and Bedrock reward choices and confirmations show what the kept reward does, the extra home slot and the next badge; the confirmation spells out what resets and stays. The Chronicle guide, progression prestige entry and reward effect lines are rewritten in plain language (same keys and placeholders). Getting Started adds parties to the chat step and the configured interest and `/g vault` to the bank step, each only while switched on. `PrestigeClarityTest` and `GettingStartedFeaturesTest` failed (5 of 5), then passed. Full suite 2484 tests, 0 failures.
+
+## Prestige XP carry-over (REQ-175)
+
+- [x] **PRESTIGE-CARRYOVER** Tag: TDD.
+  - References: REQ-175; Discord "Prestige Suggestions" (carry excess XP forward). Evidence: `ExperienceAwardTransaction` keeps adding XP at level 100; `PrestigeRepositorySQL` sets `total_experience = 0`.
+  - Result: `progression.prestige.carry_over` (`enabled: false`, `landing_level: 5`). `PrestigeCarryOver` keeps the XP earned after level 100, capped at the start of the landing level; the prestige transaction sets XP, level, level progress, `guilds.level` and post-prestige capacity from it. The Java and Bedrock confirmation say whether XP carries over or resets, and the confirming player is told how much carried and the starting level. `PrestigeCarryOverTest` and the repository carry test failed against a scaffold (3), then passed. Full suite 2490 tests and the MariaDB profile (134) pass.

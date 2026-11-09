@@ -459,6 +459,7 @@ data class PrestigeConfig(
     /** REQ-155 placeholder badges; index 0 is "no prestige". */
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
     var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
+    var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }
@@ -470,6 +471,16 @@ data class PrestigeConfig(
     fun feeFor(currentPrestigeCount: Int): Long {
         require(currentPrestigeCount in 0 until maxCount)
         return fees[currentPrestigeCount]
+    }
+}
+
+/** REQ-175: XP earned past level 100 can start the next climb, up to the start of [landingLevel]. */
+data class PrestigeCarryOverConfig(
+    var enabled: Boolean = false,
+    var landingLevel: Int = 5,
+) {
+    init {
+        require(landingLevel in 1..99) { "Prestige carry-over landing level must be between 1 and 99" }
     }
 }
 

@@ -632,6 +632,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-174
 **Event-driven.** WHEN a player reads Getting Started on Java or Bedrock THE SYSTEM SHALL explain, inside the existing chat and bank steps, that parties are temporary chat groups for the guild or shared with other guilds and used with `/pc` (only while parties are enabled), that the guild bank earns the configured interest rate every configured period (only while the rate is above zero), and that the guild has a separate physical vault opened with `/g vault` (only while the physical vault is enabled), without adding new menu entries.
 
+### REQ-175
+**Optional.** WHERE prestige XP carry-over is enabled (default off) THE SYSTEM SHALL, when a prestige commits, start the guild's next climb with the XP it earned after reaching level 100, capped at the XP needed to reach the configured landing level (default 5), SHALL set the guild's level, level progress and post-prestige bank capacity from that carried XP in the same transaction, SHALL tell the confirming player how much XP carried over and the level the guild starts at, and SHALL state the carry-over and its cap on the Java and Bedrock confirmation; WHILE carry-over is disabled THE SYSTEM SHALL keep resetting XP to 0.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

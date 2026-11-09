@@ -597,6 +597,12 @@ progression:
       enabled: true
       server_wide: true
       member_title: true
+    # REQ-175: XP a guild earns after reaching Level 100 can start its next climb.
+    # The carry stops at the start of landing_level, so a guild that sat at 100 for
+    # a long time skips at most the first few levels. Off by default.
+    carry_over:
+      enabled: false
+      landing_level: 5
 
   # Experience values for different activities
   bank_deposit_xp_per_100: 1         # XP per 100 coins deposited

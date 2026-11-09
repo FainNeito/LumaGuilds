@@ -400,6 +400,11 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
                 ),
                 // REQ-155: seven entries (index 0 = none); & colour codes become section signs.
+                // REQ-175: off unless the operator turns it on; landing level clamped to 1-99.
+                carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(
+                    enabled = config.getBoolean("progression.prestige.carry_over.enabled", false),
+                    landingLevel = config.getInt("progression.prestige.carry_over.landing_level", 5).coerceIn(1, 99),
+                ),
                 fanfare = net.lumalyte.lg.config.PrestigeFanfareConfig(
                     enabled = config.getBoolean("progression.prestige.fanfare.enabled", true),
                     serverWide = config.getBoolean("progression.prestige.fanfare.server_wide", true),

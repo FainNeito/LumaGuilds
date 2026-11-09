@@ -220,6 +220,36 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
     }
 
     @Test
+    fun `carry-over starts the next climb with XP earned past level 100`() {
+        val curve = net.lumalyte.lg.domain.values.ProgressionCurve.from(settings.progression)
+        val landing = curve.totalExperienceForLevel(3)
+        val original = settings.progression
+        settings.progression = original.copy(prestige = original.prestige.copy(
+            carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(enabled = true, landingLevel = 3),
+        ))
+        val subject = open()
+        subject.storage.connection.executeUpdate(
+            "UPDATE guild_progression SET total_experience = ? WHERE guild_id = ?",
+            curve.totalExperienceForLevel(100) + landing + 500, guildId.toString(),
+        )
+        val result = assertIs<PrestigeResult.Applied>(subject.repository.confirm(quote()) { null })
+
+        assertEquals(landing, result.carriedExperience)
+        assertEquals(3, result.postLevel)
+        val progression = subject.storage.connection.getFirstRow(
+            "SELECT * FROM guild_progression WHERE guild_id = ?", guildId.toString()
+        )!!
+        assertEquals(landing, progression.getInt("total_experience"))
+        assertEquals(3, progression.getInt("current_level"))
+        assertEquals(curve.experienceForNextLevel(3), progression.getInt("experience_for_next_level"))
+        assertEquals(
+            3,
+            subject.storage.connection.getFirstRow("SELECT level FROM guilds WHERE id = ?", guildId.toString())!!.getInt("level"),
+        )
+        settings.progression = original
+    }
+
+    @Test
     fun `identical confirmation replays receipt without double charge or second prestige`() {
         val subject = open()
         val request = quote()
