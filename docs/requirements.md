@@ -635,6 +635,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-175
 **Optional.** WHERE prestige XP carry-over is enabled (default off) THE SYSTEM SHALL, when a prestige commits, start the guild's next climb with the XP it earned after reaching level 100, capped at the XP needed to reach the configured landing level (default 5), SHALL set the guild's level, level progress and post-prestige bank capacity from that carried XP in the same transaction, SHALL tell the confirming player how much XP carried over and the level the guild starts at, and SHALL state the carry-over and its cap on the Java and Bedrock confirmation; WHILE carry-over is disabled THE SYSTEM SHALL keep resetting XP to 0.
 
+### REQ-176
+**Ubiquitous.** THE SYSTEM SHALL generate weekly quests only from targets a guild can reasonably work on: kill quests only for hostile mobs, bosses and common farm animals (never villagers, traders, golems, pets, mounts, armor stands, mannequins or mobs that never spawn naturally), with phantoms, breezes, creakings, evokers and piglin brutes counted as rare; harvest quests only for farm crops (wheat, carrots, potatoes, beetroots, nether wart, cocoa, sweet berries, torchflowers, pitcher plants, sugar cane, cactus, kelp and bamboo); and place quests only for full building blocks (planks, logs, wood, stone, bricks, concrete, wool, terracotta, glass and similar) rather than stairs, slabs, walls, panes, waxed or weathered copper and other decorative variants.
+
+### REQ-177
+**Event-driven.** WHEN a member breaks sugar cane, cactus, kelp or bamboo THE SYSTEM SHALL count it toward a matching harvest quest regardless of the plant's growth stage, counting the broken block and the blocks of the same plant above it that break with it, except blocks a player placed; and WHEN a quest is shown THE SYSTEM SHALL say that mining quests count only blocks not placed by players and that age-based crops count only when fully grown.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
