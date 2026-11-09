@@ -1264,3 +1264,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
   - References: REQ-165; Fain's TEST screenshot ("has reached Guild Prestige 4", "Prestige count: 4").
   - Evidence: the announcement only mapped I to III and printed 4 and up as numbers; menus and the applied message passed raw counts.
   - Result: `PrestigeNumeralTest` and the announcement tests failed (3 of 5), then passed. `PrestigeNumeral.of` now feeds the broadcast, the applied message (reworded to "Your guild is now Prestige IV."), the Java and Bedrock progression, selection and confirmation menus, the Chronicle milestones and progress, and the `guild_prestige_roman` placeholder. The home-slot bonus stays a number. Full suite 2462 tests, 0 failures.
+
+## Prestige history in /g info (REQ-172)
+
+- [x] **GUILD-INFO-PRESTIGE** Tag: TDD.
+  - References: REQ-172; prestige history (REQ-152) and server-first (REQ-153) data from #26.
+  - Result: `GuildInfoPrestige` turns `PrestigeHistory` into the view (none, unavailable, or each prestige oldest first with date and server-first mark); a failing history read or server-first lookup never blocks the menu. Java `/g info` gets a Prestige item (nether star, top right); the Bedrock form gets a Prestige section after the overview. `GuildInfoPrestigeTest` failed against a scaffold (3 of 4), then passed; `GuildInfoPrestigeMenuTest` renders both real views. Full suite 2479 tests, 0 failures.

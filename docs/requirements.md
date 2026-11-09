@@ -623,6 +623,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-165
 **Ubiquitous.** THE SYSTEM SHALL show every prestige tier and prestige count it puts in front of players (the server-wide prestige announcement, the prestige-applied message, the Java and Bedrock progression and prestige menus, and the Chronicle prestige page) as a Roman numeral from I to VI, with a count of zero shown as 0; counts of things other than prestige tiers, such as home slots, SHALL stay as ordinary numbers.
 
+### REQ-172
+**Event-driven.** WHEN a player opens a guild's info view with `/g info` on Java or Bedrock THE SYSTEM SHALL show that guild's prestige history: its current prestige in Roman numerals and, oldest first, each applied prestige with its tier in Roman numerals, the date it was applied and, where that prestige was the first on the server to reach its tier, a server-first mark. A guild that never prestiged SHALL show that it has not prestiged yet, and IF the prestige history cannot be read THEN THE SYSTEM SHALL still open the info view and say the history is unavailable.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

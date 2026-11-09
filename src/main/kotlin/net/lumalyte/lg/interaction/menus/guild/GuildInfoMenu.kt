@@ -1,5 +1,7 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.application.services.GuildInfoPrestige
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import com.github.stefvanschie.inventoryframework.gui.GuiItem
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui
 import io.papermc.paper.datacomponent.DataComponentTypes
@@ -47,6 +49,7 @@ class GuildInfoMenu(private val menuNavigator: MenuNavigator, private val player
     private val menuFactory: net.lumalyte.lg.interaction.menus.MenuFactory by inject()
     private val lang: LangService by inject()
     private val nexoEmojiService: NexoEmojiService by inject()
+    private val prestigeHistory: net.lumalyte.lg.application.persistence.PrestigeHistory by inject()
 
     override fun open() {
         // Public guild info is intentionally viewable by non-members. Re-resolve the
@@ -82,6 +85,9 @@ class GuildInfoMenu(private val menuNavigator: MenuNavigator, private val player
 
         // Statistics section
         addStatisticsSection(pane, 6, 0)
+
+        // Prestige history (REQ-172)
+        addPrestigeSection(pane, 8, 0)
 
         // Back button
         addBackButton(pane, 4, 5)
@@ -318,6 +324,30 @@ class GuildInfoMenu(private val menuNavigator: MenuNavigator, private val player
             .lore(lang.gui("menu.guild_info.progression.next", "level" to guild.level + 1))
 
         pane.addItem(GuiItem(progressionItem), x, y + 1)
+    }
+
+    private fun addPrestigeSection(pane: StaticPane, x: Int, y: Int) {
+        val item = ItemStack.of(Material.NETHER_STAR).name(lang.gui("menu.guild_info.prestige.name"))
+        when (val prestige = GuildInfoPrestige.of(prestigeHistory, guild.id)) {
+            GuildInfoPrestige.None -> item.lore(lang.gui("menu.guild_info.prestige.none"))
+            GuildInfoPrestige.Unavailable -> item.lore(lang.gui("menu.guild_info.prestige.unavailable"))
+            is GuildInfoPrestige.Prestiged -> {
+                val formatter = DateTimeFormatter.ofPattern(lang.raw("menu.guild_info.overview.date_format"))
+                item.lore(lang.gui("menu.guild_info.prestige.current", "tier" to PrestigeNumeral.of(prestige.current)))
+                prestige.entries.forEach { entry ->
+                    val date = entry.appliedAt.atZone(java.time.ZoneId.systemDefault()).format(formatter)
+                    val tier = PrestigeNumeral.of(entry.tier)
+                    item.lore(
+                        if (entry.serverFirst) {
+                            lang.gui("menu.guild_info.prestige.entry_first", "tier" to tier, "date" to date)
+                        } else {
+                            lang.gui("menu.guild_info.prestige.entry", "tier" to tier, "date" to date)
+                        },
+                    )
+                }
+            }
+        }
+        pane.addItem(GuiItem(item), x, y)
     }
 
     private fun addBackButton(pane: StaticPane, x: Int, y: Int) {
