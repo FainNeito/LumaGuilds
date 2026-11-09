@@ -49,22 +49,4 @@ class ExperienceBoostRepositorySQLTest : RewardSqlTestFixture() {
             ExperienceAwardRequest(guild, null, source, 200, now), ExperiencePolicy(source, source.defaultPool, 1, 0, CapPeriod.UNLIMITED, true)))
         assertEquals(0, storage.connection.getFirstRow("SELECT COUNT(*) AS n FROM guild_experience_source_usage")!!.getInt("n"))
     }
-
-    @Test fun `prestiged guilds earn the climb boost and others do not`() {
-        val storage = openStorage()
-        val prestiged = UUID.randomUUID()
-        val fresh = UUID.randomUUID()
-        storage.connection.executeUpdate("CREATE TABLE guilds (id VARCHAR(36) PRIMARY KEY, level INTEGER NOT NULL DEFAULT 1)")
-        storage.connection.executeUpdate("INSERT INTO guilds VALUES (?, 1)", prestiged.toString())
-        storage.connection.executeUpdate("INSERT INTO guilds VALUES (?, 1)", fresh.toString())
-        val now = Instant.parse("2026-11-09T12:00:00Z")
-        val policy = ExperiencePolicy(ExperienceSource.MOB_KILL, "MOB_KILL", 3, 6000, CapPeriod.DAILY, true)
-        val service = PermanentExperienceService(
-            ExperienceAwardRepositorySQL(storage, ProgressionCurve(500.0, 1.15, 150, 100)),
-            mockk(),
-            climbMultiplier = { guild -> if (guild == prestiged) 2.5 else 1.0 },
-        )
-        assertEquals(ExperienceAwardResult.Awarded(7, 7, true), service.award(ExperienceAwardRequest(prestiged, null, policy.source, 1, now), policy))
-        assertEquals(ExperienceAwardResult.Awarded(3, 3, true), service.award(ExperienceAwardRequest(fresh, null, policy.source, 1, now), policy))
-    }
 }

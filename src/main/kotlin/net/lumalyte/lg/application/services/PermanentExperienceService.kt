@@ -12,7 +12,6 @@ import net.lumalyte.lg.domain.values.ExperienceSource
 class PermanentExperienceService(
     private val repository: ExperienceAwardRepository,
     private val activityService: PlaytimeActivityService,
-    private val climbMultiplier: (java.util.UUID) -> Double = { 1.0 },
     private val boostProvider: () -> net.lumalyte.lg.domain.values.ExperienceBoost? = { null },
 ) {
     /** Reject invalid/source-ineligible requests before reserving caps or changing progression. */
@@ -69,14 +68,6 @@ class PermanentExperienceService(
         return repository.awardAtomically(request, policy, requestedXp, policy.windowContaining(request.occurredAt))
     }
 
-    /** REQ-178: prestiged guilds earn their climb boost on every award, rounded down. */
-    private fun climbBoosted(xp: Int, guildId: java.util.UUID): Int {
-        val multiplier = runCatching { climbMultiplier(guildId) }.getOrDefault(1.0)
-        if (!multiplier.isFinite() || multiplier <= 1.0) return xp
-        return java.math.BigDecimal.valueOf(xp.toLong()).multiply(java.math.BigDecimal.valueOf(multiplier))
-            .setScale(0, java.math.RoundingMode.FLOOR).intValueExact()
-    }
-
     private fun requestedXp(
         request: ExperienceAwardRequest,
         policy: ExperiencePolicy,
@@ -84,8 +75,7 @@ class PermanentExperienceService(
     ): Int? {
         return try {
             val base = Math.multiplyExact(policy.awardXp, request.units)
-            val boosted = boost()?.apply(base, request.source, request.occurredAt) ?: base
-            climbBoosted(boosted, request.guildId)
+            boost()?.apply(base, request.source, request.occurredAt) ?: base
         } catch (_: ArithmeticException) {
             null
         }

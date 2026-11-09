@@ -461,11 +461,8 @@ data class PrestigeConfig(
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
     var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
     var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
-    /** REQ-178: XP multiplier for guilds that have prestiged; 1.0 turns it off. */
-    var climbBoost: Double = 2.0,
 ) {
     init {
-        require(climbBoost.isFinite() && climbBoost >= 1.0) { "Prestige climb boost must be at least 1" }
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }
         require(fees.size >= maxCount && fees.take(maxCount).all { it > 0 }) {
             "Prestige fees must define a positive fee for every allowed prestige"
@@ -485,6 +482,18 @@ data class PrestigeCarryOverConfig(
 ) {
     init {
         require(landingLevel in 1..99) { "Prestige carry-over landing level must be between 1 and 99" }
+    }
+}
+
+/** REQ-178: every guild earns [multiplier] times activity XP on [days] in [zone]. */
+data class WeekendBoostConfig(
+    val enabled: Boolean = true,
+    val multiplier: Double = 2.0,
+    val days: Set<java.time.DayOfWeek> = setOf(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY),
+    val zone: java.time.ZoneId = java.time.ZoneId.of("America/New_York"),
+) {
+    init {
+        require(multiplier.isFinite() && multiplier >= 1.0) { "Weekend XP multiplier must be at least 1" }
     }
 }
 
@@ -526,7 +535,8 @@ data class ProgressionConfig(
     // 0 in either field disables the cleanup task entirely.
     var transactionRetentionDays: Int = 90,
     var transactionCleanupIntervalHours: Int = 24,
-    val xpBoost: net.lumalyte.lg.domain.values.ExperienceBoost? = null
+    val xpBoost: net.lumalyte.lg.domain.values.ExperienceBoost? = null,
+    val weekendBoost: WeekendBoostConfig = WeekendBoostConfig()
 )
 
 object ChapterTwoExperiencePolicies {

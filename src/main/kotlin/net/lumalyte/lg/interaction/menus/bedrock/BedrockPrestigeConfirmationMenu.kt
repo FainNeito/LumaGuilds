@@ -57,12 +57,6 @@ class BedrockPrestigeConfirmationMenu(
                         lang.bedrock("menu.guild_progression.prestige.confirmation.summary.xp_reset")
                     }
                 },
-                config.loadConfig().progression.prestige.climbBoost.takeIf { it > 1.0 }?.let {
-                    lang.bedrock(
-                        "menu.guild_progression.prestige.confirmation.summary.climb_boost",
-                        "multiplier" to java.math.BigDecimal.valueOf(it).stripTrailingZeros().toPlainString(),
-                    )
-                },
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.permanent"),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.home_slot"),
                 lang.bedrock(

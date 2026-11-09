@@ -369,6 +369,25 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
         )
     }
     
+    /** REQ-178: bad day names or time zones fall back to the defaults instead of failing startup. */
+    private fun loadWeekendBoost(): net.lumalyte.lg.config.WeekendBoostConfig {
+        val defaults = net.lumalyte.lg.config.WeekendBoostConfig()
+        val prefix = "progression.weekend_boost"
+        val days = config.getStringList("$prefix.days")
+            .mapNotNull { runCatching { java.time.DayOfWeek.valueOf(it.trim().uppercase(Locale.ROOT)) }.getOrNull() }
+            .toSet().ifEmpty { defaults.days }
+        val zone = config.getString("$prefix.timezone")?.let { runCatching { java.time.ZoneId.of(it) }.getOrNull() }
+            ?: defaults.zone
+        val multiplier = config.getDouble("$prefix.multiplier", defaults.multiplier).takeIf { it.isFinite() && it >= 1.0 }
+            ?: defaults.multiplier
+        return net.lumalyte.lg.config.WeekendBoostConfig(
+            enabled = config.getBoolean("$prefix.enabled", defaults.enabled),
+            multiplier = multiplier,
+            days = days,
+            zone = zone,
+        )
+    }
+
     private fun loadExperienceBoost(): net.lumalyte.lg.domain.values.ExperienceBoost? {
         if (!config.getBoolean("progression.xp_boost.enabled", false)) return null
         val prefix = "progression.xp_boost"
@@ -400,9 +419,6 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
                 ),
                 // REQ-155: seven entries (index 0 = none); & colour codes become section signs.
-                // REQ-178: values below 1 (or not numbers) fall back to no boost.
-                climbBoost = config.getDouble("progression.prestige.climb_boost", 2.0)
-                    .takeIf { it.isFinite() && it >= 1.0 } ?: 1.0,
                 // REQ-175: off unless the operator turns it on; landing level clamped to 1-99.
                 carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(
                     enabled = config.getBoolean("progression.prestige.carry_over.enabled", false),
@@ -452,6 +468,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             ),
             sourcePolicies = loadExperiencePolicies(),
             xpBoost = loadExperienceBoost(),
+            weekendBoost = loadWeekendBoost(),
             materialPools = loadMaterialPools(),
             entityPools = loadEntityPools(),
 

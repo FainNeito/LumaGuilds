@@ -15,7 +15,6 @@ class PrestigeConfigSeason2Test {
             config.fees,
         )
         assertEquals(15_000L, config.feeFor(5))
-        assertEquals(2.0, config.climbBoost)
     }
 
     @Test
