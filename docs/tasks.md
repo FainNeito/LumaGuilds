@@ -1296,3 +1296,11 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **WEEKEND-XP-BOOST** Tag: TDD.
   - References: REQ-178; production copy 2026-11-09: the busiest guild (Everlights) earns about 27,750 XP a day, so a 5,446,893 XP climb takes about 6.5 months; daily caps were hit on under 1% of guild-days; only 3 of 171 guilds hold 10,000 gold and none of the three level-100 guilds can pay the first fee. Fain first chose a 2x boost for prestiged guilds, then replaced it with 2x XP on weekends (Saturday and Sunday, New York time) for every guild; fees were first lowered to 2.5k rising to 15k, then set to 20% below the original (8k, 16k, then 24k).
   - Result: `progression.weekend_boost` (enabled, multiplier 2.0, days SATURDAY and SUNDAY, timezone America/New_York). `ActiveExperienceBoost` turns the current weekend day into a one-day boost window for every source but WEEKLY_ACTIVITY and ADMIN_BONUS, and picks the larger of it and any dated `xp_boost`; awards and bank deposit quotes both use it. Bad day names, time zones or multipliers fall back to the defaults. Default fees are 8,000, 16,000, then 24,000. `ActiveExperienceBoostTest` failed (2 of 4), then passed. Full suite 2494 tests, 0 failures.
+
+## Prestige tier perks and allied-home access (REQ-179 to REQ-182)
+
+- [ ] **PRESTIGE-QUICK-HOME** Tag: TDD. REQ-179.
+- [ ] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180.
+- [ ] **PRESTIGE-EXTRA-STALL** Tag: TDD. REQ-181 (with EnthusiaMarket).
+- [ ] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182.
+  - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.
