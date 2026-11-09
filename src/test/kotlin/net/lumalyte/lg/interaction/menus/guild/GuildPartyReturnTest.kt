@@ -93,6 +93,25 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
         verify(exactly = 1) { parties.createParty(match { it.guildIds == setOf(guild.id) && it.shared }) }
         verify(exactly = 1) { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) }
     }
+    @Test fun `bedrock shared party creates a real invitation without prejoining the invitee`() {
+        val invited = Guild(UUID.randomUUID(), "Vibe", createdAt = Instant.EPOCH)
+        org.koin.core.context.loadKoinModules(org.koin.dsl.module {
+            single<PartyService> { parties }
+            single<net.lumalyte.lg.application.persistence.GuildRepository> { mockk(relaxed = true) }
+        })
+        every { parties.canManageParties(player.uniqueId, guild.id) } returns true
+        every { parties.createParty(any()) } answers { firstArg() }
+        every { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) } answers {
+            net.lumalyte.lg.domain.entities.PartyRequest.create(guild.id, invited.id, player.uniqueId).copy(partyId = firstArg())
+        }
+        val menu = net.lumalyte.lg.interaction.menus.bedrock.BedrockPartyCreationMenu(
+            MenuNavigator(player), player, guild, java.util.logging.Logger.getLogger("party-test")
+        )
+        menu.javaClass.getDeclaredMethod("handlePartyCreation", String::class.java, Boolean::class.javaPrimitiveType, Guild::class.java)
+            .also { it.isAccessible = true }.invoke(menu, "Expedition", false, invited)
+        verify(exactly = 1) { parties.createParty(match { it.guildIds == setOf(guild.id) && it.shared }) }
+        verify(exactly = 1) { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) }
+    }
     @Test fun `guild selection returns invited guilds without discarding the name and role drafts`() {
         val navigator = MenuNavigator(player)
         val visits = mutableListOf<String>()
