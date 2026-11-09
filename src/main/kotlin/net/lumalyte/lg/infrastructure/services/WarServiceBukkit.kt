@@ -1007,7 +1007,7 @@ class WarServiceBukkit(
         // until duration + grace period have both elapsed.
         val graceSeconds = configService.loadConfig().combat.warEndGracePeriodMinutes * 60L
         val expiredWars = snapshot.values.mapNotNull { it.war }.filter { war ->
-            war.isActive && war.startedAt != null &&
+            war.isActive && !war.objectiveBased && war.startedAt != null &&
                 war.startedAt!!.plus(war.duration).plusSeconds(graceSeconds).isBefore(now)
         }
         for (war in expiredWars) {

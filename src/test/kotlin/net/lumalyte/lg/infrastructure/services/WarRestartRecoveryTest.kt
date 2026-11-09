@@ -55,8 +55,16 @@ class WarRestartRecoveryTest {
         assertTrue(declaration.objectiveBased)
         val active = assertNotNull(wars.acceptWarDeclaration(declaration.id, UUID.randomUUID()))
         assertTrue(active.objectiveBased)
+        // Exercise scheduled expiry after a restart beyond the placeholder duration.
+        val repository = WarRepositorySQL(storage)
+        val saved = requireNotNull(repository.get(active.id))
+        assertTrue(repository.save(saved.copy(war = requireNotNull(saved.war).copy(
+            startedAt = java.time.Instant.now().minus(Duration.ofDays(40))
+        ))))
         wars = service()
         assertTrue(requireNotNull(wars.getWar(active.id)).objectiveBased)
+        wars.processExpiredWars()
+        assertEquals(WarStatus.ACTIVE, wars.getWar(active.id)?.status)
         repeat(25) { assertNotNull(wars.recordOpposingGuildKill(active.id, first, second)) }
         assertTrue(wars.resolveReachedKillTarget(active.id, first))
         wars = service()
