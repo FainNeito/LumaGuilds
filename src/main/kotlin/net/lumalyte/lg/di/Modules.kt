@@ -717,6 +717,12 @@ fun progressionModule() = module {
             as net.lumalyte.lg.application.persistence.PrestigeHistory
     }
     single { net.lumalyte.lg.application.services.GuildPrestigeStandings(get(), get()) }
+    single {
+        val configService = get<net.lumalyte.lg.application.services.ConfigService>()
+        net.lumalyte.lg.application.services.GuildPrestigePerks(get(), get()) {
+            net.lumalyte.lg.domain.rewards.PrestigePerks(configService.loadConfig().progression.prestige.perks)
+        }
+    }
     single<net.lumalyte.lg.application.persistence.DisbandedPrestigeGuilds> {
         net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeTombstonesSQL(get())
     }
@@ -1263,7 +1269,12 @@ fun utilitiesModule() = module {
 
     // Other utilities
     single<net.lumalyte.lg.infrastructure.services.TeleportationService> {
-        net.lumalyte.lg.infrastructure.services.TeleportationService(get(), get())
+        val koin = getKoin()
+        net.lumalyte.lg.infrastructure.services.TeleportationService(get(), get()) { playerId ->
+            koin.getOrNull<net.lumalyte.lg.application.services.GuildPrestigePerks>()
+                ?.homeCountdownSeconds(playerId)
+                ?: net.lumalyte.lg.config.PrestigePerksConfigDefaults.STANDARD_COUNTDOWN
+        }
     }
 }
 

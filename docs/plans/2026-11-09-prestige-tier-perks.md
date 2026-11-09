@@ -15,8 +15,18 @@ access control is for every guild, not just prestiged ones.
 
 - The perk follows the guild's current prestige tier from the cached standing
   (30 s). A failed read means no perk, never a crash.
-- The prestige confirmation and the Chronicle prestige guide list which perk
-  the next tier unlocks.
+- The prestige confirmation lists the perk the new tier starts. The second
+  allied home joins that list when it ships.
+- Other plugins read the stall bonus from the public `GuildPrestigePerkLookup`
+  service (Bukkit ServicesManager).
+
+## Delivery
+
+1. LumaGuilds `feature/prestige-tier-perks`: config, quick home (REQ-179),
+   stall bonus API (REQ-181 LumaGuilds side), confirmation lines.
+2. EnthusiaMarket `feature/guild-stall-cap`: the cap (REQ-181, Market REQ-399).
+3. LumaGuilds follow-up: second allied home (REQ-180) and allied-home access
+   (REQ-182); both change how allied homes are stored.
 - Finding while scoping: the countdown is hard-coded to 5 s in
   `TeleportationService`; `guild.home_teleport_warmup_seconds` is read but
   never used. Non-prestiged guilds keep 5 s; war-banner teleports keep 5 s.

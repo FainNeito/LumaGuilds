@@ -424,6 +424,13 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     enabled = config.getBoolean("progression.prestige.carry_over.enabled", false),
                     landingLevel = config.getInt("progression.prestige.carry_over.landing_level", 5).coerceIn(1, 99),
                 ),
+                // REQ-179 to REQ-181: a tier of 0 or less gives the perk to every guild.
+                perks = net.lumalyte.lg.config.PrestigePerksConfig(
+                    quickHomeTier = config.getInt("progression.prestige.perks.quick_home_tier", 1),
+                    quickHomeSeconds = config.getInt("progression.prestige.perks.quick_home_seconds", 2).coerceIn(1, 5),
+                    secondAllyHomeTier = config.getInt("progression.prestige.perks.second_ally_home_tier", 2),
+                    extraStallTier = config.getInt("progression.prestige.perks.extra_stall_tier", 3),
+                ),
                 fanfare = net.lumalyte.lg.config.PrestigeFanfareConfig(
                     enabled = config.getBoolean("progression.prestige.fanfare.enabled", true),
                     serverWide = config.getBoolean("progression.prestige.fanfare.server_wide", true),

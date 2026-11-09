@@ -63,3 +63,30 @@ internal fun bedrockRewardEffect(lang: net.badgersmc.nexus.i18n.LangService,
     is net.lumalyte.lg.domain.rewards.RewardEffect.WithdrawalFee -> lang.bedrock("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
     net.lumalyte.lg.domain.rewards.RewardEffect.AllyHomes -> lang.bedrock("chronicle.ally_effect")
 }
+
+/** REQ-179 to REQ-181: confirmation lines for the perks a prestige tier starts. */
+internal fun prestigePerkLines(
+    lang: net.badgersmc.nexus.i18n.LangService,
+    perks: net.lumalyte.lg.domain.rewards.PrestigePerks,
+    tier: Int,
+): List<net.kyori.adventure.text.Component> = perks.unlockedAt(tier).map { perk ->
+    when (perk) {
+        net.lumalyte.lg.domain.rewards.PrestigePerk.QUICK_HOME ->
+            lang.gui("menu.guild_progression.prestige.confirmation.summary.perk_quick_home", "seconds" to perks.quickHomeSeconds)
+        net.lumalyte.lg.domain.rewards.PrestigePerk.EXTRA_STALL ->
+            lang.gui("menu.guild_progression.prestige.confirmation.summary.perk_extra_stall")
+    }
+}
+
+internal fun bedrockPrestigePerkLines(
+    lang: net.badgersmc.nexus.i18n.LangService,
+    perks: net.lumalyte.lg.domain.rewards.PrestigePerks,
+    tier: Int,
+): List<String> = perks.unlockedAt(tier).map { perk ->
+    when (perk) {
+        net.lumalyte.lg.domain.rewards.PrestigePerk.QUICK_HOME ->
+            lang.bedrock("menu.guild_progression.prestige.confirmation.summary.perk_quick_home", "seconds" to perks.quickHomeSeconds)
+        net.lumalyte.lg.domain.rewards.PrestigePerk.EXTRA_STALL ->
+            lang.bedrock("menu.guild_progression.prestige.confirmation.summary.perk_extra_stall")
+    }
+}

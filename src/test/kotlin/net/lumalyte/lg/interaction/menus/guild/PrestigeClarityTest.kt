@@ -29,7 +29,10 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         bindRank("Founder")
         every { prestige.overview(guild.id) } returns
             PrestigeOverview(true, 100, 1, 6, 20_000, listOf(catalog.find("bank-1")!!, catalog.find("ally-homes")!!))
-        loadKoinModules(module { single { prestige }; single { catalog } })
+        val perks = net.lumalyte.lg.application.services.GuildPrestigePerks(mockk(relaxed = true), mockk(relaxed = true)) {
+            net.lumalyte.lg.domain.rewards.PrestigePerks(net.lumalyte.lg.config.PrestigePerksConfig())
+        }
+        loadKoinModules(module { single { prestige }; single { catalog }; single { perks } })
     }
 
     @Test
@@ -42,6 +45,7 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         assertTrue("one permanent home slot" in lore, lore)
         assertTrue("prestige ii badge" in lore, lore)
         assertTrue("buy them again" in lore, lore)
+        assertTrue("new perk" !in lore, lore) // Prestige II starts no live perk yet
     }
 
     @Test
@@ -72,6 +76,20 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         assertTrue("bank capacity: +1" in content, content)
         assertTrue("one permanent home slot" in content, content)
         assertTrue("prestige ii badge" in content, content)
+        assertTrue("new perk" !in content, content)
+    }
+
+    @Test
+    fun `reaching Prestige I and III lists the perk they start`() {
+        bind()
+        fun javaLore(q: PrestigeQuote) = GuildPrestigeConfirmationMenu(player, q, "Bank Extension 1", {}, {}).createGui()
+            .let { gui -> gui.show(player); player.openInventory.topInventory.getItem(4)!!.lore()!! }
+            .joinToString("\n") { plain(PlainTextComponentSerializer.plainText().serialize(it)) }
+        assertTrue("take 2 seconds instead of 5" in javaLore(quote.copy(expectedPrestigeCount = 0)))
+        assertTrue("one more market stall" in javaLore(quote.copy(expectedPrestigeCount = 2)))
+        val bedrock = plain((BedrockPrestigeConfirmationMenu(MenuNavigator(player), player, quote.copy(expectedPrestigeCount = 0),
+            "Bank Extension 1", {}, {}, Logger.getAnonymousLogger()).getForm() as ModalForm).content())
+        assertTrue("take 2 seconds instead of 5" in bedrock, bedrock)
     }
 
     @Test

@@ -186,7 +186,7 @@ class BedrockGuildHomeMenu(
             if (targetLocation == null) {
                 player.sendMessage(lang.msg("bedrock.home.feedback.teleport_failed"))
             } else {
-                teleportationService.startTeleport(player, targetLocation)
+                teleportationService.startHomeTeleport(player, targetLocation)
             }
         } catch (e: Exception) {
             logger.log(Level.WARNING, "Error teleporting to home", e)

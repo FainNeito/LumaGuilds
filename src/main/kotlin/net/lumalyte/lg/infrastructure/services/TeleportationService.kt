@@ -22,6 +22,8 @@ import kotlin.math.abs
 class TeleportationService(
     private val plugin: Plugin,
     private val lang: LangService,
+    /** REQ-179: countdown for a player's guild-home and allied-home teleports. */
+    private val homeCountdownSeconds: (UUID) -> Int = { COUNTDOWN_SECONDS },
 ) {
 
     private val logger = LoggerFactory.getLogger(TeleportationService::class.java)
@@ -38,9 +40,10 @@ class TeleportationService(
         val targetLocation: Location,
         val startLocation: Location,
         val onSuccess: (() -> Unit)? = null,
+        countdownSeconds: Int = COUNTDOWN_SECONDS,
     ) {
         var countdownTask: BukkitRunnable? = null
-        var remainingSeconds: Int = COUNTDOWN_SECONDS
+        var remainingSeconds: Int = countdownSeconds
     }
 
     /** Immutable bundle of teleport callsite info passed to result handlers. */
@@ -75,7 +78,7 @@ class TeleportationService(
      * Behavior:
      * - Cancels any existing countdown for the player first.
      * - Refuses to start if the player is in combat (sends a message).
-     * - Runs a 5-second countdown; movement greater than 0.1 blocks cancels it.
+     * - Runs a 5-second countdown ([startHomeTeleport]: the guild's countdown); movement greater than 0.1 blocks cancels it.
      * - On completion, dismounts any vehicle/passengers, then calls
      *   [Player.teleportAsync] with [PlayerTeleportEvent.TeleportCause.PLUGIN].
      * - Logs a warning if `teleportAsync` returns `false` so admins can correlate
@@ -88,27 +91,41 @@ class TeleportationService(
      * @param onSuccess invoked on the main thread after a successful teleport
      *   (e.g. to stamp a per-player cooldown). Skipped on failure.
      */
-    fun startTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) {
+    fun startTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) =
+        start(player, targetLocation, onSuccess) { COUNTDOWN_SECONDS }
+
+    /**
+     * Guild-home and allied-home teleport (REQ-179): same as [startTeleport], but the
+     * countdown is the player's guild's, which is shorter once it has prestiged. A
+     * failure to work that out falls back to the standard countdown.
+     */
+    fun startHomeTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) =
+        start(player, targetLocation, onSuccess) { homeCountdown(it) }
+
+    private fun homeCountdown(playerId: UUID): Int =
+        runCatching { homeCountdownSeconds(playerId) }.getOrNull()?.takeIf { it in 1..COUNTDOWN_SECONDS } ?: COUNTDOWN_SECONDS
+
+    private fun start(player: Player, targetLocation: Location, onSuccess: (() -> Unit)?, seconds: (UUID) -> Int) {
         if (Bukkit.isPrimaryThread()) {
-            startTeleportInternal(player, targetLocation, onSuccess)
+            startTeleportInternal(player, targetLocation, onSuccess, seconds(player.uniqueId))
         } else {
             Bukkit.getScheduler().runTask(
                 plugin,
-                Runnable { startTeleportInternal(player, targetLocation, onSuccess) },
+                Runnable { startTeleportInternal(player, targetLocation, onSuccess, seconds(player.uniqueId)) },
             )
         }
     }
 
-    private fun startTeleportInternal(player: Player, targetLocation: Location, onSuccess: (() -> Unit)?) {
+    private fun startTeleportInternal(player: Player, targetLocation: Location, onSuccess: (() -> Unit)?, seconds: Int) {
         val playerId = player.uniqueId
         cancelTeleport(playerId)
         if (CombatUtil.isInCombat(player)) {
             player.sendMessage(lang.msg("notification.teleport.in_combat"))
             return
         }
-        val session = TeleportSession(player, targetLocation, player.location.clone(), onSuccess)
+        val session = TeleportSession(player, targetLocation, player.location.clone(), onSuccess, seconds)
         activeTeleports[playerId] = session
-        announceCountdownStart(player)
+        announceCountdownStart(player, seconds)
         val task = CountdownTask(playerId)
         session.countdownTask = task
         // announceCountdownStart already posts the "5 seconds" action bar; a timer
@@ -121,11 +138,11 @@ class TeleportationService(
         task.runTaskTimer(plugin, initialCountdownDelay, countdownInterval)
     }
 
-    private fun announceCountdownStart(player: Player) {
+    private fun announceCountdownStart(player: Player, seconds: Int) {
         player.sendMessage(
-            lang.msg("notification.teleport.countdown_started", "duration" to countdownSecondsPhrase(COUNTDOWN_SECONDS)),
+            lang.msg("notification.teleport.countdown_started", "duration" to countdownSecondsPhrase(seconds)),
         )
-        player.sendActionBar(countdownActionBar(COUNTDOWN_SECONDS))
+        player.sendActionBar(countdownActionBar(seconds))
     }
 
     /** Chat phrase: "1 second" vs "N seconds" for countdown copy. */

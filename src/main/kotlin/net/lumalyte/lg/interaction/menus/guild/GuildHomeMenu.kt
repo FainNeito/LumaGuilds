@@ -540,7 +540,7 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
             return
         }
 
-        teleportationService.startTeleport(player, targetLocation)
+        teleportationService.startHomeTeleport(player, targetLocation)
     }
 
     private fun isLocationSafe(location: org.bukkit.Location): Boolean {

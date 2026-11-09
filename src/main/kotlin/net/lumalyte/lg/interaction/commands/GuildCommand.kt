@@ -471,7 +471,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
         if (isConfirm) {
             val pendingLocation = GuildHomeSafety.consumePending(player)
             if (pendingLocation != null) {
-                teleportationService.startTeleport(player, pendingLocation) {
+                teleportationService.startHomeTeleport(player, pendingLocation) {
                     lastHomeTeleport[player.uniqueId] = System.currentTimeMillis()
                 }
                 return
@@ -551,7 +551,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
             }
 
             // Start teleport countdown via centralized service
-            teleportationService.startTeleport(player, targetLocation) {
+            teleportationService.startHomeTeleport(player, targetLocation) {
                 lastHomeTeleport[playerId] = System.currentTimeMillis()
             }
         } else {
@@ -712,7 +712,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
             return
         }
 
-        teleportationService.startTeleport(player, targetLocation) {
+        teleportationService.startHomeTeleport(player, targetLocation) {
             lastHomeTeleport[player.uniqueId] = System.currentTimeMillis()
             player.sendMessage(lang.msg("command.migrated.guild.allyhome.teleported_to_s_ally_home", "guild" to targetGuild.name))
         }
@@ -724,7 +724,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
             player.sendMessage(lang.msg("command.migrated.guild.home.no_pending_unsafe_teleport_to_confirm_or"))
             return
         }
-        teleportationService.startTeleport(player, pendingLocation) {
+        teleportationService.startHomeTeleport(player, pendingLocation) {
             lastHomeTeleport[player.uniqueId] = System.currentTimeMillis()
         }
     }

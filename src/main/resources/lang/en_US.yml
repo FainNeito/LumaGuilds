@@ -6141,6 +6141,8 @@ menu:
           carry: "<aqua>XP earned past Level 100 carries over, up to the start of Level <level>."
           permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
           home_slot: "<green>Your guild also gains one permanent home slot."
+          perk_quick_home: "<green>New perk: guild home and allied home teleports take <seconds> seconds instead of 5."
+          perk_extra_stall: "<green>New perk: your guild can own one more market stall."
           badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."
           overflow: "<gray>Gold above the new bank capacity stays and can be withdrawn, but nothing can be added until capacity catches up."
         confirm: "<green>Confirm Prestige"
