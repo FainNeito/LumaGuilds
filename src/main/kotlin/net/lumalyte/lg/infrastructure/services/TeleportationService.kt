@@ -22,8 +22,11 @@ import kotlin.math.abs
 class TeleportationService(
     private val plugin: Plugin,
     private val lang: LangService,
-    /** REQ-179: countdown for a player's guild-home and allied-home teleports. */
-    private val homeCountdownSeconds: (UUID) -> Int = { COUNTDOWN_SECONDS },
+    /** REQ-179: Quick Travel countdown and cooldown for guild-home and allied-home teleports. */
+    private val homeTravel: net.lumalyte.lg.application.services.HomeTravelPolicy =
+        net.lumalyte.lg.application.services.HomeTravelPolicy.Standard,
+    private val homeCooldowns: net.lumalyte.lg.application.services.HomeTeleportCooldowns =
+        net.lumalyte.lg.application.services.HomeTeleportCooldowns(),
 ) {
 
     private val logger = LoggerFactory.getLogger(TeleportationService::class.java)
@@ -92,28 +95,33 @@ class TeleportationService(
      *   (e.g. to stamp a per-player cooldown). Skipped on failure.
      */
     fun startTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) =
-        start(player, targetLocation, onSuccess) { COUNTDOWN_SECONDS }
+        onMain { startTeleportInternal(player, targetLocation, onSuccess, COUNTDOWN_SECONDS) }
 
     /**
-     * Guild-home and allied-home teleport (REQ-179): same as [startTeleport], but the
-     * countdown is the player's guild's, which is shorter once it has prestiged. A
-     * failure to work that out falls back to the standard countdown.
+     * Guild-home and allied-home teleport (REQ-179), from commands and menus alike.
+     * Refuses while the player's home cooldown runs; otherwise counts down for the
+     * guild's Quick Travel countdown and starts the cooldown after a successful
+     * teleport. A failure to read Quick Travel gives the standard times.
      */
-    fun startHomeTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) =
-        start(player, targetLocation, onSuccess) { homeCountdown(it) }
-
-    private fun homeCountdown(playerId: UUID): Int =
-        runCatching { homeCountdownSeconds(playerId) }.getOrNull()?.takeIf { it in 1..COUNTDOWN_SECONDS } ?: COUNTDOWN_SECONDS
-
-    private fun start(player: Player, targetLocation: Location, onSuccess: (() -> Unit)?, seconds: (UUID) -> Int) {
-        if (Bukkit.isPrimaryThread()) {
-            startTeleportInternal(player, targetLocation, onSuccess, seconds(player.uniqueId))
+    fun startHomeTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) = onMain {
+        val playerId = player.uniqueId
+        val wait = homeCooldowns.remainingSeconds(playerId, safe(0L) { homeTravel.cooldownSeconds(playerId) })
+        if (wait > 0) {
+            player.sendMessage(lang.msg("notification.teleport.cooldown", "seconds" to wait))
         } else {
-            Bukkit.getScheduler().runTask(
-                plugin,
-                Runnable { startTeleportInternal(player, targetLocation, onSuccess, seconds(player.uniqueId)) },
-            )
+            val seconds = safe(COUNTDOWN_SECONDS) { homeTravel.countdownSeconds(playerId) }
+                .takeIf { it in 1..COUNTDOWN_SECONDS } ?: COUNTDOWN_SECONDS
+            startTeleportInternal(player, targetLocation, {
+                homeCooldowns.markTeleported(playerId)
+                onSuccess?.invoke()
+            }, seconds)
         }
+    }
+
+    private inline fun <T> safe(fallback: T, read: () -> T): T = runCatching(read).getOrDefault(fallback)
+
+    private fun onMain(action: () -> Unit) {
+        if (Bukkit.isPrimaryThread()) action() else Bukkit.getScheduler().runTask(plugin, Runnable { action() })
     }
 
     private fun startTeleportInternal(player: Player, targetLocation: Location, onSuccess: (() -> Unit)?, seconds: Int) {

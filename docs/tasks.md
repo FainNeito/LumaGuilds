@@ -1299,7 +1299,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 
 ## Prestige tier perks and allied-home access (REQ-179 to REQ-182)
 
-- [x] **PRESTIGE-QUICK-HOME** Tag: TDD. REQ-179. Evidence: PrestigePerksTest, GuildPrestigePerksTest, PrestigeClarityTest; full suite green.
+- [x] **QUICK-TRAVEL-COUNTDOWN** Tag: TDD. REQ-179. Evidence: HomeTravelTimesTest, HomeTravelTest, HomeTeleportCooldownsTest.
 - [ ] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180.
 - [ ] **PRESTIGE-EXTRA-STALL** Tag: TDD. REQ-181 (with EnthusiaMarket).
 - [ ] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182.

@@ -29,7 +29,7 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         bindRank("Founder")
         every { prestige.overview(guild.id) } returns
             PrestigeOverview(true, 100, 1, 6, 20_000, listOf(catalog.find("bank-1")!!, catalog.find("ally-homes")!!))
-        val perks = net.lumalyte.lg.application.services.GuildPrestigePerks(mockk(relaxed = true), mockk(relaxed = true)) {
+        val perks = net.lumalyte.lg.application.services.GuildPrestigePerks(mockk(relaxed = true)) {
             net.lumalyte.lg.domain.rewards.PrestigePerks(net.lumalyte.lg.config.PrestigePerksConfig())
         }
         loadKoinModules(module { single { prestige }; single { catalog }; single { perks } })
@@ -80,16 +80,16 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
     }
 
     @Test
-    fun `reaching Prestige I and III lists the perk they start`() {
+    fun `reaching Prestige III lists the extra stall`() {
         bind()
         fun javaLore(q: PrestigeQuote) = GuildPrestigeConfirmationMenu(player, q, "Bank Extension 1", {}, {}).createGui()
             .let { gui -> gui.show(player); player.openInventory.topInventory.getItem(4)!!.lore()!! }
             .joinToString("\n") { plain(PlainTextComponentSerializer.plainText().serialize(it)) }
-        assertTrue("take 2 seconds instead of 5" in javaLore(quote.copy(expectedPrestigeCount = 0)))
+        assertTrue("new perk" !in javaLore(quote.copy(expectedPrestigeCount = 0)))
         assertTrue("one more market stall" in javaLore(quote.copy(expectedPrestigeCount = 2)))
-        val bedrock = plain((BedrockPrestigeConfirmationMenu(MenuNavigator(player), player, quote.copy(expectedPrestigeCount = 0),
+        val bedrock = plain((BedrockPrestigeConfirmationMenu(MenuNavigator(player), player, quote.copy(expectedPrestigeCount = 2),
             "Bank Extension 1", {}, {}, Logger.getAnonymousLogger()).getForm() as ModalForm).content())
-        assertTrue("take 2 seconds instead of 5" in bedrock, bedrock)
+        assertTrue("one more market stall" in bedrock, bedrock)
     }
 
     @Test

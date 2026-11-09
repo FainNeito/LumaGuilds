@@ -476,23 +476,11 @@ data class PrestigeConfig(
     }
 }
 
-/** REQ-179 to REQ-181: the prestige tier at which each practical perk unlocks. */
+/** REQ-180, REQ-181: the prestige tier at which each practical perk unlocks. */
 data class PrestigePerksConfig(
-    val quickHomeTier: Int = 1,
-    val quickHomeSeconds: Int = 2,
     val secondAllyHomeTier: Int = 2,
     val extraStallTier: Int = 3,
-) {
-    init {
-        require(quickHomeSeconds in 1..PrestigePerksConfigDefaults.STANDARD_COUNTDOWN) {
-            "Prestige quick-home countdown must be between 1 and 5 seconds"
-        }
-    }
-}
-
-object PrestigePerksConfigDefaults {
-    const val STANDARD_COUNTDOWN = 5
-}
+)
 
 /** REQ-175: XP earned past level 100 can start the next climb, up to the start of [landingLevel]. */
 data class PrestigeCarryOverConfig(

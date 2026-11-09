@@ -1875,8 +1875,6 @@ command:
         failed_to_toggle_bannerman: '<red>❌ Failed to toggle bannerman.'
         you_don_t_have_permission_to_toggle: '<red>You don''t have permission to toggle the bannerman.'
         you_need_the_manage_banner_permission: '<gray>You need the MANAGE_BANNER permission.'
-      checkallyhomecooldown:
-        please_wait_s_before_teleporting_again: '<red>◷ Please wait <elapsed_seconds>s before teleporting again.'
       create:
         a_new_guild_has_been_founded_by: '<gold>⌂ <yellow>A new guild has been founded: <gold><name> <yellow>by <gold><player><yellow>!'
         basic_punctuation: '<gray> • Basic punctuation: '' & -'
@@ -1992,7 +1990,6 @@ command:
         activation_failed: '<red>❌ Failed to activate home ''<target_home_name>''.'
         no_guild_homes_have_been_set: '<red>No guild homes have been set.'
         no_pending_unsafe_teleport_to_confirm_or: '<red>No pending unsafe teleport to confirm, or confirmation expired.'
-        please_wait_s_before_teleporting_again: '<red>◷ Please wait <remaining_seconds>s before teleporting again.'
         use_guild_home_name_to_teleport_to: '<gray>Use <gold>/guild home \<name> <gray>to teleport to a specific home.'
         use_guild_sethome_to_set_your_first: '<gray>Use <gold>/guild sethome <gray>to set your first home.'
         you_already_have_a_teleport_in_progress: '<red>You already have a teleport in progress. Please wait for it to complete.'
@@ -6141,7 +6138,6 @@ menu:
           carry: "<aqua>XP earned past Level 100 carries over, up to the start of Level <level>."
           permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
           home_slot: "<green>Your guild also gains one permanent home slot."
-          perk_quick_home: "<green>New perk: guild home and allied home teleports take <seconds> seconds instead of 5."
           perk_extra_stall: "<green>New perk: your guild can own one more market stall."
           badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."
           overflow: "<gray>Gold above the new bank capacity stays and can be withdrawn, but nothing can be added until capacity catches up."
@@ -7478,6 +7474,7 @@ notification:
       perks: '<gray>New Perks:'
       perk: '<gray>  • <green><perk>'
   teleport:
+    cooldown: "<red>◷ Please wait <seconds>s before teleporting home again."
     in_combat: '<yellow>◷ Cannot teleport in combat.'
     countdown_started: '<yellow>◷ Teleportation countdown started! Don''t move for <duration>...'
     duration:
@@ -7986,7 +7983,7 @@ chronicle:
   outposts: '<green>Outposts</green>'
   bank_effect: '<gray>Bank capacity: +<amount>, up to the server maximum.</gray>'
   home_effect: '<gray>Home slots: +<amount>.</gray>'
-  cooldown_effect: '<gray>Home teleport cooldown: <percent>% of normal. Your best Quick Travel applies.</gray>'
+  cooldown_effect: '<gray>Home teleports: <seconds>s countdown, cooldown <percent>% of normal. Your best Quick Travel applies.</gray>'
   fee_effect: '<gray>Bank withdrawal fee: <percent>% of normal. Your best Treasury Discount applies.</gray>'
   ally_effect: '<gray>Members can use allied guild homes they have been given access to.</gray>'
   shared: '<gray>Shared guild goal; Manage Guild Settings is required to change it.</gray>'

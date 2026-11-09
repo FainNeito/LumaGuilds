@@ -9,7 +9,6 @@ access control is for every guild, not just prestiged ones.
 
 | Tier (default) | Perk | Config |
 |---|---|---|
-| I | Home and allied-home teleport countdown drops from 5 s to 2 s | `progression.prestige.perks.quick_home_tier`, `quick_home_seconds` |
 | II | A second allied-home slot | `second_ally_home_tier` |
 | III | One more guild-owned market stall (cap 1 becomes 2) | `extra_stall_tier` |
 
@@ -22,14 +21,30 @@ access control is for every guild, not just prestiged ones.
 
 ## Delivery
 
-1. LumaGuilds `feature/prestige-tier-perks`: config, quick home (REQ-179),
+1. LumaGuilds `feature/prestige-tier-perks`: config, Quick Travel (REQ-179),
    stall bonus API (REQ-181 LumaGuilds side), confirmation lines.
 2. EnthusiaMarket `feature/guild-stall-cap`: the cap (REQ-181, Market REQ-399).
 3. LumaGuilds follow-up: second allied home (REQ-180) and allied-home access
    (REQ-182); both change how allied homes are stored.
-- Finding while scoping: the countdown is hard-coded to 5 s in
-  `TeleportationService`; `guild.home_teleport_warmup_seconds` is read but
-  never used. Non-prestiged guilds keep 5 s; war-banner teleports keep 5 s.
+- Quicker home teleports were first planned as a Prestige I perk. Fain moved
+  them into Quick Travel instead (2026-11-09): see "Quick Travel" below.
+
+## Quick Travel (every guild, bought as a level reward)
+
+Quick Travel 1-5 (Lv10-50, multiplier 0.9 to 0.5) used to shorten only the
+cooldown between `/g home` and `/g allyhome` uses. With the default 5-second
+cooldown that saved at most 2.5 seconds, and the Java and Bedrock home menus
+skipped the cooldown entirely. Now (REQ-179):
+
+| Quick Travel | none | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|---|
+| Countdown | 5 s | 4 s | 4 s | 3 s | 3 s | 2 s |
+| Cooldown | 100% | 90% | 80% | 70% | 60% | 50% |
+
+- One cooldown for commands and menus, kept in `TeleportationService`.
+- War-banner teleports keep the plain 5-second countdown and no cooldown.
+- `guild.home_teleport_warmup_seconds` is still unused (the base countdown
+  stays 5 s); the base cooldown is `guild.home_teleport_cooldown_seconds`.
 
 ## Guild stall cap (EnthusiaMarket)
 

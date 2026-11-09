@@ -719,7 +719,7 @@ fun progressionModule() = module {
     single { net.lumalyte.lg.application.services.GuildPrestigeStandings(get(), get()) }
     single {
         val configService = get<net.lumalyte.lg.application.services.ConfigService>()
-        net.lumalyte.lg.application.services.GuildPrestigePerks(get(), get()) {
+        net.lumalyte.lg.application.services.GuildPrestigePerks(get()) {
             net.lumalyte.lg.domain.rewards.PrestigePerks(configService.loadConfig().progression.prestige.perks)
         }
     }
@@ -1269,12 +1269,11 @@ fun utilitiesModule() = module {
 
     // Other utilities
     single<net.lumalyte.lg.infrastructure.services.TeleportationService> {
-        val koin = getKoin()
-        net.lumalyte.lg.infrastructure.services.TeleportationService(get(), get()) { playerId ->
-            koin.getOrNull<net.lumalyte.lg.application.services.GuildPrestigePerks>()
-                ?.homeCountdownSeconds(playerId)
-                ?: net.lumalyte.lg.config.PrestigePerksConfigDefaults.STANDARD_COUNTDOWN
-        }
+        // REQ-179: Quick Travel shortens the home countdown and cooldown.
+        net.lumalyte.lg.infrastructure.services.TeleportationService(
+            get(), get(),
+            net.lumalyte.lg.application.services.HomeTravel(get(), get(), get()),
+        )
     }
 }
 

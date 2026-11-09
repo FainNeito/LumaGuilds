@@ -68,7 +68,6 @@ class GuildCommand : BaseCommand(), KoinComponent {
     private val warBannerService: net.lumalyte.lg.infrastructure.services.WarBannerServiceBukkit by inject()
     private val guildLoginNotificationService: net.lumalyte.lg.application.services.GuildLoginNotificationService by inject()
 
-    private val lastHomeTeleport = mutableMapOf<java.util.UUID, Long>()
 
     private fun notifyGuildMembers(guildId: java.util.UUID, message: Component) {
         val members = memberService.getGuildMembers(guildId)
@@ -471,9 +470,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
         if (isConfirm) {
             val pendingLocation = GuildHomeSafety.consumePending(player)
             if (pendingLocation != null) {
-                teleportationService.startHomeTeleport(player, pendingLocation) {
-                    lastHomeTeleport[player.uniqueId] = System.currentTimeMillis()
-                }
+                teleportationService.startHomeTeleport(player, pendingLocation)
                 return
             } else {
                 player.sendMessage(lang.msg("command.migrated.guild.home.no_pending_unsafe_teleport_to_confirm_or"))
@@ -511,22 +508,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
                 return
             }
 
-            // Check teleport cooldown (with progression-based multiplier)
-            val config = configService.loadConfig()
-            val baseCooldownSeconds = config.guild.homeTeleportCooldownSeconds
-            val cooldownMultiplier = progressionService.getHomeCooldownMultiplier(guild.id)
-            val cooldownSeconds = (baseCooldownSeconds * cooldownMultiplier).toLong()
-
-            val lastTeleport = lastHomeTeleport[playerId]
-            if (lastTeleport != null) {
-                val elapsedSeconds = (System.currentTimeMillis() - lastTeleport) / 1000
-                if (elapsedSeconds < cooldownSeconds) {
-                    val remainingSeconds = cooldownSeconds - elapsedSeconds
-                    player.sendMessage(lang.msg("command.migrated.guild.home.please_wait_s_before_teleporting_again", "remaining_seconds" to remainingSeconds))
-                    return
-                }
-            }
-
+            // Cooldown and Quick Travel countdown are applied by startHomeTeleport (REQ-179).
             // Get target location
             val world = player.server.getWorld(home.worldId)
             if (world == null) {
@@ -551,9 +533,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
             }
 
             // Start teleport countdown via centralized service
-            teleportationService.startHomeTeleport(player, targetLocation) {
-                lastHomeTeleport[playerId] = System.currentTimeMillis()
-            }
+            teleportationService.startHomeTeleport(player, targetLocation)
         } else {
             // Check if the guild has any homes at all
             val allHomes = guildService.getHomes(guild.id)
@@ -704,7 +684,6 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
         val targetGuild = resolveAllyTarget(player, guildName, ownGuild) ?: return
         val targetLocation = resolveAllyHomeLocation(player, ownGuild, targetGuild) ?: return
-        if (!checkAllyHomeCooldown(player, ownGuild.id)) return
 
         val config = configService.loadConfig()
         if (config.guild.homeTeleportSafetyCheck &&
@@ -713,7 +692,6 @@ class GuildCommand : BaseCommand(), KoinComponent {
         }
 
         teleportationService.startHomeTeleport(player, targetLocation) {
-            lastHomeTeleport[player.uniqueId] = System.currentTimeMillis()
             player.sendMessage(lang.msg("command.migrated.guild.allyhome.teleported_to_s_ally_home", "guild" to targetGuild.name))
         }
     }
@@ -724,9 +702,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
             player.sendMessage(lang.msg("command.migrated.guild.home.no_pending_unsafe_teleport_to_confirm_or"))
             return
         }
-        teleportationService.startHomeTeleport(player, pendingLocation) {
-            lastHomeTeleport[player.uniqueId] = System.currentTimeMillis()
-        }
+        teleportationService.startHomeTeleport(player, pendingLocation)
     }
 
     private fun resolveAllyTarget(
@@ -796,20 +772,6 @@ class GuildCommand : BaseCommand(), KoinComponent {
             player.location.yaw,
             player.location.pitch
         )
-    }
-
-    private fun checkAllyHomeCooldown(player: Player, ownGuildId: java.util.UUID): Boolean {
-        val config = configService.loadConfig()
-        val baseCooldownSeconds = config.guild.homeTeleportCooldownSeconds
-        val cooldownMultiplier = progressionService.getHomeCooldownMultiplier(ownGuildId)
-        val cooldownSeconds = (baseCooldownSeconds * cooldownMultiplier).toLong()
-        val lastTeleport = lastHomeTeleport[player.uniqueId] ?: return true
-        val elapsedSeconds = (System.currentTimeMillis() - lastTeleport) / 1000
-        if (elapsedSeconds < cooldownSeconds) {
-            player.sendMessage(lang.msg("command.migrated.guild.checkallyhomecooldown.please_wait_s_before_teleporting_again", "elapsed_seconds" to cooldownSeconds - elapsedSeconds))
-            return false
-        }
-        return true
     }
 
     @Subcommand("ranks")
