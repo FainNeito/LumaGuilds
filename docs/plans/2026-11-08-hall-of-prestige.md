@@ -7,6 +7,9 @@ visible here.
 
 Decisions (Fain, 2026-11-08): fixed pedestals filled by the top-ranked guilds;
 the guild picks whose skin its statue wears; armor is set by prestige tier.
+On 2026-11-09 Fain picked the Guard pose as the statue default after testing it
+on TEST (the sword angle there is `pri_right_item` (153.2, -10.8, 19.3) in the
+model source's convention).
 
 ## What it is
 
@@ -46,7 +49,7 @@ places and updates everything on the pedestal; staff own the room around it.
 | Armor | Prestige tier: I–II iron, III–IV diamond, V gold, VI netherite. Full set, never an item anyone can take. |
 | Held items | A sword of the same material. The Victory pose also holds a matching axe in the off hand, as in the prototype. |
 | Armor trim | The guild's chosen trim cosmetic (pattern and material). None until chosen. |
-| Pose | The chosen pose cosmetic. Before one is chosen, a plain "Stand" idle: still, with slow head turns. |
+| Pose | The chosen pose cosmetic. Before one is chosen, the Guard pose Fain approved on TEST: hands resting on a sword planted point-down, head turning slowly. |
 | Nameplate | Two lines above the head: the guild name in the chosen nameplate style with the chosen title flourish, then `Prestige IV` in Roman numerals. Default style is plain white, no flourish. |
 
 Poses animate only vanilla joints (head, arms at the shoulder, whole-body hop),
@@ -112,8 +115,8 @@ cosmetics already need for their picks (REQ-158), so it is stored once.
 - `/npc limb` is not saved, so the plugin restarts the pose animation itself
   every time a statue spawns (chunk load, restart, refresh).
 - Citizens and BetterModel are soft dependencies. Without Citizens the Hall is
-  off and the log says why once. Without BetterModel the statues stand in the
-  "Stand" pose with no animation.
+  off and the log says why once. Without BetterModel the statues stand still
+  with no animation.
 - Bedrock players (through Geyser) are expected not to see BetterModel's
   animation. They get the plain Citizens NPC in the same armor; the TEST check
   below confirms what they really see.
@@ -133,7 +136,9 @@ Players need no permission to view the Hall or read the books.
 
 From the NPC prototype bundle, before building on it:
 
-1. The Victory pose looks right on Java (arm rotation signs).
+1. Done 2026-11-09: the Guard pose looks right on Java. BetterModel turns x and
+   y the opposite way from Blockbench's preview, so the model source flips them
+   on export.
 2. Tiered armor, trims and held items follow the moving limbs.
 3. What Bedrock players see.
 4. TPS and `/spark` cost with 6 animated statues in view. This sets the default
@@ -143,6 +148,6 @@ From the NPC prototype bundle, before building on it:
 
 - Building the room itself; staff do that.
 - The website Hall of Prestige page and the Discord post.
-- Pose animations other than Victory and Stand, which are art work done while
-  building this, one per pose cosmetic.
+- Pose animations other than Guard, which are art work done while building
+  this, one per pose cosmetic.
 - Statues for guilds below Prestige I or for disbanded guilds.
