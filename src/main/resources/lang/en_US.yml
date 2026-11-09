@@ -8019,7 +8019,7 @@ chronicle:
     preserved_title: '<gold>What stays and what resets</gold>'
     preserved_homes: '<green>Purchased home slots, saved homes and paid home activations stay.</green>'
     preserved_rewards: '<green>Rewards kept from earlier prestiges stay, and the one you choose now joins them. Members and gold stay too.</green>'
-    reset: '<gray>Your level goes back to 1 and XP to 0. Level perks and other purchased rewards reset, so you buy them again as you climb. Prestige gives no gold or XP.</gray>'
+    reset: '<gray>Your level goes back to 1. Level perks and other purchased rewards reset, so you buy them again as you climb. The confirmation shows whether XP carries over.</gray>'
     chapter: '<gray>Chapter rollover follows server policy separately from prestige.</gray>'
     none: '<gray>No rewards kept from prestige yet. Purchased home slots are kept on their own.</gray>'
     retained: '<gold>Kept forever from an earlier prestige.</gold>'
