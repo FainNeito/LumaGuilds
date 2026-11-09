@@ -18,13 +18,12 @@ class PartySharedPersistenceTest {
         try {
             storage.connection.executeUpdate("""CREATE TABLE parties (
               id TEXT PRIMARY KEY, name TEXT, guild_ids TEXT NOT NULL, leader_id TEXT NOT NULL,
-              status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT, restricted_roles TEXT,
-              muted_players TEXT, banned_players TEXT)""")
+              status TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT, restricted_roles TEXT)""")
             val guild = UUID.randomUUID()
             val leader = UUID.randomUUID()
             val oldId = UUID.randomUUID()
-            storage.connection.executeUpdate("INSERT INTO parties VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                oldId.toString(), "Guild_Chat", guild.toString(), leader.toString(), "ACTIVE", Instant.now().toString(), null, null, null, null)
+            storage.connection.executeUpdate("INSERT INTO parties VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                oldId.toString(), "Guild_Chat", guild.toString(), leader.toString(), "ACTIVE", Instant.now().toString(), null, null)
             val repo = PartyRepositorySQLite(storage)
             assertTrue(repo.getById(oldId)!!.isPrivateParty())
             val shared = Party(id = UUID.randomUUID(), guildIds = setOf(guild), leaderId = leader, createdAt = Instant.now(), shared = true)

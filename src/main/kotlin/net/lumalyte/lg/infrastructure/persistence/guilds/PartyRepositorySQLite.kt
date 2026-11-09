@@ -43,13 +43,19 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
             storage.connection.executeUpdate(sql)
             storage.connection.connection.use { connection ->
                 val metadata = connection.metaData
-                val hasColumn = listOf("parties", "PARTIES").any { table ->
-                    listOf("shared", "SHARED").any { column ->
-                        metadata.getColumns(connection.catalog, null, table, column).use { it.next() }
+                for ((name, declaration) in listOf(
+                    "muted_players" to "TEXT NULL",
+                    "banned_players" to "TEXT NULL",
+                    "shared" to "INTEGER NOT NULL DEFAULT 0",
+                )) {
+                    val hasColumn = listOf("parties", "PARTIES").any { table ->
+                        listOf(name, name.uppercase()).any { column ->
+                            metadata.getColumns(connection.catalog, null, table, column).use { it.next() }
+                        }
                     }
-                }
-                if (!hasColumn) connection.createStatement().use {
-                    it.executeUpdate("ALTER TABLE parties ADD COLUMN shared INTEGER NOT NULL DEFAULT 0")
+                    if (!hasColumn) connection.createStatement().use {
+                        it.executeUpdate("ALTER TABLE parties ADD COLUMN $name $declaration")
+                    }
                 }
             }
         } catch (e: SQLException) {

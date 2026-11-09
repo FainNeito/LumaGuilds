@@ -24,6 +24,27 @@ class PartyServiceBukkit(
     
     private val logger = LoggerFactory.getLogger(PartyServiceBukkit::class.java)
 
+    init {
+        reconcileAppliedAcceptances()
+    }
+
+    /** A party update may have committed just before its request status write failed. */
+    private fun reconcileAppliedAcceptances() {
+        try {
+            partyRequestRepository.getRequestsByStatus(PartyRequestStatus.PENDING).forEach { request ->
+                val destination = request.partyId?.let(partyRepository::getById) ?: return@forEach
+                if (!destination.isPrivateParty() && destination.includesGuild(request.fromGuildId) &&
+                    destination.includesGuild(request.toGuildId)) {
+                    if (!partyRequestRepository.update(request.copy(status = PartyRequestStatus.ACCEPTED))) {
+                        logger.warn("Could not reconcile applied party request ${request.id}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Could not reconcile applied party acceptances", e)
+        }
+    }
+
     override fun createParty(party: Party, suppressBroadcast: Boolean): Party? {
         try {
             // Validate party name (no spaces allowed - prevents command conflicts)
@@ -527,6 +548,7 @@ class PartyServiceBukkit(
         var processedCount = 0
         
         try {
+            reconcileAppliedAcceptances()
             // Process expired party requests
             val expiredRequests = partyRequestRepository.getExpiredRequests()
             for (request in expiredRequests) {
