@@ -130,8 +130,9 @@ prestiged, so they get one pick per checkpoint they have passed on Run II.
 ## Out of scope
 
 - The Hall of Prestige itself (NPCs, lectern, armor-set registration) and
-  applying these cosmetics to it. It is specified separately but released
-  together with this track.
+  applying these cosmetics to it. It is specified in
+  `2026-11-08-hall-of-prestige.md`, which also says how each cosmetic looks
+  there, and is released together with this track.
 - Nameplate styles or flourishes on player chat, tab or EnthusiaTags tags.
 - Any power, price, XP or capacity change.
 - A track after Run VII.

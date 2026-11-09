@@ -620,6 +620,24 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-161
 **Event-driven.** WHEN the plugin first starts with this feature THE SYSTEM SHALL give each guild, exactly once, one unclaimed pick for every checkpoint of the runs it has completed and of its current run at or below its current level, recording source `prestige_run_<n>_backfill` and the upgrade time, so that Chronicle pages present them as earned before records began rather than with invented dates.
 
+### REQ-166
+**State-driven.** WHILE the Hall of Prestige is enabled and Citizens is installed THE SYSTEM SHALL fill the configured pedestals, in order, with the guilds that have at least Prestige I ranked by prestige count, then current level, then the earliest time of reaching their current prestige, SHALL leave pedestals beyond the ranked guilds empty, SHALL re-rank when a prestige is committed and every configured refresh interval (default 5 minutes), and SHALL rebuild only the pedestals whose guild or chosen look changed. A disbanded guild SHALL leave the Hall.
+
+### REQ-167
+**State-driven.** WHILE a guild holds a pedestal THE SYSTEM SHALL show its statue wearing the skin of the member the guild picked (the owner if none is picked or that member has left), a full armor set and a matching sword set by prestige tier (I and II iron, III and IV diamond, V gold, VI netherite), the guild's chosen trim, pose, nameplate style, title flourish, banner, spotlight, aura, plinth block and run trophy, each falling back to the documented default when none is chosen, and a nameplate naming the guild and its prestige in Roman numerals. Statue armor and items SHALL NOT be obtainable by players, and poses SHALL animate only the head, the arms at the shoulder and a whole-body hop.
+
+### REQ-168
+**Event-driven.** WHEN the guild owner or a member whose rank has Manage guild settings chooses, on the Java or Bedrock Hall display page, the statue's skin member or an owned cosmetic for a slot THE SYSTEM SHALL save that choice and apply it to the guild's statue within one refresh; other members SHALL be able to view the page but not change it, and a cosmetic the guild does not own SHALL NOT be selectable.
+
+### REQ-169
+**Event-driven.** WHEN a player clicks a pedestal's lectern THE SYSTEM SHALL open a read-only book for that pedestal's guild with a cover page and, for each run from Run II on, the date and member count at the prestige that opened it, the first date it reached each of levels 10 to 90, and its completion date or "In progress"; dates from before the feature shipped SHALL read "Before records began". THE SYSTEM SHALL record the member count at every committed prestige and the first time each run reaches each checkpoint level, storing the checkpoint record once for both this book and the run cosmetic picks.
+
+### REQ-170
+**Event-driven.** WHEN the plugin starts, stops, refreshes the Hall or a statue's chunk loads THE SYSTEM SHALL create statues only in a Citizens registry that is never saved to disk, SHALL restart each statue's pose animation whenever the statue spawns, and on stop SHALL remove its statues and displays and restore every plinth and banner spot to the blocks recorded when staff saved that spot; WHEN a pedestal changes guild THE SYSTEM SHALL restore those spots before applying the new guild's look. IF Citizens is missing THEN THE SYSTEM SHALL keep the Hall off and log the reason once, and IF BetterModel is missing THEN THE SYSTEM SHALL show statues in the still Stand pose.
+
+### REQ-171
+**State-driven.** WHILE a player is within the configured view distance of a pedestal (default 24 blocks) THE SYSTEM SHALL show that pedestal's spotlight, aura and turning trophy to that player only, and WHEN that player clicks the statue THE SYSTEM SHALL play the guild's chosen Hall sound to players within that distance; no Hall effect SHALL be broadcast beyond it.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
