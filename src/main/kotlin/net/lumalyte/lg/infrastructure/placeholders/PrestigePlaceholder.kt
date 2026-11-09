@@ -1,15 +1,16 @@
 package net.lumalyte.lg.infrastructure.placeholders
 
 import net.lumalyte.lg.domain.rewards.PrestigeStanding
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /** REQ-155 formatting. An unreadable standing is blank, never a fabricated tier. */
 object PrestigePlaceholder {
-    private val ROMAN = listOf("", "I", "II", "III", "IV", "V", "VI")
     private val DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC)
 
-    fun roman(tier: Int): String = ROMAN.getOrElse(tier) { "" }
+    /** Blank below tier I, unlike [PrestigeNumeral], so placeholder users can hide it. */
+    fun roman(tier: Int): String = if (tier in 1..6) PrestigeNumeral.of(tier) else ""
 
     fun badge(tier: Int, badges: List<String>): String = if (tier <= 0) "" else badges.getOrElse(tier) { "" }
 

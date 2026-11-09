@@ -1,5 +1,6 @@
 package net.lumalyte.lg.application.services
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import java.util.UUID
 
 /**
@@ -15,13 +16,11 @@ sealed interface DisbandPrestigeWarning {
         override val needsConfirmation = true
 
         /** The tier as players see it on badges: I to VI. */
-        val roman: String get() = ROMAN.getOrElse(tier) { tier.toString() }
+        val roman: String get() = PrestigeNumeral.of(tier)
     }
     data object Unknown : DisbandPrestigeWarning { override val needsConfirmation = true }
 
     companion object {
-        private val ROMAN = listOf("", "I", "II", "III", "IV", "V", "VI")
-
         fun of(standings: GuildPrestigeStandings, guildId: UUID): DisbandPrestigeWarning {
             val standing = runCatching { standings.standing(guildId) }.getOrNull() ?: return Unknown
             return if (standing.tier > 0) Tier(standing.tier) else None

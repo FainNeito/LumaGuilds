@@ -1,5 +1,6 @@
 package net.lumalyte.lg.infrastructure.services
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.badgersmc.nexus.i18n.LangService
 import net.kyori.adventure.title.Title
 import net.lumalyte.lg.application.services.FanfareStage
@@ -30,14 +31,10 @@ class PrestigeFanfareBukkit(private val plugin: Plugin, private val lang: LangSe
         val target = Bukkit.getPlayer(player) ?: return
         target.showTitle(
             Title.title(
-                lang.msg("notification.progression.prestige.title", "tier" to ROMAN[tier]),
+                lang.msg("notification.progression.prestige.title", "tier" to PrestigeNumeral.of(tier)),
                 lang.msg("notification.progression.prestige.subtitle", "guild" to guildName),
                 Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(3500), Duration.ofMillis(1000)),
             )
         )
-    }
-
-    private companion object {
-        val ROMAN = listOf("", "I", "II", "III", "IV", "V", "VI")
     }
 }

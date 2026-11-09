@@ -620,6 +620,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-164
 **Event-driven.** WHEN a prestige is newly committed and the prestige fanfare is enabled THE SYSTEM SHALL play, from vanilla sounds only and scheduled in server ticks after the public announcement, the member fanfare to that guild's online members (three rising note-block bells, F A C, leading into the vanilla challenge-complete chime with a high F bell on it, all pitched 0.9 so the bells sit in the chime's key; the same for every tier), SHALL show those members a title naming the prestige tier and the guild, and, WHILE the server-wide option is on, SHALL play the same fanfare at no more than 0.3 volume to every other online player. A player who logs out during the fanfare SHALL simply stop receiving its remaining cues, a replayed prestige receipt SHALL NOT play it again, and no failure in the fanfare SHALL affect the prestige.
 
+### REQ-165
+**Ubiquitous.** THE SYSTEM SHALL show every prestige tier and prestige count it puts in front of players (the server-wide prestige announcement, the prestige-applied message, the Java and Bedrock progression and prestige menus, and the Chronicle prestige page) as a Roman numeral from I to VI, with a count of zero shown as 0; counts of things other than prestige tiers, such as home slots, SHALL stay as ordinary numbers.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

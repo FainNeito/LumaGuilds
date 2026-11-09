@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.lumalyte.lg.infrastructure.i18n.bedrock
 import net.lumalyte.lg.infrastructure.i18n.rewardStatusText
 
@@ -164,7 +165,7 @@ class BedrockGuildProgressionInfoMenu(
             !overview.enabled -> lang.bedrock("menu.guild_progression.prestige.state.disabled")
             overview.prestigeCount >= overview.maxPrestigeCount -> lang.bedrock(
                 "menu.guild_progression.prestige.state.maximum",
-                "count" to overview.prestigeCount, "max" to overview.maxPrestigeCount
+                "count" to PrestigeNumeral.of(overview.prestigeCount), "max" to PrestigeNumeral.of(overview.maxPrestigeCount)
             )
             overview.currentLevel < 100 -> lang.bedrock(
                 "menu.guild_progression.prestige.state.level", "level" to overview.currentLevel
@@ -172,7 +173,7 @@ class BedrockGuildProgressionInfoMenu(
             overview.choices.isEmpty() -> lang.bedrock("menu.guild_progression.prestige.state.no_choices")
             else -> lang.bedrock(
                 "menu.guild_progression.prestige.state.ready",
-                "count" to overview.prestigeCount, "max" to overview.maxPrestigeCount,
+                "count" to PrestigeNumeral.of(overview.prestigeCount), "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
                 "fee" to (overview.nextFee ?: 0L), "choices" to overview.choices.size
             )
         }

@@ -1257,3 +1257,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
   - References: REQ-164. Revised after the TEST listen: the v3 score (horn, low bell, beacons, flute) sounded muddy with the real samples; Fain picked preview 8, a bell climb into the challenge chime, rendered from the 26.2 sound assets.
   - Evidence: `GuildPrestigeService` notifies `GuildPrestigeNotifier`s only for a newly committed prestige (REQ-153), so a notifier is the hook and replays stay silent.
   - Result: `PrestigeFanfareScoreTest` and `PrestigeFanfareTest` failed against scaffolds (6 of 8), then passed. Revision: the rewritten tests failed (6 of 7) against the v3 score, then passed. Full suite 2466 tests, 0 failures. Sounds are vanilla keys played through `Player.playSound(Entity, String, …)`; in-game listening is a TEST check.
+
+## Prestige Roman numerals (REQ-165)
+
+- [x] **PRESTIGE-ROMAN** Tag: TDD.
+  - References: REQ-165; Fain's TEST screenshot ("has reached Guild Prestige 4", "Prestige count: 4").
+  - Evidence: the announcement only mapped I to III and printed 4 and up as numbers; menus and the applied message passed raw counts.
+  - Result: `PrestigeNumeralTest` and the announcement tests failed (3 of 5), then passed. `PrestigeNumeral.of` now feeds the broadcast, the applied message (reworded to "Your guild is now Prestige IV."), the Java and Bedrock progression, selection and confirmation menus, the Chronicle milestones and progress, and the `guild_prestige_roman` placeholder. The home-slot bonus stays a number. Full suite 2462 tests, 0 failures.

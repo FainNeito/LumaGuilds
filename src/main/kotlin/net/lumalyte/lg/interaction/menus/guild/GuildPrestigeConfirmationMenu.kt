@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.lumalyte.lg.utils.inventoryframework.addPane
 
 import com.github.stefvanschie.inventoryframework.gui.GuiItem
@@ -99,7 +100,7 @@ class GuildPrestigeConfirmationMenu(
             "menu.guild_progression.prestige.feedback.applied",
             "reward" to retainedRewardName,
             "fee" to result.fee,
-            "count" to result.prestigeCount,
+            "count" to PrestigeNumeral.of(result.prestigeCount),
         )
         is PrestigeResult.Failed ->
             lang.msg("menu.guild_progression.prestige.feedback.failed")

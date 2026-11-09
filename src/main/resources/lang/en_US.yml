@@ -6129,7 +6129,7 @@ menu:
         cancel: "<red>Cancel"
       feedback:
         quote_failed: "<red>Prestige conditions changed. Review the current progression state and try again."
-        applied: "<green>Guild prestige complete. <reward> is now permanent. Fee: <fee> Gold Ore. Prestige count: <count>."
+        applied: "<green>Guild prestige complete. <reward> is now permanent. Fee: <fee> Gold Ore. Your guild is now Prestige <count>."
         failed: "<red>The prestige result could not be confirmed. Retry this same confirmation; you will not be charged twice."
         rejected:
           unavailable: "<red>Prestige is currently unavailable."
