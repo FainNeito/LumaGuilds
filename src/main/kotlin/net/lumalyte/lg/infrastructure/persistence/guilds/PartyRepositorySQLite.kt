@@ -28,7 +28,7 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
     private fun createPartyTable() {
         val sql = """
             CREATE TABLE IF NOT EXISTS parties (
-                id TEXT PRIMARY KEY,
+                id VARCHAR(36) PRIMARY KEY,
                 name TEXT,
                 guild_ids TEXT NOT NULL,
                 leader_id TEXT NOT NULL,

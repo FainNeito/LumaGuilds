@@ -24,7 +24,7 @@ class PartyRequestRepositorySQLite(private val storage: Storage<Database>) : Par
     private fun createPartyRequestTable() {
         val sql = """
             CREATE TABLE IF NOT EXISTS party_requests (
-                id TEXT PRIMARY KEY,
+                id VARCHAR(36) PRIMARY KEY,
                 from_guild_id TEXT NOT NULL,
                 to_guild_id TEXT NOT NULL,
                 requester_id TEXT NOT NULL,
