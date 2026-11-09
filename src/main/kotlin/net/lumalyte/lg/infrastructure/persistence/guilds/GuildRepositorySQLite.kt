@@ -702,6 +702,9 @@ class GuildRepositorySQLite(
             }
             connection.deleteGuildRelations(guildId)
             GuildChatReconnectSettingsSchema.delete(connection, guildId)
+            // REQ-163: keep a prestiged guild's name before its reward account goes.
+            net.lumalyte.lg.infrastructure.persistence.migrations.PrestigeTombstoneSchema
+                .recordIfPrestiged(connection, guildId, deletedAt)
             deleteRewardOwnershipState(connection, guildId)
             connection.prepareStatement("DELETE FROM guild_cosmetic_unlocks WHERE guild_id = ?").use {
                 it.setString(1, guildId.toString())
