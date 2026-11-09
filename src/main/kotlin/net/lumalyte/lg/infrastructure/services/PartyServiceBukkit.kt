@@ -181,7 +181,7 @@ class PartyServiceBukkit(
             
             // Check if there's an existing party involving the requesting guild
             val existingParties = partyRepository.getActivePartiesByGuild(request.fromGuildId)
-            val existingParty = existingParties.firstOrNull()
+            val existingParty = existingParties.firstOrNull { !it.isPrivateParty() }
             
             val party = if (existingParty != null) {
                 // Add accepting guild to existing party
