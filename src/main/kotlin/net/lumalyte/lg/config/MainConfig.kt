@@ -441,6 +441,13 @@ data class PrestigeMemberCreditsConfig(
     var firstReachCommands: List<String> = emptyList(),
 )
 
+/** REQ-164 prestige fanfare switches. */
+data class PrestigeFanfareConfig(
+    var enabled: Boolean = true,
+    var serverWide: Boolean = true,
+    var memberTitle: Boolean = true,
+)
+
 /** Uncoloured fallback; the shipped config.yml carries the coloured badges. */
 val DEFAULT_PRESTIGE_BADGES = listOf("", "✦I", "✦II", "✦III", "✦IV", "✦V", "✦VI")
 
@@ -451,6 +458,7 @@ data class PrestigeConfig(
     var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
     /** REQ-155 placeholder badges; index 0 is "no prestige". */
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
+    var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }

@@ -617,6 +617,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-163
 **Event-driven.** WHEN a guild whose prestige count is at least 1 is disbanded THE SYSTEM SHALL, in the same transaction as the deletion, record the guild's id, its name and prestige count at that moment and the disband time, SHALL keep its prestige receipts and gold journal, and SHALL keep every server-first it holds, so that `PrestigeHistory` can still name it as disbanded. A disband that fails SHALL record nothing. Re-founding a guild with the same name SHALL create a new guild with no prestige history.
 
+### REQ-164
+**Event-driven.** WHEN a prestige is newly committed and the prestige fanfare is enabled THE SYSTEM SHALL play, from vanilla sounds only and scheduled in server ticks after the public announcement, the member fanfare to that guild's online members (three rising note-block bells, F A C, leading into the vanilla challenge-complete chime with a high F bell on it, all pitched 0.9 so the bells sit in the chime's key; the same for every tier), SHALL show those members a title naming the prestige tier and the guild, and, WHILE the server-wide option is on, SHALL play the same fanfare at no more than 0.3 volume to every other online player. A player who logs out during the fanfare SHALL simply stop receiving its remaining cues, a replayed prestige receipt SHALL NOT play it again, and no failure in the fanfare SHALL affect the prestige.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
