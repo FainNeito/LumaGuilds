@@ -74,6 +74,26 @@ class WarRestartRecoveryTest {
         assertEquals(900, gold.balance(second))
     }
 
+    @Test fun `objective war resolves on the selected kill target after restart`() {
+        var wars = service()
+        val objective = WarObjective(type = ObjectiveType.KILLS, targetValue = 5, description = "Kill 5 enemies")
+        val declaration = assertNotNull(wars.createObjectiveWarDeclaration(
+            first, second, setOf(objective), 100, null, UUID.randomUUID(), false
+        ))
+        val active = assertNotNull(wars.acceptWarDeclaration(declaration.id, UUID.randomUUID()))
+        repeat(4) {
+            val update = assertNotNull(wars.recordOpposingGuildKill(active.id, first, second))
+            assertNull(update.winnerGuildId)
+        }
+        wars = service()
+        val decisive = assertNotNull(wars.recordOpposingGuildKill(active.id, first, second))
+        assertEquals(first, decisive.winnerGuildId)
+        assertTrue(wars.resolveReachedKillTarget(active.id, first))
+        wars = service()
+        assertEquals(first, wars.getWar(active.id)?.winner)
+        assertEquals(1_100, gold.balance(first))
+        assertEquals(900, gold.balance(second))
+    }
     @Test fun `paid war keeps identity statistics and one settlement across service restarts`() {
         var wars = service()
         val declaration = assertNotNull(wars.createWarDeclaration(first, second, Duration.ofDays(1), emptySet(),
