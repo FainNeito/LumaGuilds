@@ -20,5 +20,4 @@ Reproduce both entry points; test pending/accepted/declined/expired states, exac
 
 The in-progress implementation persists a shared-party marker and each new invitation's destination, sends invitations without pre-adding guilds, and saves membership before marking a request accepted so a retry can finish an interrupted status update. Existing single-guild channels remain private. Focused tests cover legacy data, persistence after repository recreation, explicit destination, private-channel rejection, Java creation and retry. Full-suite, MariaDB migration, hosted checks, concurrency/restart recovery, Bedrock interaction and live TEST acceptance remain outstanding. The changes are unmerged and are not ready for deployment.
 
-
 Restart recovery now detects bound pending invitations whose exact shared party already contains both guilds and marks them accepted; cancellation, rejection and expiry cannot discard an applied acceptance. Focused local tests cover the interrupted status write, restart reconciliation and failed reconciliation. This does not establish multi-server concurrency or live client acceptance.
