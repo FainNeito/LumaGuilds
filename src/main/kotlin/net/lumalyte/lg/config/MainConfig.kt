@@ -454,8 +454,8 @@ val DEFAULT_PRESTIGE_BADGES = listOf("", "✦I", "✦II", "✦III", "✦IV", "�
 data class PrestigeConfig(
     var enabled: Boolean = true,
     var maxCount: Int = 6,
-    // REQ-178: production (2026-11-09) showed only 3 of 171 guilds could pay 10,000.
-    var fees: List<Long> = listOf(2_500L, 5_000L, 7_500L, 10_000L, 12_500L, 15_000L),
+    // REQ-178: 20% below the original 10k/20k/30k fees (Fain, 2026-11-09).
+    var fees: List<Long> = listOf(8_000L, 16_000L, 24_000L, 24_000L, 24_000L, 24_000L),
     var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
     /** REQ-155 placeholder badges; index 0 is "no prestige". */
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,

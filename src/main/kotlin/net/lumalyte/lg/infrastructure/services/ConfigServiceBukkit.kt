@@ -403,7 +403,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
     private fun loadProgressionConfig(): ProgressionConfig {
         val prestigeMax = config.getInt("progression.prestige.max_count", 6).coerceIn(1, 6)
         val prestigeFees = config.getLongList("progression.prestige.fees").ifEmpty {
-            listOf(2_500L, 5_000L, 7_500L, 10_000L, 12_500L, 15_000L)
+            listOf(8_000L, 16_000L, 24_000L, 24_000L, 24_000L, 24_000L)
         }
         return ProgressionConfig(
             maxLevel = config.getInt("progression.max_level", 100).coerceIn(1, 100),

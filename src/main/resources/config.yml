@@ -581,7 +581,7 @@ progression:
   prestige:
     enabled: true
     max_count: 6
-    fees: [2500, 5000, 7500, 10000, 12500, 15000]
+    fees: [8000, 16000, 24000, 24000, 24000, 24000]
     # Console commands run for members of a prestiging guild (REQ-154), right away
     # for online members and on join for the rest. A member qualifies when they had
     # been in the guild for at least min_tenure_hours before the prestige. Each
