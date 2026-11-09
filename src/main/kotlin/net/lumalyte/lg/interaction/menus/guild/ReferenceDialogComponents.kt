@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.infrastructure.i18n.bedrock
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
@@ -51,4 +52,14 @@ internal fun referenceRewardEffect(lang: net.badgersmc.nexus.i18n.LangService,
     is net.lumalyte.lg.domain.rewards.RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt())
     is net.lumalyte.lg.domain.rewards.RewardEffect.WithdrawalFee -> lang.gui("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
     net.lumalyte.lg.domain.rewards.RewardEffect.AllyHomes -> lang.gui("chronicle.ally_effect")
+}
+
+/** The same reward effect text as [referenceRewardEffect], as plain text for Bedrock forms. */
+internal fun bedrockRewardEffect(lang: net.badgersmc.nexus.i18n.LangService,
+    value: net.lumalyte.lg.domain.rewards.RewardEffect): String = when (value) {
+    is net.lumalyte.lg.domain.rewards.RewardEffect.BankCapacity -> lang.bedrock("chronicle.bank_effect", "amount" to value.amount)
+    is net.lumalyte.lg.domain.rewards.RewardEffect.HomeCapacity -> lang.bedrock("chronicle.home_effect", "amount" to value.amount)
+    is net.lumalyte.lg.domain.rewards.RewardEffect.HomeCooldown -> lang.bedrock("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt())
+    is net.lumalyte.lg.domain.rewards.RewardEffect.WithdrawalFee -> lang.bedrock("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
+    net.lumalyte.lg.domain.rewards.RewardEffect.AllyHomes -> lang.bedrock("chronicle.ally_effect")
 }

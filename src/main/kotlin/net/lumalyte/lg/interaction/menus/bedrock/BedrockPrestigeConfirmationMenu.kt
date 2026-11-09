@@ -1,5 +1,7 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.interaction.menus.guild.bedrockRewardEffect
+import net.lumalyte.lg.domain.rewards.RewardCatalog
 import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.badgersmc.nexus.i18n.LangService
 import net.kyori.adventure.text.Component
@@ -29,24 +31,31 @@ class BedrockPrestigeConfirmationMenu(
 ) : BaseBedrockMenu(menuNavigator, player, logger) {
     private val prestige: GuildPrestigeService by inject()
     private val lang: LangService by inject()
+    private val catalog: RewardCatalog by inject()
     private val plugin: Plugin by inject()
 
     override fun getForm(): Form = ModalForm.builder()
         .title(lang.bedrock("menu.guild_progression.prestige.confirmation.title"))
         .content(
-            listOf(
+            listOf<String?>(
                 lang.bedrock(
                     "menu.guild_progression.prestige.confirmation.summary.reward",
                     "reward" to retainedRewardName,
                 ),
+                catalog.find(quote.retainedRewardId)?.let { bedrockRewardEffect(lang, it.effect) },
                 lang.bedrock(
                     "menu.guild_progression.prestige.confirmation.summary.fee",
                     "fee" to quote.quotedFee,
                 ),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.reset"),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.permanent"),
+                lang.bedrock("menu.guild_progression.prestige.confirmation.summary.home_slot"),
+                lang.bedrock(
+                    "menu.guild_progression.prestige.confirmation.summary.badge",
+                    "tier" to PrestigeNumeral.of(quote.expectedPrestigeCount + 1),
+                ),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.overflow"),
-            ).joinToString("\n")
+            ).filterNotNull().joinToString("\n")
         )
         .button1(lang.bedrock("menu.guild_progression.prestige.confirmation.confirm"))
         .button2(lang.bedrock("menu.guild_progression.prestige.confirmation.cancel"))

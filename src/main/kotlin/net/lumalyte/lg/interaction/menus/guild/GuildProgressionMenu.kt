@@ -597,6 +597,7 @@ class GuildProgressionMenu(
                     "reward" to reward.name,
                 ))
                 meta.lore(listOf(
+                    referenceRewardEffect(lang, reward.effect),
                     lang.gui("menu.guild_progression.prestige.selection.reward.level", "level" to reward.level),
                     lang.gui("menu.guild_progression.prestige.selection.reward.retain"),
                     lang.gui(

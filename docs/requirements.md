@@ -626,6 +626,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-172
 **Event-driven.** WHEN a player opens a guild's info view with `/g info` on Java or Bedrock THE SYSTEM SHALL show that guild's prestige history: its current prestige in Roman numerals and, oldest first, each applied prestige with its tier in Roman numerals, the date it was applied and, where that prestige was the first on the server to reach its tier, a server-first mark. A guild that never prestiged SHALL show that it has not prestiged yet, and IF the prestige history cannot be read THEN THE SYSTEM SHALL still open the info view and say the history is unavailable.
 
+### REQ-173
+**Event-driven.** WHEN a player views a guild's prestige on Java or Bedrock (the progression prestige entry, the Chronicle prestige guide, the reward choices or the confirmation) THE SYSTEM SHALL say in plain language what the next prestige costs, what resets (level, XP, level perks and every purchased reward not kept), what stays (rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold, with gold above the new bank capacity withdraw-only), and what the guild gains (the one chosen reward made permanent, one extra permanent home slot, the next badge and member advancements); each reward choice and the confirmation SHALL state what the kept reward does.
+
+### REQ-174
+**Event-driven.** WHEN a player reads Getting Started on Java or Bedrock THE SYSTEM SHALL explain, inside the existing chat and bank steps, that parties are temporary chat groups for the guild or shared with other guilds and used with `/pc` (only while parties are enabled), that the guild bank earns the configured interest rate every configured period (only while the rate is above zero), and that the guild has a separate physical vault opened with `/g vault` (only while the physical vault is enabled), without adding new menu entries.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

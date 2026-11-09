@@ -1270,3 +1270,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **GUILD-INFO-PRESTIGE** Tag: TDD.
   - References: REQ-172; prestige history (REQ-152) and server-first (REQ-153) data from #26.
   - Result: `GuildInfoPrestige` turns `PrestigeHistory` into the view (none, unavailable, or each prestige oldest first with date and server-first mark); a failing history read or server-first lookup never blocks the menu. Java `/g info` gets a Prestige item (nether star, top right); the Bedrock form gets a Prestige section after the overview. `GuildInfoPrestigeTest` failed against a scaffold (3 of 4), then passed; `GuildInfoPrestigeMenuTest` renders both real views. Full suite 2479 tests, 0 failures.
+
+## Prestige and feature clarity (REQ-173, REQ-174)
+
+- [x] **PRESTIGE-CLARITY** Tag: TDD.
+  - References: REQ-173, REQ-174; the Discord "Prestige Suggestions" thread summary (players unsure what prestige and perks do; parties, the vault and bank interest not discovered).
+  - Evidence: a full prestige guide already existed in the Chronicle, in legal-sounding copy; reward choices showed no effect; the confirmation said nothing about the home slot, the badge or rebuying perks.
+  - Result: Java and Bedrock reward choices and confirmations show what the kept reward does, the extra home slot and the next badge; the confirmation spells out what resets and stays. The Chronicle guide, progression prestige entry and reward effect lines are rewritten in plain language (same keys and placeholders). Getting Started adds parties to the chat step and the configured interest and `/g vault` to the bank step, each only while switched on. `PrestigeClarityTest` and `GettingStartedFeaturesTest` failed (5 of 5), then passed. Full suite 2484 tests, 0 failures.
