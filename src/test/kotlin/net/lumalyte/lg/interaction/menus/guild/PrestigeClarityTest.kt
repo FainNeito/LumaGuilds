@@ -42,6 +42,7 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         assertTrue("one permanent home slot" in lore, lore)
         assertTrue("prestige ii badge" in lore, lore)
         assertTrue("buy them again" in lore, lore)
+        assertTrue("2x xp" in lore, lore)
     }
 
     @Test

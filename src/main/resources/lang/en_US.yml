@@ -6139,6 +6139,7 @@ menu:
           reset: "<yellow>Your guild goes back to Level 1. Level perks and every other purchased reward reset, so you buy them again as you climb."
           xp_reset: "<yellow>Guild XP goes back to 0."
           carry: "<aqua>XP earned past Level 100 carries over, up to the start of Level <level>."
+          climb_boost: "<aqua>From now on your guild earns <multiplier>x XP, so the next climb goes faster."
           permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
           home_slot: "<green>Your guild also gains one permanent home slot."
           badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."

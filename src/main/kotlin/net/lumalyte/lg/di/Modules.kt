@@ -837,7 +837,15 @@ fun progressionModule() = module {
     single<PlaytimeActivityService> { PlaytimeActivityServiceBukkit() }
     single {
         val config = get<ConfigService>()
-        net.lumalyte.lg.application.services.PermanentExperienceService(get(), get()) {
+        val standings = get<net.lumalyte.lg.application.services.GuildPrestigeStandings>()
+        net.lumalyte.lg.application.services.PermanentExperienceService(
+            get(),
+            get(),
+            climbMultiplier = { guildId ->
+                // REQ-178: cached 30 s per guild; no standing (read failed) means no boost.
+                if ((standings.standing(guildId)?.tier ?: 0) > 0) config.loadConfig().progression.prestige.climbBoost else 1.0
+            },
+        ) {
             config.loadConfig().progression.xpBoost
         }
     }

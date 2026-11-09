@@ -384,7 +384,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
     private fun loadProgressionConfig(): ProgressionConfig {
         val prestigeMax = config.getInt("progression.prestige.max_count", 6).coerceIn(1, 6)
         val prestigeFees = config.getLongList("progression.prestige.fees").ifEmpty {
-            listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L)
+            listOf(2_500L, 5_000L, 7_500L, 10_000L, 12_500L, 15_000L)
         }
         return ProgressionConfig(
             maxLevel = config.getInt("progression.max_level", 100).coerceIn(1, 100),
@@ -400,6 +400,9 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
                 ),
                 // REQ-155: seven entries (index 0 = none); & colour codes become section signs.
+                // REQ-178: values below 1 (or not numbers) fall back to no boost.
+                climbBoost = config.getDouble("progression.prestige.climb_boost", 2.0)
+                    .takeIf { it.isFinite() && it >= 1.0 } ?: 1.0,
                 // REQ-175: off unless the operator turns it on; landing level clamped to 1-99.
                 carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(
                     enabled = config.getBoolean("progression.prestige.carry_over.enabled", false),

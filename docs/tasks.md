@@ -1283,3 +1283,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PRESTIGE-CARRYOVER** Tag: TDD.
   - References: REQ-175; Discord "Prestige Suggestions" (carry excess XP forward). Evidence: `ExperienceAwardTransaction` keeps adding XP at level 100; `PrestigeRepositorySQL` sets `total_experience = 0`.
   - Result: `progression.prestige.carry_over` (`enabled: false`, `landing_level: 5`). `PrestigeCarryOver` keeps the XP earned after level 100, capped at the start of the landing level; the prestige transaction sets XP, level, level progress, `guilds.level` and post-prestige capacity from it. The Java and Bedrock confirmation say whether XP carries over or resets, and the confirming player is told how much carried and the starting level. `PrestigeCarryOverTest` and the repository carry test failed against a scaffold (3), then passed. Full suite 2490 tests and the MariaDB profile (134) pass.
+
+## Prestige climb boost and fees (REQ-178)
+
+- [x] **PRESTIGE-CLIMB-BOOST** Tag: TDD.
+  - References: REQ-178; production copy 2026-11-09: the busiest guild (Everlights, prestiged) earns about 27,750 XP a day, so a 5,446,893 XP climb takes about 6.5 months; daily caps were hit on under 1% of guild-days; only 3 of 171 guilds hold 10,000 gold and none of the three level-100 guilds can pay the first fee. Fain chose a configurable boost for climbs after a prestige and fees of 2.5k rising to 15k.
+  - Result: `progression.prestige.climb_boost` (default 2.0; 1.0 turns it off) multiplies every award to a guild whose cached prestige standing is at least I, after any timed boost and before caps; a failed standing read gives no boost. Default fees are 2,500 to 15,000. The Java and Bedrock confirmation say "From now on your guild earns 2x XP". The boost test and the fee test failed first, then passed. Full suite 2491 tests, 0 failures.

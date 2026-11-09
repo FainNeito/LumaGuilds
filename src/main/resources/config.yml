@@ -573,7 +573,10 @@ progression:
   prestige:
     enabled: true
     max_count: 6
-    fees: [10000, 20000, 30000, 30000, 30000, 30000]
+    fees: [2500, 5000, 7500, 10000, 12500, 15000]
+    # REQ-178: guilds that have prestiged earn this many times the XP on every
+    # award, so climbs after the first are shorter. 1.0 turns it off.
+    climb_boost: 2.0
     # Console commands run for members of a prestiging guild (REQ-154), right away
     # for online members and on join for the rest. A member qualifies when they had
     # been in the guild for at least min_tenure_hours before the prestige. Each

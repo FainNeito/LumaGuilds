@@ -635,6 +635,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-175
 **Optional.** WHERE prestige XP carry-over is enabled (default off) THE SYSTEM SHALL, when a prestige commits, start the guild's next climb with the XP it earned after reaching level 100, capped at the XP needed to reach the configured landing level (default 5), SHALL set the guild's level, level progress and post-prestige bank capacity from that carried XP in the same transaction, SHALL tell the confirming player how much XP carried over and the level the guild starts at, and SHALL state the carry-over and its cap on the Java and Bedrock confirmation; WHILE carry-over is disabled THE SYSTEM SHALL keep resetting XP to 0.
 
+### REQ-178
+**State-driven.** WHILE a guild has prestiged at least once and the prestige climb boost multiplier is above 1 (default 2) THE SYSTEM SHALL multiply every XP award to that guild by that multiplier, rounding down, before daily caps are applied, and SHALL state the boost on the Java and Bedrock prestige confirmation; WHILE the multiplier is 1 or the guild has never prestiged THE SYSTEM SHALL award XP unchanged. The default prestige fees SHALL be 2,500, 5,000, 7,500, 10,000, 12,500 and 15,000 gold for prestiges I to VI.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

@@ -454,14 +454,18 @@ val DEFAULT_PRESTIGE_BADGES = listOf("", "✦I", "✦II", "✦III", "✦IV", "�
 data class PrestigeConfig(
     var enabled: Boolean = true,
     var maxCount: Int = 6,
-    var fees: List<Long> = listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L),
+    // REQ-178: production (2026-11-09) showed only 3 of 171 guilds could pay 10,000.
+    var fees: List<Long> = listOf(2_500L, 5_000L, 7_500L, 10_000L, 12_500L, 15_000L),
     var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
     /** REQ-155 placeholder badges; index 0 is "no prestige". */
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
     var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
     var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
+    /** REQ-178: XP multiplier for guilds that have prestiged; 1.0 turns it off. */
+    var climbBoost: Double = 2.0,
 ) {
     init {
+        require(climbBoost.isFinite() && climbBoost >= 1.0) { "Prestige climb boost must be at least 1" }
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }
         require(fees.size >= maxCount && fees.take(maxCount).all { it > 0 }) {
             "Prestige fees must define a positive fee for every allowed prestige"

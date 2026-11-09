@@ -11,10 +11,11 @@ class PrestigeConfigSeason2Test {
         assertEquals(true, config.enabled)
         assertEquals(6, config.maxCount)
         assertEquals(
-            listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L),
+            listOf(2_500L, 5_000L, 7_500L, 10_000L, 12_500L, 15_000L),
             config.fees,
         )
-        assertEquals(30_000L, config.feeFor(5))
+        assertEquals(15_000L, config.feeFor(5))
+        assertEquals(2.0, config.climbBoost)
     }
 
     @Test

@@ -61,6 +61,7 @@ class GuildPrestigeConfirmationMenu(
                 ),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.reset"),
                 carryOverLine(),
+            ) + listOfNotNull(climbBoostLine()) + listOf(
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.permanent"),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.home_slot"),
                 lang.gui(
@@ -112,6 +113,13 @@ class GuildPrestigeConfirmationMenu(
     override fun open() {
         if (player.isOnline) createGui().show(player)
     }
+
+    /** REQ-178: the XP boost every climb after a prestige earns. */
+    private fun climbBoostLine() = config.loadConfig().progression.prestige.climbBoost.takeIf { it > 1.0 }?.let {
+        lang.gui("menu.guild_progression.prestige.confirmation.summary.climb_boost", "multiplier" to boostText(it))
+    }
+
+    private fun boostText(value: Double) = java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
 
     /** REQ-175: say whether XP earned past level 100 carries into the next climb. */
     private fun carryOverLine() = config.loadConfig().progression.prestige.carryOver.let { carry ->
