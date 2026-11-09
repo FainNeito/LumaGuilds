@@ -1240,6 +1240,24 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
     balance. Confirmation menus (Java and Bedrock) show the overflow notice.
     Full suite 2459 tests, 0 failures; native MariaDB profile 132 tests, 0 failures.
 
+## Prestige disband rules (REQ-162, REQ-163)
+
+- [x] **PRESTIGE-DISBAND-RULES** Tag: TDD.
+  - References: REQ-162, REQ-163, `plans/2026-11-08-prestige-disband-rules.md`.
+  - Evidence: `GuildRepositorySQLite.removeWithCreationCooldown` deletes the
+    reward account and ownership but no prestige receipts; `firstToReach` reads
+    receipts and the journal only; `/g disband` disbanded without confirmation.
+  - Result: `DisbandPrestigeWarningTest` and `PrestigeTombstoneSQLTest` failed
+    against scaffolds (3 of 4), then passed. Full suite 2463 tests, 0 failures;
+    native MariaDB profile 133 tests, 0 failures (tombstone test added to it).
+
+## Prestige fanfare (REQ-164)
+
+- [x] **PRESTIGE-FANFARE** Tag: TDD.
+  - References: REQ-164. Revised after the TEST listen: the v3 score (horn, low bell, beacons, flute) sounded muddy with the real samples; Fain picked preview 8, a bell climb into the challenge chime, rendered from the 26.2 sound assets.
+  - Evidence: `GuildPrestigeService` notifies `GuildPrestigeNotifier`s only for a newly committed prestige (REQ-153), so a notifier is the hook and replays stay silent.
+  - Result: `PrestigeFanfareScoreTest` and `PrestigeFanfareTest` failed against scaffolds (6 of 8), then passed. Revision: the rewritten tests failed (6 of 7) against the v3 score, then passed. Full suite 2466 tests, 0 failures. Sounds are vanilla keys played through `Player.playSound(Entity, String, …)`; in-game listening is a TEST check.
+
 ## Prestige Roman numerals (REQ-165)
 
 - [x] **PRESTIGE-ROMAN** Tag: TDD.

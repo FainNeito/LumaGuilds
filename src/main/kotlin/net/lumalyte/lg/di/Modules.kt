@@ -717,6 +717,9 @@ fun progressionModule() = module {
             as net.lumalyte.lg.application.persistence.PrestigeHistory
     }
     single { net.lumalyte.lg.application.services.GuildPrestigeStandings(get(), get()) }
+    single<net.lumalyte.lg.application.persistence.DisbandedPrestigeGuilds> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeTombstonesSQL(get())
+    }
     single<net.lumalyte.lg.application.persistence.PrestigeCreditLedger> {
         net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeCreditLedgerSQL(get())
     }
@@ -744,6 +747,14 @@ fun progressionModule() = module {
                 get<net.lumalyte.lg.application.services.GuildPrestigeStandings>(),
                 net.lumalyte.lg.infrastructure.services.GuildPrestigeEventBukkit(),
                 net.lumalyte.lg.infrastructure.listeners.PrestigeCreditNotifier(get()),
+                net.lumalyte.lg.application.services.PrestigeFanfare(
+                    settings = { get<net.lumalyte.lg.application.services.ConfigService>().loadConfig().progression.prestige.fanfare },
+                    members = { guildId ->
+                        get<net.lumalyte.lg.application.services.MemberService>().getGuildMembers(guildId).map { it.playerId }
+                    },
+                    guildName = { guildId -> get<net.lumalyte.lg.application.services.GuildService>().getGuild(guildId)?.name },
+                    stage = net.lumalyte.lg.infrastructure.services.PrestigeFanfareBukkit(get(), get()),
+                ),
             ),
         )
     }

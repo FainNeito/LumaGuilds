@@ -46,6 +46,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     private val lfgService: net.lumalyte.lg.application.services.LfgService by inject()
     private val guildRepository: net.lumalyte.lg.application.persistence.GuildRepository by inject()
     private val rankService: RankService by inject()
+    private val prestigeStandings: net.lumalyte.lg.application.services.GuildPrestigeStandings by inject()
     private val chatRankSettings: net.lumalyte.lg.application.services.GuildChatRankSettingsService by inject()
     private val memberService: MemberService by inject()
     private val inviteBlocks: net.lumalyte.lg.application.services.InviteBlockService by inject()
@@ -1432,7 +1433,14 @@ class GuildCommand : BaseCommand(), KoinComponent {
             player.sendMessage(lang.msg("command.migrated.guild.disband.only_the_guild_owner_can_disband_the"))
             return
         }
-        
+
+        // REQ-162: a prestiged guild goes through the confirmation screen and its warning.
+        if (net.lumalyte.lg.application.services.DisbandPrestigeWarning.of(prestigeStandings, guild.id).needsConfirmation) {
+            val navigator = MenuNavigator(player)
+            navigator.openMenu(menuFactory.createGuildDisbandConfirmationMenu(navigator, player, guild))
+            return
+        }
+
         val success = guildService.disbandGuild(guild.id, playerId)
         
         if (success) {

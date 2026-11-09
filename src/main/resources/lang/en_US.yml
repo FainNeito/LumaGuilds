@@ -1234,6 +1234,14 @@ bedrock:
 
       <gray>Requested by: <white><player>
       <red>This deletes the guild and removes every member. This cannot be undone.
+    prestige: |-
+
+      <gold>This guild is Prestige <tier>.</gold> <red>Disbanding loses that tier and its permanent rewards for good.
+      <gray>Members keep the advancements and tags they earned, and the guild's server-firsts stay in the history under <white><guild><gray>.
+    prestige_unknown: |-
+
+      <red>Any prestige tier this guild has, and its permanent rewards, will be lost for good.
+      <gray>Members keep the advancements and tags they earned, and the guild's server-firsts stay in the history under <white><guild><gray>.
     button:
       disband: Disband Guild Permanently
       keep: Keep Guild
@@ -3006,6 +3014,10 @@ menu:
             irreversible: '<red>This action cannot be undone!'
             level: '<gray>Level: <white><level>'
             vault_loss: '<gray>All vault items will be lost.'
+            prestige: '<gold>Prestige <tier>: <red>lost for good, with its permanent rewards.'
+            prestige_unknown: '<red>Any prestige tier is lost for good, with its permanent rewards.'
+            prestige_keep: '<gray>Members keep their advancements and tags.'
+            prestige_history: '<gray>Server-firsts stay in the history under <white><guild><gray>.'
           name: '<red>Disband Guild'
       title: '<white><bold>Disband <guild>?'
     leave:
@@ -7431,6 +7443,9 @@ notification:
         description: '<gold><objective> <gray>— <gold><xp> Guild EXP awarded'
         fallback: '<green>Quest complete: <gold><objective> <gray>(<gold><xp> Guild EXP<gray>)'
   progression:
+    prestige:
+      title: '<gold><bold>PRESTIGE <tier></bold>'
+      subtitle: '<yellow><guild> <gray>has prestiged'
     level_up:
       title: '<gold>⭐ <bold>GUILD LEVEL UP!</bold> ⭐'
       subtitle: '<yellow><guild> <gray>reached level <yellow><level>'
