@@ -6110,8 +6110,8 @@ menu:
         ally_home_access: "Ally Home Access"
     prestige:
       name: "<light_purple>Prestige"
-      description: "<gray>Reset your guild to Level 1"
-      rewards: "<gray>and permanently retain one eligible purchased reward."
+      description: "<gray>Take your guild back to Level 1 for a lasting reward:"
+      rewards: "<gray>keep one purchased reward forever, plus a home slot and a new badge."
       requirement: "<gray>Requires Level <light_purple>100"
       action: '<yellow>Click to choose the reward you will retain'
       state:
@@ -6136,8 +6136,10 @@ menu:
           name: "<light_purple>Prestige Summary"
           reward: "<gray>Retain permanently: <white><reward>"
           fee: "<gray>Fee: <gold><fee> Gold Ore"
-          reset: "<yellow>Your guild progression resets to Level 1."
-          permanent: "<green>Existing permanent rewards and home-capacity purchases remain."
+          reset: "<yellow>Your guild goes back to Level 1 with 0 XP. Level perks and every other purchased reward reset, so you buy them again as you climb."
+          permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
+          home_slot: "<green>Your guild also gains one permanent home slot."
+          badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."
           overflow: "<gray>Gold above the new bank capacity stays and can be withdrawn, but nothing can be added until capacity catches up."
         confirm: "<green>Confirm Prestige"
         cancel: "<red>Cancel"
@@ -7748,7 +7750,10 @@ onboarding:
     home: "Unlock a home slot, then set and activate a home. Existing active homes can move for free."
     quests: "Open current guild quests to see objectives, progress and rewards. Participation keeps existing rules."
     progression: "Earn guild XP through supported activities and quests. Review rewards, requirements and prices here."
-    bank: "Bank deposits and withdrawals follow your rank permissions. Physical vault permissions are separate."
+    bank: "Deposit and withdraw guild gold from the bank, as your rank allows."
+    bank_interest: "The bank earns <rate>% interest every <hours> hours."
+    vault: "Your guild also has a physical vault for items, opened with /g vault, with its own rank permissions."
+    parties: "Parties are temporary chat groups, just for your guild or shared with other guilds. Talk in yours with /pc."
     stalls: "Guild Stalls shows authoritative ownership and member access, or explains unavailable Market data."
 
 recruitment:
@@ -7974,11 +7979,11 @@ chronicle:
   treasury: '<gold>Treasury</gold>'
   travel: '<aqua>Travel</aqua>'
   outposts: '<green>Outposts</green>'
-  bank_effect: '<gray>Bank capacity: +<amount> before the configured ceiling.</gray>'
-  home_effect: '<gray>Home capacity: +<amount> slots.</gray>'
-  cooldown_effect: '<gray>Home cooldown tier: <percent>% of base. Best owned tier applies.</gray>'
-  fee_effect: '<gray>Withdrawal fee tier: <percent>% of configured fee. Best owned tier applies.</gray>'
-  ally_effect: '<gray>Unlock access to allied guild homes under existing access rules.</gray>'
+  bank_effect: '<gray>Bank capacity: +<amount>, up to the server maximum.</gray>'
+  home_effect: '<gray>Home slots: +<amount>.</gray>'
+  cooldown_effect: '<gray>Home teleport cooldown: <percent>% of normal. Your best Quick Travel applies.</gray>'
+  fee_effect: '<gray>Bank withdrawal fee: <percent>% of normal. Your best Treasury Discount applies.</gray>'
+  ally_effect: '<gray>Members can use allied guild homes they have been given access to.</gray>'
   shared: '<gray>Shared guild goal; Manage Guild Settings is required to change it.</gray>'
   change: '<gold>Current: <current> → after purchase: <after></gold>'
   percent_change: '<gold>Current: <current>% → after purchase: <after>% of base.</gold>'
@@ -7995,30 +8000,30 @@ chronicle:
   prestige:
     action: '<gold>Prestige rewards</gold>'
     title: '<gold>Prestige rewards and earning guide</gold>'
-    subtitle: '<gray>Permanent rewards, retention choices and exact acquisition rules</gray>'
+    subtitle: '<gray>What prestige costs, what resets and what you keep</gray>'
     overview: '<gold>Earning guide</gold>'
     milestones: '<gold>Prestige milestones</gold>'
     legacy: '<gold>Retained legacy perks</gold>'
     seal: '<gold>✦ PRESTIGE LEGACY · PERMANENT ✦</gold>'
     progress: '<gold>Prestige <count>/<max> · Current guild level <level></gold>'
     home_bonus: '<green>Permanent prestige home-capacity bonus: +<count></green>'
-    fee: '<gold>Next prestige fee: <fee> guild gold, subject to the final quote.</gold>'
+    fee: '<gold>Next prestige fee: <fee> guild gold.</gold>'
     maximum: '<gray>Lifetime prestige maximum reached.</gray>'
-    earn_title: '<gold>How to earn the next prestige rewards</gold>'
-    earn_level: '<gray>1. Reach guild level 100 again in the current run.</gray>'
-    earn_purchase: '<gray>2. Already own an eligible Bank Extension, Quick Travel, Treasury Discount or Allied Waypoints reward.</gray>'
-    earn_confirm: '<gray>3. Select one eligible owned reward, review the fee and reset details, then confirm through the existing authorized prestige transaction. Each applied prestige also adds one permanent home-capacity slot.</gray>'
-    preserved_title: '<gold>What survives and what resets</gold>'
-    preserved_homes: '<green>Purchased home capacity, saved home locations and previously paid home activations survive prestige.</green>'
-    preserved_rewards: '<green>Previously permanent rewards remain; exactly one newly selected eligible owned reward becomes permanent.</green>'
-    reset: '<gray>Guild level resets to 1 and run XP to 0. Other non-permanent current-run purchases reset. No currency or guild-XP bonus is awarded.</gray>'
+    earn_title: '<gold>How to prestige</gold>'
+    earn_level: '<gray>1. Reach guild level 100.</gray>'
+    earn_purchase: '<gray>2. Own at least one Bank Extension, Quick Travel, Treasury Discount or Allied Waypoints reward.</gray>'
+    earn_confirm: '<gray>3. Choose the one to keep forever, check the fee and confirm. Every prestige also adds one permanent home slot.</gray>'
+    preserved_title: '<gold>What stays and what resets</gold>'
+    preserved_homes: '<green>Purchased home slots, saved homes and paid home activations stay.</green>'
+    preserved_rewards: '<green>Rewards kept from earlier prestiges stay, and the one you choose now joins them. Members and gold stay too.</green>'
+    reset: '<gray>Your level goes back to 1 and XP to 0. Level perks and other purchased rewards reset, so you buy them again as you climb. Prestige gives no gold or XP.</gray>'
     chapter: '<gray>Chapter rollover follows server policy separately from prestige.</gray>'
-    none: '<gray>No prestige-retained rewards recorded yet. Home capacity bought permanently is a separate acquisition route.</gray>'
-    retained: '<gold>Earned by purchasing this reward and selecting it during an applied prestige; retained under the existing rules.</gold>'
+    none: '<gray>No rewards kept from prestige yet. Purchased home slots are kept on their own.</gray>'
+    retained: '<gold>Kept forever from an earlier prestige.</gold>'
     review: '<gold>Review eligible retention choices</gold>'
-    milestone: '<gold>Prestige <tier> · Fee: <fee> guild gold · +1 permanent home slot and one eligible retention choice.</gold>'
+    milestone: '<gold>Prestige <tier> · Fee: <fee> guild gold · +1 permanent home slot and one reward to keep.</gold>'
     milestone_earned: '<green>✓ This prestige milestone is earned.</green>'
-    milestone_locked: '<gray>Reach level 100 in that run, meet the existing restrictions, select an eligible owned reward and confirm the exact fee.</gray>'
+    milestone_locked: '<gray>Reach level 100, choose a reward you own to keep and confirm the fee.</gray>'
 
 achievements:
   back_statistics: '<white>Back to Statistics</white>'

@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.domain.rewards.RewardCatalog
 import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.lumalyte.lg.utils.inventoryframework.addPane
 
@@ -35,6 +36,7 @@ class GuildPrestigeConfirmationMenu(
 ) : Menu, KoinComponent {
     private val prestige: GuildPrestigeService by inject()
     private val lang: LangService by inject()
+    private val catalog: RewardCatalog by inject()
 
     internal fun createGui(): ChestGui {
         val gui = ChestGui(3, lang.guiTitle("menu.guild_progression.prestige.confirmation.title"))
@@ -50,12 +52,18 @@ class GuildPrestigeConfirmationMenu(
                     "menu.guild_progression.prestige.confirmation.summary.reward",
                     "reward" to retainedRewardName,
                 ),
+            ) + listOfNotNull(catalog.find(quote.retainedRewardId)?.let { referenceRewardEffect(lang, it.effect) }) + listOf(
                 lang.gui(
                     "menu.guild_progression.prestige.confirmation.summary.fee",
                     "fee" to quote.quotedFee,
                 ),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.reset"),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.permanent"),
+                lang.gui("menu.guild_progression.prestige.confirmation.summary.home_slot"),
+                lang.gui(
+                    "menu.guild_progression.prestige.confirmation.summary.badge",
+                    "tier" to PrestigeNumeral.of(quote.expectedPrestigeCount + 1),
+                ),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.overflow"),
             ))
         } }
