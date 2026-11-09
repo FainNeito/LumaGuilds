@@ -838,7 +838,9 @@ fun progressionModule() = module {
     single {
         val config = get<ConfigService>()
         net.lumalyte.lg.application.services.PermanentExperienceService(get(), get()) {
-            config.loadConfig().progression.xpBoost
+            // REQ-178: the dated boost or today's weekend boost, whichever is larger.
+            val progression = config.loadConfig().progression
+            net.lumalyte.lg.domain.values.ActiveExperienceBoost.at(java.time.Instant.now(), progression.xpBoost, progression.weekendBoost)
         }
     }
     single {

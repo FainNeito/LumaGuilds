@@ -641,6 +641,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-177
 **Event-driven.** WHEN a member breaks sugar cane, cactus, kelp or bamboo THE SYSTEM SHALL count it toward a matching harvest quest regardless of the plant's growth stage, counting the broken block and the blocks of the same plant above it that break with it, except blocks a player placed; and WHEN a quest is shown THE SYSTEM SHALL say that mining quests count only blocks not placed by players and that age-based crops count only when fully grown.
 
+### REQ-178
+**State-driven.** WHILE the weekend XP boost is enabled (default on) and the current time falls on one of its days in its time zone (default Saturday and Sunday, America/New_York) THE SYSTEM SHALL multiply XP from every guild activity by its multiplier (default 2), rounding down, for every guild, except weekly-quest and admin-granted XP; WHILE a dated XP boost is also active THE SYSTEM SHALL apply only the larger of the two, never both. The default prestige fees SHALL be 8,000, 16,000, 24,000, 24,000, 24,000 and 24,000 gold for prestiges I to VI.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

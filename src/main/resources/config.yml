@@ -570,10 +570,18 @@ progression:
     # sources: [MOB_KILL, PLAYER_KILL, COAL_ORE]
   max_level: 100                      # Permanent progression cap
   # Prestige is production-ready. Set false to disable it explicitly.
+  # REQ-178: every guild earns multiplier x XP from activities on these days, in
+  # this time zone (midnight to midnight). Quest and admin XP are not doubled. If a
+  # dated xp_boost is running too, only the larger multiplier applies.
+  weekend_boost:
+    enabled: true
+    multiplier: 2.0
+    days: [SATURDAY, SUNDAY]
+    timezone: America/New_York
   prestige:
     enabled: true
     max_count: 6
-    fees: [10000, 20000, 30000, 30000, 30000, 30000]
+    fees: [8000, 16000, 24000, 24000, 24000, 24000]
     # Console commands run for members of a prestiging guild (REQ-154), right away
     # for online members and on join for the rest. A member qualifies when they had
     # been in the guild for at least min_tenure_hours before the prestige. Each
