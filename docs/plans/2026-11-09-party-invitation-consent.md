@@ -18,4 +18,4 @@ Reproduce both entry points; test pending/accepted/declined/expired states, exac
 
 ## Status
 
-A narrow safeguard excludes internal single-guild channels when accepting a legacy request; a focused test reproduced the prior behavior and passes with the safeguard. The Java and Bedrock creation flows remain unsafe and require a durable association and atomic or recoverable acceptance design. This draft is not ready to merge or deploy.
+The in-progress implementation persists a shared-party marker and each new invitation's destination, sends invitations without pre-adding guilds, and saves membership before marking a request accepted so a retry can finish an interrupted status update. Existing single-guild channels remain private. Focused tests cover legacy data, persistence after repository recreation, explicit destination, private-channel rejection, Java creation and retry. Full-suite, MariaDB migration, hosted checks, concurrency/restart recovery, Bedrock interaction and live TEST acceptance remain outstanding. The changes are unmerged and are not ready for deployment.

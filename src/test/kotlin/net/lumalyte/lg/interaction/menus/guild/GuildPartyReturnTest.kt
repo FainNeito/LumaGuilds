@@ -72,6 +72,27 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
         verify(exactly = 0) { parties.inviteToParty(any(), any(), any(), any()) }
     }
 
+    @Test fun `shared party creation leaves invitees out until they accept`() {
+        val invited = Guild(UUID.randomUUID(), "Vibe", createdAt = Instant.EPOCH)
+        every { guilds.getGuild(invited.id) } returns invited
+        every { parties.createParty(any()) } answers { firstArg() }
+        every { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) } answers {
+            net.lumalyte.lg.domain.entities.PartyRequest.create(guild.id, invited.id, player.uniqueId).copy(partyId = firstArg())
+        }
+        every { members.getGuildMembers(invited.id) } returns emptySet()
+        val navigator = MenuNavigator(player)
+        val visits = mutableListOf<String>()
+        val management = management(navigator, visits)
+        val creation = creation(navigator)
+        setField(creation, "isPrivateParty", false)
+        setField(creation, "selectedGuilds", mutableSetOf(guild.id, invited.id))
+        navigator.openMenu(dashboard(visits))
+        navigator.openMenu(management)
+        navigator.openMenu(creation)
+        click(paneFor(creation, "addActionButtons"), 1, 5)
+        verify(exactly = 1) { parties.createParty(match { it.guildIds == setOf(guild.id) && it.shared }) }
+        verify(exactly = 1) { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) }
+    }
     @Test fun `guild selection returns invited guilds without discarding the name and role drafts`() {
         val navigator = MenuNavigator(player)
         val visits = mutableListOf<String>()

@@ -39,7 +39,7 @@ class PartyServiceBukkit(
             }
 
             // For private parties, only 1 guild is required
-            val isPrivateParty = party.guildIds.size == 1
+            val isPrivateParty = party.isPrivateParty()
 
             // Validate that the leader has permission to manage parties for their guild
             val leaderGuildId = memberService.getPlayerGuilds(party.leaderId).firstOrNull()
@@ -100,7 +100,10 @@ class PartyServiceBukkit(
         }
     }
 
-    override fun sendPartyRequest(fromGuildId: UUID, toGuildId: UUID, requesterId: UUID, message: String?): PartyRequest? {
+    override fun sendPartyRequest(fromGuildId: UUID, toGuildId: UUID, requesterId: UUID, message: String?): PartyRequest? =
+        sendPartyRequestInternal(fromGuildId, toGuildId, requesterId, message, null)
+
+    private fun sendPartyRequestInternal(fromGuildId: UUID, toGuildId: UUID, requesterId: UUID, message: String?, partyId: UUID?): PartyRequest? {
         try {
             // Validate requester has permission
             if (!canManageParties(requesterId, fromGuildId)) {
@@ -123,7 +126,7 @@ class PartyServiceBukkit(
             }
             
             // Create party request
-            val request = PartyRequest.create(fromGuildId, toGuildId, requesterId, message)
+            val request = PartyRequest.create(fromGuildId, toGuildId, requesterId, message).copy(partyId = partyId)
             
             return if (partyRequestRepository.add(request)) {
                 logger.info("Party request sent from guild $fromGuildId to guild $toGuildId by player $requesterId")
@@ -154,6 +157,7 @@ class PartyServiceBukkit(
         }
     }
     
+    @Synchronized
     override fun acceptPartyRequest(requestId: UUID, acceptingGuildId: UUID, accepterId: UUID): Party? {
         try {
             // Validate accepter has permission
@@ -181,7 +185,19 @@ class PartyServiceBukkit(
             
             // Check if there's an existing party involving the requesting guild
             val existingParties = partyRepository.getActivePartiesByGuild(request.fromGuildId)
-            val existingParty = existingParties.firstOrNull { !it.isPrivateParty() }
+            val existingParty = if (request.partyId != null) {
+                val intended = partyRepository.getById(request.partyId)
+                if (intended == null || !intended.isActive() || intended.isPrivateParty() || !intended.includesGuild(request.fromGuildId)) {
+                    logger.warn("Party request $requestId no longer has its original active party")
+                    return null
+                }
+                intended
+            } else existingParties.firstOrNull { !it.isPrivateParty() }
+            if (existingParty != null && !existingParty.includesGuild(acceptingGuildId) && existingParty.guildIds.size >= 10) return null
+            if (existingParties.any { !it.isPrivateParty() && it.id != existingParty?.id }) return null
+            if (partyRepository.getActivePartiesByGuild(acceptingGuildId).any {
+                    !it.isPrivateParty() && it.id != existingParty?.id
+                }) return null
             
             val party = if (existingParty != null) {
                 // Add accepting guild to existing party
@@ -197,18 +213,14 @@ class PartyServiceBukkit(
                 )
             }
             
-            // Update request status
-            val acceptedRequest = request.copy(status = PartyRequestStatus.ACCEPTED)
-            partyRequestRepository.update(acceptedRequest)
-            
-            // Save or update party
+            // Persist membership before marking accepted; a retry repairs an interrupted status update.
             val success = if (existingParty != null) {
                 partyRepository.update(party)
             } else {
                 partyRepository.add(party)
             }
             
-            return if (success) {
+            return if (success && partyRequestRepository.update(request.copy(status = PartyRequestStatus.ACCEPTED))) {
                 logger.info("Party request $requestId accepted by guild $acceptingGuildId")
                 party
             } else {
@@ -306,6 +318,10 @@ class PartyServiceBukkit(
                 logger.warn("Party $partyId not found or not active")
                 return null
             }
+            if (party.isPrivateParty()) {
+                logger.warn("Cannot invite another guild to a private party or internal channel")
+                return null
+            }
             
             // Validate inviter's guild is in the party
             if (!party.includesGuild(inviterGuildId)) {
@@ -320,7 +336,7 @@ class PartyServiceBukkit(
             }
             
             // Send party request
-            return sendPartyRequest(inviterGuildId, targetGuildId, inviterId, "Invitation to join party")
+            return sendPartyRequestInternal(inviterGuildId, targetGuildId, inviterId, "Invitation to join party", partyId)
         } catch (e: Exception) {
             // In-memory operation - catching runtime exceptions from state validation
             logger.error("Error inviting guild to party", e)

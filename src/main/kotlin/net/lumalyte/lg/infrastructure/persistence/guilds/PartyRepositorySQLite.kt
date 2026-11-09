@@ -41,6 +41,17 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
         
         try {
             storage.connection.executeUpdate(sql)
+            storage.connection.connection.use { connection ->
+                val metadata = connection.metaData
+                val hasColumn = listOf("parties", "PARTIES").any { table ->
+                    listOf("shared", "SHARED").any { column ->
+                        metadata.getColumns(connection.catalog, null, table, column).use { it.next() }
+                    }
+                }
+                if (!hasColumn) connection.createStatement().use {
+                    it.executeUpdate("ALTER TABLE parties ADD COLUMN shared INTEGER NOT NULL DEFAULT 0")
+                }
+            }
         } catch (e: SQLException) {
             throw DatabaseOperationException("Failed to create parties table", e)
         }
@@ -49,7 +60,7 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
     private fun preload() {
         val sql = """
             SELECT id, name, guild_ids, leader_id, status, created_at, expires_at, restricted_roles,
-                   muted_players, banned_players
+                   muted_players, banned_players, shared
             FROM parties
         """.trimIndent()
 
@@ -92,15 +103,16 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
             expiresAt = rs.getInstant("expires_at"),
             restrictedRoles = restrictedRoles,
             mutedPlayers = mutedPlayers,
-            bannedPlayers = bannedPlayers
+            bannedPlayers = bannedPlayers,
+            shared = rs.getInt("shared") == 1
         )
     }
     
     override fun add(party: Party): Boolean {
         val sql = """
             INSERT INTO parties (id, name, guild_ids, leader_id, status, created_at, expires_at, restricted_roles,
-                                 muted_players, banned_players)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                 muted_players, banned_players, shared)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """.trimIndent()
 
         return try {
@@ -119,7 +131,8 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
                 party.expiresAt?.toString(),
                 restrictedRolesString,
                 mutedPlayersJson,
-                bannedPlayersJson
+                bannedPlayersJson,
+                if (party.shared) 1 else 0
             )
 
             parties[party.id] = party
@@ -133,7 +146,7 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
         val sql = """
             UPDATE parties
             SET name = ?, guild_ids = ?, leader_id = ?, status = ?, expires_at = ?, restricted_roles = ?,
-                muted_players = ?, banned_players = ?
+                muted_players = ?, banned_players = ?, shared = ?
             WHERE id = ?
         """.trimIndent()
 
@@ -152,6 +165,7 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
                 restrictedRolesString,
                 mutedPlayersJson,
                 bannedPlayersJson,
+                if (party.shared) 1 else 0,
                 party.id.toString()
             )
 
