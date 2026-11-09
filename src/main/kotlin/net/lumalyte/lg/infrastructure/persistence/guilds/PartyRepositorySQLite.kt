@@ -11,6 +11,7 @@ import net.lumalyte.lg.domain.entities.PartyStatus
 import net.lumalyte.lg.infrastructure.persistence.getInstant
 import net.lumalyte.lg.infrastructure.persistence.getInstantNotNull
 import net.lumalyte.lg.infrastructure.persistence.storage.Storage
+import net.lumalyte.lg.infrastructure.persistence.storage.SqlDialect
 import java.sql.SQLException
 import java.time.Instant
 import java.util.UUID
@@ -19,6 +20,10 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
 
     private val parties: MutableMap<UUID, Party> = mutableMapOf()
     private val gson = Gson()
+
+    private fun storedTime(value: Instant?): Any? = value?.let {
+        if (storage.dialect == SqlDialect.MARIADB) java.sql.Timestamp.from(it) else it.toString()
+    }
 
     init {
         createPartyTable()
@@ -133,8 +138,8 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
                 guildIdsString,
                 party.leaderId.toString(),
                 party.status.name,
-                party.createdAt.toString(),
-                party.expiresAt?.toString(),
+                storedTime(party.createdAt),
+                storedTime(party.expiresAt),
                 restrictedRolesString,
                 mutedPlayersJson,
                 bannedPlayersJson,
@@ -167,7 +172,7 @@ class PartyRepositorySQLite(private val storage: Storage<Database>) : PartyRepos
                 guildIdsString,
                 party.leaderId.toString(),
                 party.status.name,
-                party.expiresAt?.toString(),
+                storedTime(party.expiresAt),
                 restrictedRolesString,
                 mutedPlayersJson,
                 bannedPlayersJson,
