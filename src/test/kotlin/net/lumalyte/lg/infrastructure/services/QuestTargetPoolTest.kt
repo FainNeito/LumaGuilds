@@ -45,4 +45,34 @@ class QuestTargetPoolTest {
             assertFalse(QuestTargetPool.isPlaceTarget(it), it)
         }
     }
+
+    @Test
+    fun `mining quests are world-generated blocks, never wall-mounted or placed-only ones`() {
+        listOf("STONE", "DEEPSLATE", "COAL_ORE", "DEEPSLATE_IRON_ORE", "ANCIENT_DEBRIS", "OAK_LOG", "CRIMSON_STEM",
+            "NETHERRACK", "END_STONE", "SAND", "GRAVEL", "OBSIDIAN").forEach {
+            assertTrue(QuestTargetPool.isMineTarget(it), it)
+        }
+        listOf("CANDLE_CAKE", "CRIMSON_WALL_HANGING_SIGN", "DEAD_FIRE_CORAL_WALL_FAN", "WARPED_ROOTS",
+            "POTTED_CACTUS", "WALL_TORCH", "SPAWNER", "BUDDING_AMETHYST").forEach {
+            assertFalse(QuestTargetPool.isMineTarget(it), it)
+        }
+    }
+
+    @Test
+    fun `smelting quests are common smelted goods`() {
+        listOf("IRON_INGOT", "GOLD_INGOT", "GLASS", "SMOOTH_STONE", "COOKED_BEEF", "IRON_NUGGET").forEach {
+            assertTrue(QuestTargetPool.isSmeltTarget(it), it)
+        }
+        listOf("WHITE_GLAZED_TERRACOTTA", "LIME_DYE", "POPPED_CHORUS_FRUIT").forEach {
+            assertFalse(QuestTargetPool.isSmeltTarget(it), it)
+        }
+    }
+
+    @Test
+    fun `crafting quests skip waxed and weathered copper`() {
+        assertTrue(QuestTargetPool.isCraftTarget("CHEST"))
+        listOf("WAXED_OXIDIZED_COPPER_BULB", "EXPOSED_CUT_COPPER", "WAXED_COPPER_BLOCK").forEach {
+            assertFalse(QuestTargetPool.isCraftTarget(it), it)
+        }
+    }
 }

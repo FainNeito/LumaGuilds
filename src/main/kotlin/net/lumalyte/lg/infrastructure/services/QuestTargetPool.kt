@@ -57,4 +57,34 @@ internal object QuestTargetPool {
     fun isPlaceTarget(block: String): Boolean =
         PLACE_EXCLUDED.none { it in block } &&
             (block in PLACE_EXACT || PLACE_SUFFIXES.any { block.endsWith(it) })
+
+    private val MINE_EXACT = setOf(
+        "STONE", "DEEPSLATE", "ANDESITE", "DIORITE", "GRANITE", "TUFF", "CALCITE", "DIRT",
+        "COARSE_DIRT", "GRASS_BLOCK", "PODZOL", "MYCELIUM", "MUD", "CLAY", "SAND", "RED_SAND", "GRAVEL",
+        "SANDSTONE", "RED_SANDSTONE", "TERRACOTTA", "ICE", "PACKED_ICE", "BLUE_ICE", "SNOW_BLOCK", "OBSIDIAN",
+        "NETHERRACK", "BLACKSTONE", "BASALT", "SOUL_SAND", "SOUL_SOIL", "MAGMA_BLOCK", "GLOWSTONE",
+        "NETHER_WART_BLOCK", "WARPED_WART_BLOCK", "SHROOMLIGHT", "END_STONE", "ANCIENT_DEBRIS",
+        "AMETHYST_BLOCK", "DRIPSTONE_BLOCK", "MOSS_BLOCK", "SCULK", "MELON", "PUMPKIN", "PRISMARINE",
+    )
+
+    /** Blocks that generate in the world; never wall-mounted, potted or placed-only variants. */
+    fun isMineTarget(block: String): Boolean =
+        "WALL" !in block && "POTTED" !in block && !block.startsWith("STRIPPED_") &&
+            (block in MINE_EXACT || block.endsWith("_ORE") ||
+                (block.endsWith("_LOG") || block.endsWith("_STEM")) && block !in setOf("MELON_STEM", "PUMPKIN_STEM"))
+
+    private val SMELT_TARGETS = setOf(
+        "IRON_INGOT", "GOLD_INGOT", "COPPER_INGOT", "IRON_NUGGET", "GOLD_NUGGET", "NETHERITE_SCRAP", "GLASS",
+        "STONE", "SMOOTH_STONE", "DEEPSLATE", "BRICK", "NETHER_BRICK", "TERRACOTTA", "CHARCOAL", "DRIED_KELP",
+        "COOKED_BEEF", "COOKED_PORKCHOP", "COOKED_CHICKEN", "COOKED_MUTTON", "COOKED_RABBIT", "COOKED_COD",
+        "COOKED_SALMON", "BAKED_POTATO", "SMOOTH_SANDSTONE", "SMOOTH_QUARTZ", "CRACKED_STONE_BRICKS",
+    )
+
+    /** Everyday furnace goods; not glazed terracotta, dyes or other one-off smelts. */
+    fun isSmeltTarget(item: String): Boolean = item in SMELT_TARGETS
+
+    private val CRAFT_EXCLUDED = listOf("WAXED", "EXPOSED", "WEATHERED", "OXIDIZED")
+
+    /** Any crafting-table item except copper's waxed and weathered variants. */
+    fun isCraftTarget(item: String): Boolean = CRAFT_EXCLUDED.none { it in item }
 }

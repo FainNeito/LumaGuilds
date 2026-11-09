@@ -49,7 +49,7 @@ class BukkitQuestTargetProvider(private val plugin: Plugin) : QuestTargetProvide
                         provenance = BlockProvenancePolicy.ANY
                     )
                 } else {
-                    if (isNaturalMineTarget(material, playerProducibleBlocks)) {
+                    if (isNaturalMineTarget(material, playerProducibleBlocks) && QuestTargetPool.isMineTarget(material.name)) {
                         result += target(
                             id = blockId(material),
                             action = QuestAction.MINE_BLOCKS,
@@ -95,6 +95,7 @@ class BukkitQuestTargetProvider(private val plugin: Plugin) : QuestTargetProvide
             .filter(::isCraftingMatrixRecipe)
             .map(Recipe::getResult)
             .filter { !it.type.isLegacy && !it.type.isAir }
+            .filter { QuestTargetPool.isCraftTarget(it.type.name) }
             .distinctBy { it.type.key }
             .forEach { stack ->
                 result += target(
@@ -107,6 +108,7 @@ class BukkitQuestTargetProvider(private val plugin: Plugin) : QuestTargetProvide
         recipes.filterIsInstance<CookingRecipe<*>>()
             .map { it.result }
             .filter { !it.type.isLegacy && !it.type.isAir }
+            .filter { QuestTargetPool.isSmeltTarget(it.type.name) }
             .distinctBy { it.type.key }
             .forEach { stack ->
                 result += target(
