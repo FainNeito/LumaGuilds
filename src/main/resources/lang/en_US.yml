@@ -587,6 +587,7 @@ bedrock:
     header:
       format: '<gold><bold>━━━ <title> ━━━'
       overview: Guild Overview
+      prestige: Prestige
       members: Members
       relations: Relations
       wars: Active War Kill Progress
@@ -638,6 +639,12 @@ bedrock:
     wars:
       none: '<gray>No active wars'
       entry: '<red>vs <opponent><gray>: <green><kills><gray>/<yellow><target> kills'
+    prestige:
+      none: '<gray>This guild has not prestiged yet.'
+      unavailable: '<gray>Prestige history is unavailable right now.'
+      current: '<light_purple>Current<gray>: <white>Prestige <tier>'
+      entry: '<gray>Prestige <white><tier></white> · <white><date>'
+      entry_first: '<gray>Prestige <white><tier></white> · <white><date></white> <gold>✦ First on the server'
   rank_list:
     title: 'Guild Ranks - <guild>'
     no_ranks: No ranks have been created
@@ -5245,6 +5252,13 @@ menu:
 
   guild_info:
     title: '<white>Guild Info • <guild>'
+    prestige:
+      name: '<light_purple><bold>Prestige'
+      none: '<gray>This guild has not prestiged yet.'
+      unavailable: '<gray>Prestige history is unavailable right now.'
+      current: '<gray>Current: <light_purple>Prestige <tier>'
+      entry: '<gray>Prestige <white><tier></white> <dark_gray>·</dark_gray> <white><date>'
+      entry_first: '<gray>Prestige <white><tier></white> <dark_gray>·</dark_gray> <white><date></white> <gold>✦ First on the server'
     feedback:
       guild_missing: "<red>This guild no longer exists."
     fallback:

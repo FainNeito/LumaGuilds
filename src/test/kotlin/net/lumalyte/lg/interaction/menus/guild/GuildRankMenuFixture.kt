@@ -89,6 +89,7 @@ internal abstract class GuildRankMenuFixture {
             single { mockk<BankService>(relaxed = true) }
             single { mockk<WarService>(relaxed = true) }
             single { mockk<NexoEmojiService>(relaxed = true) }
+            single { mockk<net.lumalyte.lg.application.persistence.PrestigeHistory>(relaxed = true) }
             single { mockk<MenuFactory>(relaxed = true) }
         }
     }
