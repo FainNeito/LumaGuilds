@@ -278,7 +278,7 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
     }
 
     private fun addAllyHomeButtons(pane: StaticPane, x: Int, y: Int) {
-        val allyHomes = guildService.getAllyHomes(guild.id)
+        val allyHomes = guildService.getAllyHomeEntries(guild.id)
         if (allyHomes.isEmpty()) {
             val noAllyItem =
                 NexoItemProvider.getItemStackOrFallback("lg_ally_home_locked") { ItemStack.of(Material.GRAY_DYE) }
@@ -291,13 +291,16 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
         }
 
         var slot = x
-        for ((guildName, home) in allyHomes) {
+        for (entry in allyHomes) {
             if (slot == 4) slot++ // slot 4 is the standard Back position
             if (slot >= 7) break // Max 6 ally homes on row (slots 0-3 and 5-6)
+            val home = entry.home
+            // REQ-180: a second allied home is labelled with its number.
+            val guildName = if (entry.slot == 1) entry.guildName else "${entry.guildName} #${entry.slot}"
             val worldName = Bukkit.getWorld(home.worldId)?.name ?: lang.raw("general.unknown")
-            val targetGuild = guildService.getGuildByName(guildName)
-            val allowed = targetGuild != null &&
-                guildService.canUseAllyHome(player.uniqueId, guild.id, targetGuild.id)
+            val targetGuildId = entry.guildId
+            val allowed = targetGuildId != null &&
+                guildService.canUseAllyHome(player.uniqueId, guild.id, targetGuildId, entry.slot)
             val allyIcon =
                 NexoItemProvider.getItemStackOrFallback(if (allowed) "lg_ally_home" else "lg_ally_home_locked") {
                     ItemStack.of(if (allowed) Material.ENDER_EYE else Material.BARRIER)
@@ -319,24 +322,26 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
                     .lore(allyAction)
 
             val guiItem = GuiItem(allyItem) {
-                teleportToAllyHome(targetGuild?.id)
+                teleportToAllyHome(targetGuildId, entry.slot)
             }
             pane.addItem(guiItem, slot, y)
             slot++
         }
     }
 
-    private fun teleportToAllyHome(targetGuildId: UUID?) {
+    private fun teleportToAllyHome(targetGuildId: UUID?, slot: Int = 1) {
         if (targetGuildId == null) return denyAllyHome()
         val currentTarget = guildService.getGuild(targetGuildId) ?: return denyAllyHome()
-        val currentHome = currentTarget.allyHome ?: return denyAllyHome()
-        if (!canTeleportToAllyHome(currentTarget, currentHome)) return denyAllyHome()
-        startTeleportCountdown(currentHome)
+        val currentHome = guildService.getAllyHome(targetGuildId, slot) ?: return denyAllyHome()
+        if (!canTeleportToAllyHome(currentTarget, currentHome, slot)) return denyAllyHome()
+        // REQ-182: the host's rules are checked again when the countdown ends.
+        startTeleportCountdown(currentHome) { canTeleportToAllyHome(currentTarget, currentHome, slot) }
     }
 
-    private fun canTeleportToAllyHome(target: Guild, home: GuildHome): Boolean {
-        val eligibleHome = guildService.getAllyHomes(guild.id)[target.name]
-        return eligibleHome == home && guildService.canUseAllyHome(player.uniqueId, guild.id, target.id)
+    private fun canTeleportToAllyHome(target: Guild, home: GuildHome, slot: Int = 1): Boolean {
+        val eligible = guildService.getAllyHomeEntries(guild.id)
+            .any { it.guildId == target.id && it.slot == slot && it.home == home }
+        return eligible && guildService.canUseAllyHome(player.uniqueId, guild.id, target.id, slot)
     }
 
     private fun denyAllyHome() {
@@ -518,7 +523,7 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
         pane.addItem(guiItem, x, y)
     }
 
-    private fun startTeleportCountdown(home: GuildHome) {
+    private fun startTeleportCountdown(home: GuildHome, stillAllowed: (() -> Boolean)? = null) {
         val world = Bukkit.getWorld(home.worldId)
         if (world == null) {
             player.sendMessage(lang.msg("menu.guild_home.feedback.world_missing"))
@@ -540,7 +545,7 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
             return
         }
 
-        teleportationService.startHomeTeleport(player, targetLocation)
+        teleportationService.startHomeTeleport(player, targetLocation, stillAllowed)
     }
 
     private fun isLocationSafe(location: org.bukkit.Location): Boolean {

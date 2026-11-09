@@ -415,6 +415,9 @@ fun guildsModule() = module {
     single<MemberRepository> { MemberRepositorySQLite(get()) }
     single<RelationRepository> { RelationRepositorySQLite(get()) }
     single<GuildInvitationRepository> { GuildInvitationRepositorySQLite(get()) }
+    single<net.lumalyte.lg.application.persistence.AllyHomeAccessRepository> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.AllyHomeAccessRepositorySQL(get())
+    }
     single<net.lumalyte.lg.application.persistence.InviteBlockRepository> {
         net.lumalyte.lg.infrastructure.persistence.guilds.InviteBlockRepositorySQL(get())
     }
@@ -440,6 +443,8 @@ fun guildsModule() = module {
     single<GuildService> {
         GuildServiceBukkit(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            allyHomeAccess = get(),
+            prestigePerks = getOrNull(),
         )
     }
     single<RankService> {

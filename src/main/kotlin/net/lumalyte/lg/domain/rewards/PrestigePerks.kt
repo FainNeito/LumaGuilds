@@ -13,10 +13,11 @@ class PrestigePerks(private val config: PrestigePerksConfig) {
 
     /** Perks that start at exactly [tier], in the order menus list them. */
     fun unlockedAt(tier: Int): List<PrestigePerk> = listOfNotNull(
+        PrestigePerk.SECOND_ALLY_HOME.takeIf { tier == config.secondAllyHomeTier },
         PrestigePerk.EXTRA_STALL.takeIf { tier == config.extraStallTier },
     )
 
     private fun reached(tier: Int?, needed: Int): Boolean = tier != null && tier >= needed
 }
 
-enum class PrestigePerk { EXTRA_STALL }
+enum class PrestigePerk { SECOND_ALLY_HOME, EXTRA_STALL }

@@ -769,6 +769,16 @@ bedrock:
   ally_home_access:
     missing_guild: '<red>The guild could not be reloaded.'
     no_allies: '<gray>Your guild has no active allies to configure.'
+    blocked_button: 'Blocked players (<count>)'
+    blocked_title: 'Blocked players'
+    blocked_hint: 'Untick a player to unblock them.'
+    saved: '<green>Allied-home access saved.'
+    visitor:
+      title: 'Visitors from <guild>'
+      allowed: 'Allow <guild> to use your allied homes'
+      rank: 'Rank: <rank>'
+      members_header: 'Block players (ticked = blocked)'
+      block: '<player>'
   member_rank_confirmation:
     title: '⚡ Confirm Rank Change'
     unknown_rank: Unknown
@@ -1759,6 +1769,12 @@ command:
     unknown_claim: Claim was not found.
     unknown_partition: There is no claim partition at your current location.
   guild:
+    allyhome:
+      second_set: "<green>Second allied home set to your current location."
+      second_removed: "<green>Second allied home removed."
+      second_locked: "<red>Your guild unlocks a second allied home at Prestige II."
+      no_second: "<red><guild> has no second allied home."
+      slot_usage: "<red>Use 1 or 2 for the allied home, e.g. <white>/g allyhome \\<guild> 2</white>."
     balance:
       success: '<dark_gray>[<gold>LumaGuilds<dark_gray>] <yellow><guild><gray>''s balance: <gold>$<balance>'
     home:
@@ -4516,16 +4532,44 @@ menu:
     back: "<gray>← Back to Homes"
 
   ally_home_access:
-    title: "<white>Ally-home Access"
+    title: "<white>Allied-home Access"
     permission_denied: "<red>❌ You need MANAGE_HOME to configure ally-home access."
+    save_failed: "<red>Couldn't save that change. Try again."
     ally:
       allowed: "<green>✓ <guild>"
       denied: "<red>✗ <guild>"
-      toggle: '<yellow>Click to toggle inbound access'
+      ranks_all: "<gray>Ranks: every rank"
+      ranks_some: "<gray>Ranks: <white><count></white> picked"
+      toggle: '<yellow>Left-click: allow or deny this ally'
+      configure: '<yellow>Right-click: pick ranks and block players'
+    blocked:
+      name: "<red>Blocked players (<count>)"
+      description: "<gray>Click a head to unblock that player."
+      none: "<gray>No one is blocked. Block players from an ally's page."
+      player: "<red><player>"
+      unblock: "<yellow>Click to unblock"
+    visitor:
+      title: "<white>Visitors from <guild>"
+      ranks_header: "<yellow>Which of their ranks may visit"
+      ranks_hint: "<gray>Click a rank to allow or deny it. Heads below: click to block a player."
+      rank:
+        allowed: "<green>✓ <rank>"
+        denied: "<red>✗ <rank>"
+        toggle: "<yellow>Click to allow or deny this rank"
+      reset:
+        name: "<green>Allow every rank"
+        description: "<gray>Clears your rank picks for this ally."
+      member:
+        can: "<green><player>"
+        blocked: "<red><player> (blocked)"
+        toggle: "<yellow>Click to block or unblock"
+      previous: "<yellow>← Previous page"
+      next: "<yellow>Next page →"
+      back: "<gray>← Back to allied-home access"
     info:
-      name: "<yellow>Outbound access (read-only)"
-      description: "<gray>To control which of YOUR ranks can use ally homes,"
-      instructions: "<gray>edit the <white>USE_ALLY_HOMES<gray> permission in rank settings."
+      name: "<yellow>Who can use your allied homes"
+      description: "<gray>Pick which allies, which of their ranks, and which players may visit."
+      instructions: "<gray>Visitors also need <white>Use ally homes<gray> in their own guild."
     back: "<gray>← Back to Homes"
 
   bank_security:
@@ -6138,6 +6182,7 @@ menu:
           carry: "<aqua>XP earned past Level 100 carries over, up to the start of Level <level>."
           permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
           home_slot: "<green>Your guild also gains one permanent home slot."
+          perk_second_ally_home: "<green>New perk: your guild can set a second allied home (<white>/g setallyhome 2</white>)."
           perk_extra_stall: "<green>New perk: your guild can own one more market stall."
           badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."
           overflow: "<gray>Gold above the new bank capacity stays and can be withdrawn, but nothing can be added until capacity catches up."
@@ -7475,6 +7520,7 @@ notification:
       perk: '<gray>  • <green><perk>'
   teleport:
     cooldown: "<red>◷ Please wait <seconds>s before teleporting home again."
+    no_longer_allowed: "<red>Teleport cancelled: you can no longer use that allied home."
     in_combat: '<yellow>◷ Cannot teleport in combat.'
     countdown_started: '<yellow>◷ Teleportation countdown started! Don''t move for <duration>...'
     duration:

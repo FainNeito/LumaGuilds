@@ -34,7 +34,7 @@ class PrestigePerksTest {
     @Test
     fun `each tier lists the perks it starts`() {
         assertEquals(emptyList(), perks.unlockedAt(1))
-        assertEquals(emptyList(), perks.unlockedAt(2)) // second allied home lists once it ships (REQ-180)
+        assertEquals(listOf(PrestigePerk.SECOND_ALLY_HOME), perks.unlockedAt(2))
         assertEquals(listOf(PrestigePerk.EXTRA_STALL), perks.unlockedAt(3))
     }
 }

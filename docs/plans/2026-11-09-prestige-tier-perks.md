@@ -82,3 +82,21 @@ countdown-end checks use the current rules (REQ-141 behaviour).
 
 - Changing who may set allied homes (still Manage home).
 - Prestige perks beyond these three.
+
+## As built (part 3)
+
+- Storage: `ally_home_visitor_ranks`, `ally_home_blocked_players`,
+  `ally_home_second_homes` (schema v51), loaded into memory at start and written
+  through. Disband removes a guild's rows.
+- Commands: `/g setallyhome [2]`, `/g removeallyhome [2]` (removing works even
+  without the perk), `/g allyhome <guild> [2]`. The home menu lists a second
+  home as "<guild> #2".
+- Access page (Java): allies in rows 1-2 (left-click allow/deny, right-click
+  their page), blocked players in row 3 (click to unblock). Each ally's page:
+  their ranks (click to allow/deny, "Allow every rank" resets) and their
+  members (click to block/unblock).
+- Access page (Bedrock): one button per ally opens a form with the ally toggle,
+  rank toggles and member block toggles; "Blocked players" lists blocks to untick.
+- Rank picks and blocks apply to every visitor, the ally's owner included; the
+  visitor still needs Use ally homes in their own guild. The check runs again
+  when the countdown ends.
