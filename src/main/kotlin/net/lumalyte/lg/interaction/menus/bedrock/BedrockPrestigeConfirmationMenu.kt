@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.application.services.ConfigService
 import net.lumalyte.lg.interaction.menus.guild.bedrockRewardEffect
 import net.lumalyte.lg.domain.rewards.RewardCatalog
 import net.lumalyte.lg.domain.values.PrestigeNumeral
@@ -32,6 +33,7 @@ class BedrockPrestigeConfirmationMenu(
     private val prestige: GuildPrestigeService by inject()
     private val lang: LangService by inject()
     private val catalog: RewardCatalog by inject()
+    private val config: ConfigService by inject()
     private val plugin: Plugin by inject()
 
     override fun getForm(): Form = ModalForm.builder()
@@ -48,6 +50,13 @@ class BedrockPrestigeConfirmationMenu(
                     "fee" to quote.quotedFee,
                 ),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.reset"),
+                config.loadConfig().progression.prestige.carryOver.let { carry ->
+                    if (carry.enabled) {
+                        lang.bedrock("menu.guild_progression.prestige.confirmation.summary.carry", "level" to carry.landingLevel)
+                    } else {
+                        lang.bedrock("menu.guild_progression.prestige.confirmation.summary.xp_reset")
+                    }
+                },
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.permanent"),
                 lang.bedrock("menu.guild_progression.prestige.confirmation.summary.home_slot"),
                 lang.bedrock(
@@ -78,6 +87,13 @@ class BedrockPrestigeConfirmationMenu(
 
         val result = prestige.confirm(player.uniqueId, quote)
         player.sendMessage(feedback(result))
+        if (result is PrestigeResult.Applied && result.carriedExperience > 0) {
+            player.sendMessage(lang.msg(
+                "menu.guild_progression.prestige.feedback.carried",
+                "xp" to result.carriedExperience,
+                "level" to result.postLevel,
+            ))
+        }
         when (result) {
             is PrestigeResult.Applied -> success()
             is PrestigeResult.Rejected -> back()

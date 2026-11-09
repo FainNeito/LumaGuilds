@@ -41,6 +41,9 @@ sealed interface PrestigeResult {
         val prestigeCount: Int,
         val postBankCapacity: Long,
         val homeCapacity: Int,
+        /** REQ-175: XP carried into the next climb, and the level it starts at. */
+        val carriedExperience: Int = 0,
+        val postLevel: Int = 1,
     ) : PrestigeResult
 
     data class Rejected(val reason: PrestigeRejection) : PrestigeResult

@@ -168,11 +168,11 @@ class PrestigeRepositorySQL(
         val expectedFee = prestige.feeFor(snapshot.ownership.prestigeCount)
         if (request.quotedFee != expectedFee) return reject(PrestigeRejection.FEE_CHANGED)
 
-        val level = connection.prepareStatement(
-            "SELECT current_level FROM guild_progression WHERE guild_id = ?$lockSuffix"
+        val (level, totalExperience) = connection.prepareStatement(
+            "SELECT current_level, total_experience FROM guild_progression WHERE guild_id = ?$lockSuffix"
         ).use {
             it.setString(1, request.guildId.toString())
-            it.executeQuery().use { rows -> if (rows.next()) rows.getInt(1) else null }
+            it.executeQuery().use { rows -> if (rows.next()) rows.getInt(1) to rows.getInt(2) else null }
         } ?: return reject(PrestigeRejection.UNINITIALIZED)
         if (level != 100) return reject(PrestigeRejection.NOT_LEVEL_100)
 
@@ -223,8 +223,12 @@ class PrestigeRepositorySQL(
             permanent = snapshot.ownership.permanent + request.retainedRewardId,
             prestigeCount = snapshot.ownership.prestigeCount + 1,
         )
+        // REQ-175: optional XP carried into the next climb sets the level it starts at.
+        val curve = ProgressionCurve.from(settings.progression)
+        val carried = PrestigeCarryOver.experience(totalExperience, curve, settings.progression.prestige.carryOver)
+        val postLevel = curve.levelFromExperience(carried)
         val postEntitlements = resolver.resolve(
-            1,
+            postLevel,
             nextOwnership,
             settings.bank.maxBankBalance.toLong(),
             settings.guild.maxMembersPerGuild,
@@ -242,29 +246,32 @@ class PrestigeRepositorySQL(
         }
         check(paid is GuildGoldResult.Applied) { "Canonical prestige debit did not complete" }
 
-        val nextLevelXp = ProgressionCurve.from(settings.progression).experienceForNextLevel(1)
         val now = Instant.now().toEpochMilli()
         val progressionUpdated = connection.prepareStatement(
             """UPDATE guild_progression
-               SET total_experience = 0,
-                   current_level = 1,
-                   experience_this_level = 0,
+               SET total_experience = ?,
+                   current_level = ?,
+                   experience_this_level = ?,
                    experience_for_next_level = ?,
                    last_level_up = NULL,
                    unlocked_perks = '[]',
                    last_updated = ?
                WHERE guild_id = ? AND current_level = 100"""
         ).use {
-            it.setInt(1, nextLevelXp)
-            if (storage.dialect == SqlDialect.MARIADB) it.setTimestamp(2, Timestamp(now))
-            else it.setLong(2, now)
-            it.setString(3, request.guildId.toString())
+            it.setInt(1, carried)
+            it.setInt(2, postLevel)
+            it.setInt(3, curve.experienceInCurrentLevel(carried))
+            it.setInt(4, curve.experienceForNextLevel(postLevel))
+            if (storage.dialect == SqlDialect.MARIADB) it.setTimestamp(5, Timestamp(now))
+            else it.setLong(5, now)
+            it.setString(6, request.guildId.toString())
             it.executeUpdate() == 1
         }
         check(progressionUpdated) { "Progression changed during prestige" }
 
-        connection.prepareStatement("UPDATE guilds SET level = 1 WHERE id = ?").use {
-            it.setString(1, request.guildId.toString())
+        connection.prepareStatement("UPDATE guilds SET level = ? WHERE id = ?").use {
+            it.setInt(1, postLevel)
+            it.setString(2, request.guildId.toString())
             check(it.executeUpdate() == 1) { "Guild disappeared during prestige" }
         }
 
@@ -286,6 +293,8 @@ class PrestigeRepositorySQL(
             prestigeCount = nextOwnership.prestigeCount,
             postBankCapacity = postEntitlements.bankCapacity,
             homeCapacity = postEntitlements.homeCapacity,
+            carriedExperience = carried,
+            postLevel = postLevel,
         )
     }
 

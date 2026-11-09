@@ -45,6 +45,26 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
     }
 
     @Test
+    fun `confirmation says whether XP carries over`() {
+        bind()
+        fun javaLore() = GuildPrestigeConfirmationMenu(player, quote, "Bank Extension 1", {}, {}).createGui()
+            .let { gui -> gui.show(player); player.openInventory.topInventory.getItem(4)!!.lore()!! }
+            .joinToString("\n") { plain(PlainTextComponentSerializer.plainText().serialize(it)) }
+        assertTrue("xp goes back to 0" in javaLore())
+        val config = org.koin.core.context.GlobalContext.get().get<net.lumalyte.lg.application.services.ConfigService>()
+        every { config.loadConfig() } returns net.lumalyte.lg.config.MainConfig().apply {
+            progression = progression.copy(prestige = progression.prestige.copy(
+                carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(enabled = true, landingLevel = 5),
+            ))
+        }
+        val lore = javaLore()
+        assertTrue("carries over, up to the start of level 5" in lore, lore)
+        val bedrock = plain((BedrockPrestigeConfirmationMenu(MenuNavigator(player), player, quote, "Bank Extension 1", {}, {},
+            Logger.getAnonymousLogger()).getForm() as ModalForm).content())
+        assertTrue("carries over, up to the start of level 5" in bedrock, bedrock)
+    }
+
+    @Test
     fun `bedrock confirmation says the same`() {
         bind()
         val content = plain((BedrockPrestigeConfirmationMenu(MenuNavigator(player), player, quote, "Bank Extension 1", {}, {},
