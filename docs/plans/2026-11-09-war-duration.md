@@ -20,4 +20,4 @@ Unit and serialization tests for legacy records, new timed and unlimited records
 
 ## Current state
 
-Investigation only. No runtime behavior changed. A migration-safe representation, supported victory semantics and preview remain to implement.
+Implemented in the draft branch: explicitly persisted no-expiry mode, backward decoding for older records, longer timed choices, Java and Bedrock displays, and existing kill-target settlement. The complete local test suite passed after incorporating main at 175e9a2d. Hosted CI, review, an existing TEST configuration cap adjustment, and live client verification remain outstanding. The interactive preview is a simulation; other objective types have no verified gameplay victory path.
