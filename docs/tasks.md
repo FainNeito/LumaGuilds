@@ -1030,7 +1030,9 @@ Menu audit follow-up (REQ-063):
 - [x] Refine PR #232 persistence, filtered lookup/counts, routing and viewer filtering; run focused/full checks and publish source fixes.
 - [x] Address all three manual CodeRabbit findings; prove native MariaDB repair and verify the installed TEST Friends connector against the current Guilds API. Cross-server caches remain startup snapshots; real-client acceptance is deferred.
 - [ ] Complete exact-head hosted quality/review gates and maintainer review; merge and real-client acceptance remain separate. Current main inspected at283d75f1; existing fork head db53a274. Project EARS/state helpers absent; manual evidence in docs/plans/2026-10-13-invite-block-review.md. No merge or production authorization.
+
 ## Local quest discovery - no PR requested
+
 - [x] **QUEST-STALL-REFINEMENT** Verify all short/menu quest routes, add progression quest navigation and semantic stall icons (REQ-QUEST-DISCOVERY-4, REQ-STALL-ICONS-1). Local Java 25 full test/shadowJar passed 1,789 cases with zero failures/errors and 16 optional environment skips. Real ACF routing and Java/Bedrock permission checks execute without skips. Private artwork and local preview remain outside the public repository; no deployment or PR. Evidence: docs/plans/2026-10-13-quest-stall-refinement.md.
 - [x] **QUEST-DISCOVERY** Member command, availability reminders and spawn leaderboard placeholders.
   - Tag: `TDD`
@@ -1310,6 +1312,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 
 - [x] **MEMBER-CAPACITY** Tag: TDD. REQ-190. Evidence: GuildMemberCapacityTest, MemberCapacityServiceTest, MemberCapacityFloorSQLTest (SQLite + MariaDB).
   - References: `docs/plans/2026-11-10-member-capacity.md`.
+
 ## Prestige staff tools and Discord post (REQ-184 to REQ-188)
 
 - [x] **PRESTIGE-STAFF-INFO** Tag: TDD. REQ-184. Evidence: PrestigeStaffCommandTest.
@@ -1322,3 +1325,15 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Command completions (REQ-189)
 
 - [x] **COMMAND-COMPLETIONS** Tag: TDD. REQ-189. Evidence: LumaGuildsCompletionsTest, GuildCommandCompletionContractTest, LumaGuildsCommandTest. Every `/g` and `/lumaguilds` argument suggests values or a `<hint>`.
+
+## Combined guild page and guild bans (REQ-191 to REQ-197)
+
+- [x] **GUILD-INFO-LAYOUT** Tag: TDD. REQ-191. Evidence: GuildRosterTest, GuildInfoPrestigeMenuTest, GuildMemberRankTooltipTest.
+- [x] **GUILD-INFO-VIEWERS** Tag: TDD. REQ-192. Evidence: LastSeenTest, GuildInfoSeason2ContractTest.
+- [x] **GUILD-MEMBER-PAGE** Tag: TDD. REQ-193. Evidence: MemberActionsTest.
+- [x] **GUILD-BAN** Tag: TDD. REQ-194. Evidence: GuildBanServiceTest, GuildBanRepositorySQLTest (SQLite + MariaDB), GuildBanMembershipTest, GuildInvitationManagerBanTest, GuildRecruitmentBanEligibilityTest.
+- [x] **GUILD-CARD-YES-NO** Tag: TDD. REQ-195. Evidence: GuildCardFactsTest. The shop line waits for EnthusiaMarket to register `GuildShopLookup`.
+- [x] **GUILD-RELATIONS-PAGE** Tag: TDD. REQ-196. Evidence: GuildCardFactsTest (rows), GuildInfoExpandableRelationsWiringTest.
+- [x] **KICK-HIERARCHY** Tag: TDD. REQ-197. Evidence: GuildBanMembershipTest.
+- [x] **GUILD-MENU-SIMPLIFIED** Tag: TDD. REQ-198. Evidence: GuildDashboardLayoutContractTest, GuildDashboardFillerItemTest.
+  - References: `docs/plans/2026-11-10-guild-info-redesign.md`.

@@ -2980,14 +2980,9 @@ menu:
         name: '<white>⚔ <gray><display_name>'
       information:
         lore:
-          line_1: '<gray>Overview, members,'
-          line_2: '<gray>allies and wars at a glance'
+          line_1: '<gray>Members, overview,'
+          line_2: '<gray>allies and wars'
         name: '<blue>Information'
-      members:
-        lore:
-          line_1: '<gray>Member list, invites,'
-          line_2: '<gray>kicks and promotions'
-        name: '<aqua>Members'
       progression:
         lore:
           line_1: '<gray>Guild leveling, XP,'
@@ -5350,9 +5345,6 @@ menu:
       unknown_player: "Unknown Player"
       member: "Member"
     overview:
-      name: "<gold>Guild Overview"
-      guild: "<gray>Name: <white><guild>"
-      level: "<gray>Level: <yellow><level>"
       mode: "<gray>Mode: <white><mode>"
       emoji: "<gray>Emoji: <white><emoji>"
       tag: "<gray>Tag: <white><tag>"
@@ -5366,26 +5358,6 @@ menu:
       value: "<reset><description>"
       invite_hint: '<yellow>Click to get the Discord invite in chat'
       chat_prefix: "<gray>Guild description: <reset>"
-    members:
-      name: "<aqua>Members (<white><count><aqua>)"
-      description: '<yellow>Click to see every member'
-      player: "<white><player>"
-      rank: "<gray>Rank: <white><rank>"
-      more: "<gray>... and <count> more"
-      more_hint: '<gray>Open Members to see everyone'
-    relations:
-      entry: "<gray>• <white><guild>"
-      more: "<gray>... and <count> more"
-      view_all: "<yellow>Click to view the full list"
-      allies:
-        name: "<green>Allies (<white><count><green>)"
-        none: "<gray>No allies"
-      truces:
-        name: "<white>Truces (<count>)"
-        none: "<gray>No truces"
-      wars:
-        name: "<red>Wars (<white><count><red>)"
-        none: "<gray>No active wars"
     relation_browser:
       allies:
         title: "<green>Allies - <guild>"
@@ -5415,24 +5387,7 @@ menu:
         name: '<yellow>⬅ Back'
         description: '<gray>Return to the previous menu'
     statistics:
-      name: "<yellow>Statistics"
-      balance: "<gray>Bank Balance: <gold>$<balance>"
-      level: "<gray>Level: <yellow><level>"
       war_kills: "<red>War vs <opponent><gray>: <green><kills><gray>/<yellow><target> kills"
-      home:
-        present: "<gray>Has Guild Home: <green>Yes"
-        missing: "<gray>Has Guild Home: <red>No"
-      banner:
-        present: "<gray>Has Banner: <green>Yes"
-        missing: "<gray>Has Banner: <red>No"
-    progression:
-      name: "<light_purple>Progression"
-      level: "<gray>Level: <yellow><level>"
-      next: "<gray>Next Level: <yellow><level>"
-    back:
-      name: '<yellow>⬅ Back'
-      description: '<gray>Return to the previous menu'
-
   truce_request:
     title: "<white>Request Truce"
     feedback:
@@ -8186,3 +8141,122 @@ discord:
     kept: 'Reward kept: {reward}'
     first: 'First guild to reach Prestige {tier}!'
     footer: 'Enthusia SMP'
+# REQ-191 to REQ-196: the combined guild page.
+guild_page:
+  member_title: '<white>Member • <player>'
+  relations_title: '<white>Relations • <guild>'
+  bans_title: '<white>Banned • <guild>'
+  description:
+    none: '<gray>No description yet.'
+  level:
+    name: '<green>Level <level>'
+    members: '<gray>Member cap: <white><limit>'
+  card:
+    name: '<gold><guild>'
+    leader: '<gray>Leader: <white><leader>'
+    members: '<gray>Members: <white><count>/<limit> <dark_gray>·</dark_gray> <green><online> online'
+    balance: '<gray>Bank balance: <gold>$<balance>'
+    facts_header: 'Guild facts'
+    fact:
+      home: '<gray>Has guild home: <value>'
+      banner: '<gray>Has banner: <value>'
+      vault: '<gray>Has vault: <value>'
+      shop: '<gray>Has guild shop: <value>'
+    'yes': '<green>Yes'
+    'no': '<red>No'
+  relations:
+    name: '<white>Relations'
+    allies: '<green><count> allies'
+    enemies: '<red><count> enemies'
+    truces: '<gray><count> truces'
+    hint: '<yellow>Click to open'
+  roster:
+    name: '<white><player>'
+    rank: '<gray>Rank: <rank>'
+    online: '<green>Online'
+    last_seen:
+      minutes: '<gray>Last seen: <white><amount>m ago'
+      hours: '<gray>Last seen: <white><amount>h ago'
+      days: '<gray>Last seen: <white><amount>d ago'
+      unknown: '<gray>Last seen: <white>unknown'
+    joined: '<gray>Joined: <white><date>'
+    contribution: '<gray>Bank contribution: <gold>$<amount>'
+    open: '<yellow>Click to open their page'
+  nav:
+    previous: '<white>Previous page'
+    next: '<white>Next page'
+    page: '<white>Page <page> of <pages>'
+    page_count: '<gray><count> members'
+    sort: '<white>Sort: <order>'
+    sort_hint: '<yellow>Click to change'
+    order:
+      rank: 'rank (highest first)'
+      online: 'online first'
+      name: 'name'
+    back: '<white>Back'
+    invite: '<green>Invite a player'
+    bans: '<red>Banned players'
+    bans_count: '<gray><count> banned'
+  member:
+    promote: '<green>Promote to <rank>'
+    promote_plain: '<green>Promote'
+    demote: '<yellow>Demote to <rank>'
+    demote_plain: '<yellow>Demote'
+    kick: '<red>Kick'
+    kick_lore: '<gray>Removes them from the guild. They can be invited back.'
+    ban: '<red>Ban'
+    ban_lore: '<gray>Kicks them and blocks invites and join requests until unbanned.'
+    click: '<yellow>Click to confirm'
+    click_rank: '<yellow>Click to change their rank'
+    denied:
+      no_permission: '<red>You need the Manage Members permission.'
+      self: "<red>You can't do this to yourself."
+      not_outranked: "<red>You can't change someone of your rank or higher."
+      top_rank_for_viewer: "<red>Your rank can't give that rank."
+      lowest_rank: '<red>Already the lowest rank.'
+    feedback:
+      promoted: '<green><player> is now <rank>.'
+      demoted: '<yellow><player> is now <rank>.'
+      failed: "<red>That didn't work. Refresh the page and try again."
+      gone: '<red>That player is no longer in the guild.'
+  relation_rows:
+    allies: '<green>Allies'
+    enemies: '<red>Enemies'
+    truces: '<gray>Truces'
+    none: '<gray>None'
+    guild: '<white><guild>'
+    view: '<yellow>Click to view their guild'
+    more: '<white>and <count> more'
+    more_hint: '<yellow>Click to see all'
+  bans:
+    entry: '<white><player>'
+    by: '<gray>Banned by: <white><by>'
+    date: '<gray>Banned on: <white><date>'
+    unban: '<yellow>Click to unban'
+    empty: '<gray>Nobody is banned.'
+    unbanned: '<green><player> is unbanned.'
+    failed: "<red>Couldn't unban <player>. Try again."
+# REQ-194: guild bans.
+guild_ban:
+  confirm:
+    title: '<white>Ban <player>?'
+    confirm: '<red>Ban <player>'
+    member_lore: '<gray>Removes them from the guild and blocks them from rejoining.'
+    outsider_lore: '<gray>Blocks invites and join requests from them.'
+    undo_lore: '<gray>Unban them any time from Banned players.'
+    cancel: '<green>Cancel'
+  command:
+    banned: '<green><player> is banned from your guild.'
+    preview_member: '<yellow>This removes <player> from the guild and blocks them from rejoining. Add confirm to the end of the command to do it.'
+    preview_outsider: '<yellow>This blocks <player> from joining your guild. Add confirm to the end of the command to do it.'
+    unknown_player: '<red>No player named <player> has played here.'
+    no_permission: '<red>You need the Manage Members permission to do that.'
+    self: "<red>You can't ban yourself."
+    owner: "<red>The guild leader can't be banned."
+    not_outranked: '<red>You can only ban members below your rank.'
+    already_banned: '<yellow><player> is already banned.'
+    failed: "<red>Couldn't save that. Try again."
+    unbanned: '<green><player> is unbanned.'
+    not_banned: "<yellow><player> isn't banned from your guild."
+  notify:
+    target: '<red>You were banned from <guild>.'

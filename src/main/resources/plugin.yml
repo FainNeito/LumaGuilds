@@ -86,6 +86,7 @@ permissions:
       lumaguilds.guild.leaderboard: true
       lumaguilds.guild.invite: true
       lumaguilds.guild.kick: true
+      lumaguilds.guild.ban: true
       lumaguilds.guild.tag: true
       lumaguilds.guild.description: true
       lumaguilds.guild.war: true
@@ -159,6 +160,9 @@ permissions:
     default: true
   lumaguilds.guild.kick:
     description: Kick players from guild
+    default: true
+  lumaguilds.guild.ban:
+    description: Ban and unban players from your guild
     default: true
   lumaguilds.guild.tag:
     description: Change guild tag
