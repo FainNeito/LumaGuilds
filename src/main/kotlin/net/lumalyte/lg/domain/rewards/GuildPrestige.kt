@@ -59,6 +59,27 @@ data class PrestigeOverview(
     val choices: List<RewardDefinition>,
 )
 /** One applied prestige, read from its receipt and its canonical gold-journal debit. */
+/** REQ-185: a staff correction of a guild's prestige count. */
+data class PrestigeAdjustment(
+    val guildId: UUID,
+    val actorId: UUID,
+    val oldCount: Int,
+    val newCount: Int,
+    val at: Instant,
+)
+
+sealed interface PrestigeAdjustmentResult {
+    /** [removedRewards]: the kept rewards dropped with the lowered tiers, newest first. */
+    data class Applied(val oldCount: Int, val newCount: Int, val removedRewards: List<String> = emptyList()) :
+        PrestigeAdjustmentResult
+    data object Unchanged : PrestigeAdjustmentResult
+    /** Raising the count needs a kept reward per tier, so it goes through a staff grant. */
+    data object RaiseNeedsGrant : PrestigeAdjustmentResult
+    data object OutOfRange : PrestigeAdjustmentResult
+    data object NotFound : PrestigeAdjustmentResult
+    data object Failed : PrestigeAdjustmentResult
+}
+
 data class PrestigeRecord(
     val transactionId: UUID,
     val guildId: UUID,

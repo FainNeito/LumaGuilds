@@ -717,6 +717,21 @@ fun progressionModule() = module {
     single<net.lumalyte.lg.application.services.GuildPrestigeAnnouncement> {
         net.lumalyte.lg.infrastructure.services.GuildPrestigeAnnouncementBukkit(get(), get())
     }
+    single<net.lumalyte.lg.application.persistence.PrestigeAdministration> {
+        get<net.lumalyte.lg.application.persistence.PrestigeRepository>()
+            as net.lumalyte.lg.application.persistence.PrestigeAdministration
+    }
+    // REQ-184 to REQ-187: staff prestige tools.
+    single {
+        val credits = get<net.lumalyte.lg.application.services.PrestigeMemberCredits>()
+        net.lumalyte.lg.application.services.PrestigeStaffService(
+            get(), get(), get(), get(), get(), get(), getOrNull(), get(),
+            // Commands run on the server thread, which credit dispatch requires.
+            creditOnlineMembers = { guildId ->
+                credits.deliverToOnlineMembers(guildId) { id -> org.bukkit.Bukkit.getPlayer(id)?.name }
+            },
+        )
+    }
     single<net.lumalyte.lg.application.persistence.PrestigeHistory> {
         get<net.lumalyte.lg.application.persistence.PrestigeRepository>()
             as net.lumalyte.lg.application.persistence.PrestigeHistory
@@ -766,6 +781,7 @@ fun progressionModule() = module {
                     guildName = { guildId -> get<net.lumalyte.lg.application.services.GuildService>().getGuild(guildId)?.name },
                     stage = net.lumalyte.lg.infrastructure.services.PrestigeFanfareBukkit(get(), get()),
                 ),
+                prestigeDiscordPost(),
             ),
         )
     }
@@ -1396,3 +1412,27 @@ fun appModule(plugin: LumaGuilds, storage: Storage<*>, claimsEnabled: Boolean = 
     } else {
         emptyList()
     }
+
+/** REQ-188: the Discord webhook listener, reading config and lang on every post. */
+private fun org.koin.core.scope.Scope.prestigeDiscordPost(): net.lumalyte.lg.application.services.PrestigeDiscordPost {
+    val config = get<net.lumalyte.lg.application.services.ConfigService>()
+    val lang = get<net.badgersmc.nexus.i18n.LangService>()
+    val guilds = get<net.lumalyte.lg.application.services.GuildService>()
+    val catalog = get<net.lumalyte.lg.domain.rewards.RewardCatalog>()
+    return net.lumalyte.lg.application.services.PrestigeDiscordPost(
+        settings = { config.loadConfig().progression.prestige.discord },
+        text = {
+            net.lumalyte.lg.application.services.PrestigeDiscordText(
+                title = lang.raw("discord.prestige.title"),
+                actor = lang.raw("discord.prestige.actor"),
+                kept = lang.raw("discord.prestige.kept"),
+                first = lang.raw("discord.prestige.first"),
+                footer = lang.raw("discord.prestige.footer"),
+            )
+        },
+        guildName = { id -> guilds.getGuild(id)?.name },
+        playerName = { id -> org.bukkit.Bukkit.getOfflinePlayer(id).name },
+        rewardName = { id -> catalog.find(id)?.name },
+        send = net.lumalyte.lg.infrastructure.services.DiscordWebhookSender(),
+    )
+}

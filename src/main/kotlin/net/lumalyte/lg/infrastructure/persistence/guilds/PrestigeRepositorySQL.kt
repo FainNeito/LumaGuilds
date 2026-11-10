@@ -23,12 +23,12 @@ import java.util.UUID
  */
 class PrestigeRepositorySQL(
     private val storage: Storage<Database>,
-    catalog: RewardCatalog,
+    private val catalog: RewardCatalog,
     private val owners: RewardOwnershipRepositorySQL,
     private val gold: GuildGoldRepositorySQL,
     private val guildActions: GuildActionCoordinator,
     private val config: () -> MainConfig,
-) : PrestigeRepository, PrestigeHistory {
+) : PrestigeRepository, PrestigeHistory, net.lumalyte.lg.application.persistence.PrestigeAdministration {
     private val resolver = RewardEntitlementResolver(catalog)
     private val lockSuffix = if (storage.dialect == SqlDialect.MARIADB) " FOR UPDATE" else ""
 
@@ -52,6 +52,15 @@ class PrestigeRepositorySQL(
                     prestige_count INTEGER NULL,
                     post_bank_capacity BIGINT NULL,
                     home_capacity INTEGER NULL
+                )$engine""")
+                // REQ-185: staff corrections, apart from the prestige receipts above.
+                it.execute("""CREATE TABLE IF NOT EXISTS guild_prestige_adjustments (
+                    id VARCHAR(36) PRIMARY KEY,
+                    guild_id VARCHAR(36) NOT NULL,
+                    actor_id VARCHAR(36) NOT NULL,
+                    old_count INTEGER NOT NULL,
+                    new_count INTEGER NOT NULL,
+                    adjusted_at BIGINT NOT NULL
                 )$engine""")
             }
         }
@@ -104,6 +113,17 @@ class PrestigeRepositorySQL(
     override fun confirmWithCommitStatus(
         request: PrestigeQuote,
         guard: () -> PrestigeRejection?,
+    ): PrestigeConfirmation = commit(request, guard, staff = false)
+
+    // REQ-186: same transaction, receipt and replay as a paid prestige, minus fee and level.
+    override fun grantWithCommitStatus(request: PrestigeQuote): PrestigeConfirmation =
+        if (request.quotedFee != 0L) PrestigeConfirmation(PrestigeResult.Rejected(PrestigeRejection.FEE_CHANGED))
+        else commit(request, { null }, staff = true)
+
+    private fun commit(
+        request: PrestigeQuote,
+        guard: () -> PrestigeRejection?,
+        staff: Boolean,
     ): PrestigeConfirmation = try {
         guildActions.withGuilds(request.guildId) {
             gold.withGuildLock(request.guildId) {
@@ -116,7 +136,7 @@ class PrestigeRepositorySQL(
                             it.executeUpdate()
                         }
                         replay(connection, request)?.let { PrestigeConfirmation(it) }
-                            ?: execute(connection, request, guard).let { result ->
+                            ?: execute(connection, request, guard, staff).let { result ->
                                 saveReceipt(connection, request, result)
                                 // This envelope escapes only after transaction() commits.
                                 PrestigeConfirmation(result, result is PrestigeResult.Applied)
@@ -129,10 +149,88 @@ class PrestigeRepositorySQL(
         PrestigeConfirmation(PrestigeResult.Failed(request.transactionId))
     }
 
+    override fun setPrestigeCount(
+        guildId: UUID,
+        count: Int,
+        actorId: UUID,
+        at: Instant,
+    ): PrestigeAdjustmentResult = try {
+        if (count < 0 || count > config().progression.prestige.maxCount) {
+            PrestigeAdjustmentResult.OutOfRange
+        } else {
+            guildActions.withGuilds(guildId) {
+                storage.connection.connection.use { connection ->
+                    transaction(connection) { adjust(connection, guildId, count, actorId, at) }
+                }
+            }
+        }
+    } catch (_: Exception) {
+        PrestigeAdjustmentResult.Failed
+    }
+
+    private fun adjust(connection: Connection, guildId: UUID, count: Int, actorId: UUID, at: Instant): PrestigeAdjustmentResult {
+        val snapshot = owners.readSnapshot(connection, guildId) ?: return PrestigeAdjustmentResult.NotFound
+        val old = snapshot.ownership.prestigeCount
+        if (old == count) return PrestigeAdjustmentResult.Unchanged
+        if (count > old) return PrestigeAdjustmentResult.RaiseNeedsGrant
+        val dropped = dropped(snapshot.ownership, history(guildId).map { it.retainedRewardId }, old - count)
+        check(owners.lowerPrestigeInTransaction(connection, guildId, snapshot.version, count, dropped.toSet())) {
+            "Ownership changed during prestige adjustment"
+        }
+        connection.prepareStatement(
+            """INSERT INTO guild_prestige_adjustments (id, guild_id, actor_id, old_count, new_count, adjusted_at)
+               VALUES (?, ?, ?, ?, ?, ?)"""
+        ).use {
+            it.setString(1, UUID.randomUUID().toString())
+            it.setString(2, guildId.toString())
+            it.setString(3, actorId.toString())
+            it.setInt(4, old)
+            it.setInt(5, count)
+            it.setLong(6, at.toEpochMilli())
+            check(it.executeUpdate() == 1)
+        }
+        return PrestigeAdjustmentResult.Applied(old, count, dropped)
+    }
+
+    override fun rewardsDroppedBy(guildId: UUID, count: Int): List<String> {
+        val snapshot = (owners.read(guildId) as? RewardOwnershipRead.Found)?.snapshot ?: return emptyList()
+        val old = snapshot.ownership.prestigeCount
+        if (count !in 0 until old) return emptyList()
+        return dropped(snapshot.ownership, history(guildId).map { it.retainedRewardId }, old - count)
+    }
+
+    /** The newest kept selections first (by prestige history), then any others by id. */
+    private fun dropped(ownership: RewardOwnership, keptInOrder: List<String>, n: Int): List<String> {
+        val selections = ownership.permanent.filter { catalog.find(it)?.permanentOnPurchase == false }.toSet()
+        val newestFirst = keptInOrder.asReversed().filter { it in selections }.distinct()
+        return (newestFirst + (selections - newestFirst.toSet()).sorted()).take(n)
+    }
+
+    override fun adjustments(guildId: UUID): List<PrestigeAdjustment> =
+        storage.connection.connection.use { connection ->
+            connection.prepareStatement(
+                """SELECT guild_id, actor_id, old_count, new_count, adjusted_at FROM guild_prestige_adjustments
+                   WHERE guild_id = ? ORDER BY adjusted_at, id"""
+            ).use { statement ->
+                statement.setString(1, guildId.toString())
+                statement.executeQuery().use { rows ->
+                    buildList {
+                        while (rows.next()) add(
+                            PrestigeAdjustment(
+                                UUID.fromString(rows.getString(1)), UUID.fromString(rows.getString(2)),
+                                rows.getInt(3), rows.getInt(4), Instant.ofEpochMilli(rows.getLong(5)),
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
     private fun execute(
         connection: Connection,
         request: PrestigeQuote,
         guard: () -> PrestigeRejection?,
+        staff: Boolean = false,
     ): PrestigeResult {
         fun reject(reason: PrestigeRejection) = PrestigeResult.Rejected(reason)
 
@@ -165,7 +263,7 @@ class PrestigeRepositorySQL(
             return reject(PrestigeRejection.MAX_PRESTIGE)
         }
 
-        val expectedFee = prestige.feeFor(snapshot.ownership.prestigeCount)
+        val expectedFee = if (staff) 0L else prestige.feeFor(snapshot.ownership.prestigeCount)
         if (request.quotedFee != expectedFee) return reject(PrestigeRejection.FEE_CHANGED)
 
         val (level, totalExperience) = connection.prepareStatement(
@@ -174,10 +272,11 @@ class PrestigeRepositorySQL(
             it.setString(1, request.guildId.toString())
             it.executeQuery().use { rows -> if (rows.next()) rows.getInt(1) to rows.getInt(2) else null }
         } ?: return reject(PrestigeRejection.UNINITIALIZED)
-        if (level != 100) return reject(PrestigeRejection.NOT_LEVEL_100)
+        if (level != 100 && !staff) return reject(PrestigeRejection.NOT_LEVEL_100)
 
+        // A staff grant offers the choices the guild would have at level 100.
         val currentEntitlements = resolver.resolve(
-            level,
+            if (staff) 100 else level,
             snapshot.ownership,
             settings.bank.maxBankBalance.toLong(),
             settings.guild.maxMembersPerGuild,
@@ -256,7 +355,7 @@ class PrestigeRepositorySQL(
                    last_level_up = NULL,
                    unlocked_perks = '[]',
                    last_updated = ?
-               WHERE guild_id = ? AND current_level = 100"""
+               WHERE guild_id = ?${if (staff) "" else " AND current_level = 100"}"""
         ).use {
             it.setInt(1, carried)
             it.setInt(2, postLevel)

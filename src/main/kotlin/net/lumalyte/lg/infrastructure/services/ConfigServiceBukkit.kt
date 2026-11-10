@@ -429,6 +429,13 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     secondAllyHomeTier = config.getInt("progression.prestige.perks.second_ally_home_tier", 2),
                     extraStallTier = config.getInt("progression.prestige.perks.extra_stall_tier", 3),
                 ),
+                // REQ-188: Discord webhook post; off unless enabled with a URL.
+                discord = net.lumalyte.lg.application.services.PrestigeDiscordSettings(
+                    enabled = config.getBoolean("progression.prestige.discord.enabled", false),
+                    webhookUrl = config.getString("progression.prestige.discord.webhook_url", "") ?: "",
+                    username = config.getString("progression.prestige.discord.username", "Enthusia") ?: "Enthusia",
+                    avatarUrl = config.getString("progression.prestige.discord.avatar_url", "") ?: "",
+                ),
                 fanfare = net.lumalyte.lg.config.PrestigeFanfareConfig(
                     enabled = config.getBoolean("progression.prestige.fanfare.enabled", true),
                     serverWide = config.getBoolean("progression.prestige.fanfare.server_wide", true),
