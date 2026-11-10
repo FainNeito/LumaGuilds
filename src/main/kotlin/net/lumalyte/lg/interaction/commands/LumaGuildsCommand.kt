@@ -732,6 +732,9 @@ class LumaGuildsCommand(
         sender.sendMessage(lang.msg("admin.migrated.luma_guilds.showhelp.chapter_admin_controls"))
         sender.sendMessage(lang.msg("admin.migrated.luma_guilds.showhelp.bellclaims_override_toggle_admin_override_mode_admin"))
         sender.sendMessage(lang.msg("spawn_banner.feedback.help"))
+        if (sender.hasPermission(PrestigeStaffCommand.PERMISSION)) {
+            sender.sendMessage(lang.msg("admin.prestige.help"))
+        }
         sender.sendMessage(lang.msg("admin.migrated.luma_guilds.showhelp.warcutover"))
         sender.sendMessage(lang.msg("admin.migrated.luma_guilds.showhelp.bellclaims_help_show_this_help"))
         sender.sendMessage(lang.msg("admin.migrated.luma_guilds.showhelp.reload_commands_are_for_development_some_changes"))
@@ -740,65 +743,27 @@ class LumaGuildsCommand(
         sender.sendMessage(lang.msg("admin.migrated.luma_guilds.showhelp.override_grants_owner_permissions_in_all_guilds"))
     }
 
-    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): MutableList<String> {
-        if (sender !is Player) return mutableListOf()
+    // REQ-189: values or a <hint> for every argument; see LumaGuildsCompletions.
+    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): MutableList<String> =
+        completions(sender).complete(args.toList()).toMutableList()
 
-        return when (args.size) {
-            1 -> mutableListOf(
-                "reload", "progressionreload", "xp", "disband", "migrate", "chapter", "override", "owner",
-                "spawnbanner", "warcutover", "help", "prestige"
-            ).filter {
-                it.startsWith(args[0]) && (it != "owner" || sender.hasPermission(GuildOwnerRecoveryCommand.PERMISSION)) &&
-                    (it != "prestige" || sender.hasPermission(PrestigeStaffCommand.PERMISSION))
-            }.toMutableList()
-            2 -> when (args[0].lowercase()) {
-                "owner" -> if (sender.hasPermission(GuildOwnerRecoveryCommand.PERMISSION)) {
-                    mutableListOf("recover").filter { it.startsWith(args[1], true) }.toMutableList()
-                } else mutableListOf()
-                "disband" -> {
-                    net.lumalyte.lg.utils.GuildResolver.suggestions(guildService)
-                        .filter { it.contains(args[1], ignoreCase = true) }
-                        .toMutableList()
-                }
-                "xp" -> mutableListOf("give").filter { it.startsWith(args[1], ignoreCase = true) }.toMutableList()
-                "prestige" -> if (sender.hasPermission(PrestigeStaffCommand.PERMISSION)) {
-                    PrestigeStaffCommand.SUBCOMMANDS.filter { it.startsWith(args[1], ignoreCase = true) }.toMutableList()
-                } else mutableListOf()
-                "migrate" -> mutableListOf("confirm")
-                "warcutover" -> mutableListOf("CONFIRM")
-                "chapter" -> mutableListOf("status", "backup", "postpone", "retry", "force")
-                    .filter { it.startsWith(args[1]) }
-                    .toMutableList()
-                "spawnbanner" -> mutableListOf("1", "2", "3", "refresh", "list")
-                    .filter { it.startsWith(args[1], ignoreCase = true) }
-                    .toMutableList()
-                else -> mutableListOf()
-            }
-            3 -> when (args[0].lowercase()) {
-                "xp" -> if (args[1].equals("give", ignoreCase = true)) {
-                    net.lumalyte.lg.utils.GuildResolver.suggestions(guildService)
-                        .filter { it.contains(args[2], ignoreCase = true) }
-                        .toMutableList()
-                } else {
-                    mutableListOf()
-                }
-                "disband" -> mutableListOf("confirm")
-                "prestige" -> if (sender.hasPermission(PrestigeStaffCommand.PERMISSION)) {
-                    net.lumalyte.lg.utils.GuildResolver.suggestions(guildService)
-                        .filter { it.contains(args[2], ignoreCase = true) }
-                        .toMutableList()
-                } else mutableListOf()
-                "spawnbanner" -> if (args[1].toIntOrNull() != null) {
-                    SpawnBannerCategory.entries
-                        .map { it.commandName }
-                        .filter { it.startsWith(args[2], ignoreCase = true) }
-                        .toMutableList()
-                } else {
-                    mutableListOf()
-                }
-                else -> mutableListOf()
-            }
-            else -> mutableListOf()
-        }
+    private fun completions(sender: CommandSender) = LumaGuildsCompletions(
+        allowed = { permission ->
+            if (permission == LumaGuildsCompletions.OP) sender !is Player || sender.isOp else sender.hasPermission(permission)
+        },
+        guildNames = { net.lumalyte.lg.utils.GuildResolver.suggestions(guildService) },
+        prestige = { name -> prestigeFacts(name) },
+    )
+
+    private fun prestigeFacts(name: String): LumaGuildsCompletions.PrestigeFacts? {
+        val guild = net.lumalyte.lg.utils.GuildResolver.resolveGuildByName(name, guildService) ?: return null
+        val staff = getKoin().getOrNull<net.lumalyte.lg.application.services.PrestigeStaffService>() ?: return null
+        val info = runCatching { staff.info(guild.id) }.getOrNull() ?: return null
+        return LumaGuildsCompletions.PrestigeFacts(
+            count = info.prestigeCount,
+            rewardChoices = runCatching { staff.grantChoices(guild.id).map { it.id } }.getOrDefault(emptyList()),
+            tiers = info.history.map { it.tier },
+        )
     }
+
 }

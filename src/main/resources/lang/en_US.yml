@@ -7239,6 +7239,7 @@ permission:
     name: View
 admin:
   prestige:
+    help: '<yellow>/lumaguilds prestige info|set|grant|rerun \<guild> <gray>- Inspect or correct a guild''s prestige (Tab shows what to type)'
     usage: '<gray>Usage: <white>/lumaguilds prestige info|set|grant|rerun \<guild> ...'
     guild_not_found: '<red>No guild named <white><guild></white>.'
     unavailable: '<red>Prestige data for <white><guild></white> could not be read or changed.'
