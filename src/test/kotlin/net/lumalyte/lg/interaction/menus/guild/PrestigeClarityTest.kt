@@ -45,7 +45,8 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         assertTrue("one permanent home slot" in lore, lore)
         assertTrue("prestige ii badge" in lore, lore)
         assertTrue("buy them again" in lore, lore)
-        assertTrue("new perk" !in lore, lore) // Prestige II starts no live perk yet
+        // REQ-180: Prestige II starts the second allied home.
+        assertTrue("second allied home" in lore, lore)
     }
 
     @Test
@@ -76,7 +77,7 @@ internal class PrestigeClarityTest : GuildRankMenuFixture() {
         assertTrue("bank capacity: +1" in content, content)
         assertTrue("one permanent home slot" in content, content)
         assertTrue("prestige ii badge" in content, content)
-        assertTrue("new perk" !in content, content)
+        assertTrue("second allied home" in content, content)
     }
 
     @Test

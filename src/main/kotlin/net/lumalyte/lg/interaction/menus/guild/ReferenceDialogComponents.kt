@@ -73,6 +73,8 @@ internal fun prestigePerkLines(
     tier: Int,
 ): List<net.kyori.adventure.text.Component> = perks.unlockedAt(tier).map { perk ->
     when (perk) {
+        net.lumalyte.lg.domain.rewards.PrestigePerk.SECOND_ALLY_HOME ->
+            lang.gui("menu.guild_progression.prestige.confirmation.summary.perk_second_ally_home")
         net.lumalyte.lg.domain.rewards.PrestigePerk.EXTRA_STALL ->
             lang.gui("menu.guild_progression.prestige.confirmation.summary.perk_extra_stall")
     }
@@ -84,6 +86,8 @@ internal fun bedrockPrestigePerkLines(
     tier: Int,
 ): List<String> = perks.unlockedAt(tier).map { perk ->
     when (perk) {
+        net.lumalyte.lg.domain.rewards.PrestigePerk.SECOND_ALLY_HOME ->
+            lang.bedrock("menu.guild_progression.prestige.confirmation.summary.perk_second_ally_home")
         net.lumalyte.lg.domain.rewards.PrestigePerk.EXTRA_STALL ->
             lang.bedrock("menu.guild_progression.prestige.confirmation.summary.perk_extra_stall")
     }

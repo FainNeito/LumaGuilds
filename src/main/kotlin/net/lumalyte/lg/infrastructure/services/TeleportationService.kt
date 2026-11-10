@@ -44,6 +44,8 @@ class TeleportationService(
         val startLocation: Location,
         val onSuccess: (() -> Unit)? = null,
         countdownSeconds: Int = COUNTDOWN_SECONDS,
+        /** REQ-182: checked again when the countdown ends; false cancels the teleport. */
+        val stillAllowed: (() -> Boolean)? = null,
     ) {
         var countdownTask: BukkitRunnable? = null
         var remainingSeconds: Int = countdownSeconds
@@ -103,7 +105,12 @@ class TeleportationService(
      * guild's Quick Travel countdown and starts the cooldown after a successful
      * teleport. A failure to read Quick Travel gives the standard times.
      */
-    fun startHomeTeleport(player: Player, targetLocation: Location, onSuccess: (() -> Unit)? = null) = onMain {
+    fun startHomeTeleport(
+        player: Player,
+        targetLocation: Location,
+        stillAllowed: (() -> Boolean)? = null,
+        onSuccess: (() -> Unit)? = null,
+    ) = onMain {
         val playerId = player.uniqueId
         val wait = homeCooldowns.remainingSeconds(playerId, safe(0L) { homeTravel.cooldownSeconds(playerId) })
         if (wait > 0) {
@@ -114,7 +121,7 @@ class TeleportationService(
             startTeleportInternal(player, targetLocation, {
                 homeCooldowns.markTeleported(playerId)
                 onSuccess?.invoke()
-            }, seconds)
+            }, seconds, stillAllowed)
         }
     }
 
@@ -124,14 +131,20 @@ class TeleportationService(
         if (Bukkit.isPrimaryThread()) action() else Bukkit.getScheduler().runTask(plugin, Runnable { action() })
     }
 
-    private fun startTeleportInternal(player: Player, targetLocation: Location, onSuccess: (() -> Unit)?, seconds: Int) {
+    private fun startTeleportInternal(
+        player: Player,
+        targetLocation: Location,
+        onSuccess: (() -> Unit)?,
+        seconds: Int,
+        stillAllowed: (() -> Boolean)? = null,
+    ) {
         val playerId = player.uniqueId
         cancelTeleport(playerId)
         if (CombatUtil.isInCombat(player)) {
             player.sendMessage(lang.msg("notification.teleport.in_combat"))
             return
         }
-        val session = TeleportSession(player, targetLocation, player.location.clone(), onSuccess, seconds)
+        val session = TeleportSession(player, targetLocation, player.location.clone(), onSuccess, seconds, stillAllowed)
         activeTeleports[playerId] = session
         announceCountdownStart(player, seconds)
         val task = CountdownTask(playerId)
@@ -184,6 +197,11 @@ class TeleportationService(
                     current.player.sendMessage(lang.msg("notification.teleport.moved"))
                     cancel()
                 }
+                current.remainingSeconds <= 0 && !stillAllowed(current) -> {
+                    cancelTeleport(playerId)
+                    current.player.sendMessage(lang.msg("notification.teleport.no_longer_allowed"))
+                    cancel()
+                }
                 current.remainingSeconds <= 0 -> {
                     performTeleport(
                         TeleportContext(current.player, current.targetLocation, current.onSuccess, current),
@@ -194,6 +212,9 @@ class TeleportationService(
             }
         }
     }
+
+    private fun stillAllowed(session: TeleportSession): Boolean =
+        session.stillAllowed?.let { check -> runCatching(check).getOrDefault(false) } ?: true
 
     private fun tickCountdown(session: TeleportSession) {
         session.remainingSeconds--

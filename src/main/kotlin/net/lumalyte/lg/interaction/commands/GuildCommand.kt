@@ -622,7 +622,8 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("setallyhome")
     @CommandPermission("lumaguilds.guild.sethome")
-    fun onSetAllyHome(player: Player) {
+    @Syntax("[2]")
+    fun onSetAllyHome(player: Player, @Optional slotArg: String?) {
         val playerId = player.uniqueId
         val guilds = guildService.getPlayerGuilds(playerId)
         if (guilds.isEmpty()) {
@@ -631,6 +632,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
         }
 
         val guild = guilds.first()
+        val slot = allyHomeSlotArg(player, guild.id, slotArg) ?: return
         val location = player.location
 
         val home = GuildHome(
@@ -638,9 +640,13 @@ class GuildCommand : BaseCommand(), KoinComponent {
             position = location.toPosition3D()
         )
 
-        val success = guildService.setAllyHome(guild.id, home, playerId)
+        val success = guildService.setAllyHome(guild.id, home, playerId, slot)
         if (success) {
-            player.sendMessage(lang.msg("command.migrated.guild.setallyhome.ally_home_set_to_your_current_location"))
+            if (slot == 2) {
+                player.sendMessage(lang.msg("command.guild.allyhome.second_set"))
+            } else {
+                player.sendMessage(lang.msg("command.migrated.guild.setallyhome.ally_home_set_to_your_current_location"))
+            }
             player.sendMessage(lang.msg("command.migrated.guild.setallyhome.allied_guilds_with_the_ally_home_perk"))
         } else {
             player.sendMessage(lang.msg("command.migrated.guild.setallyhome.failed_to_set_ally_home_you_may"))
@@ -649,7 +655,8 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("removeallyhome")
     @CommandPermission("lumaguilds.guild.sethome")
-    fun onRemoveAllyHome(player: Player) {
+    @Syntax("[2]")
+    fun onRemoveAllyHome(player: Player, @Optional slotArg: String?) {
         val playerId = player.uniqueId
         val guilds = guildService.getPlayerGuilds(playerId)
         if (guilds.isEmpty()) {
@@ -658,22 +665,58 @@ class GuildCommand : BaseCommand(), KoinComponent {
         }
 
         val guild = guilds.first()
-        val success = guildService.removeAllyHome(guild.id, playerId)
+        // Removing the second home works without the perk, so nothing is left stranded.
+        val slot = when (slotArg?.trim()) {
+            null, "", "1" -> 1
+            "2" -> 2
+            else -> {
+                player.sendMessage(lang.msg("command.guild.allyhome.slot_usage"))
+                return
+            }
+        }
+        val success = guildService.removeAllyHome(guild.id, playerId, slot)
         if (success) {
-            player.sendMessage(lang.msg("command.migrated.guild.removeallyhome.ally_home_removed"))
+            player.sendMessage(
+                if (slot == 2) lang.msg("command.guild.allyhome.second_removed")
+                else lang.msg("command.migrated.guild.removeallyhome.ally_home_removed"),
+            )
         } else {
             player.sendMessage(lang.msg("command.migrated.guild.removeallyhome.failed_to_remove_ally_home_it_may"))
+        }
+    }
+
+    /** REQ-180: "2" picks the second allied home, which needs the guild's perk. */
+    private fun allyHomeSlotArg(player: Player, guildId: java.util.UUID, arg: String?): Int? = when (arg?.trim()) {
+        null, "", "1" -> 1
+        "2" -> if (guildService.allyHomeSlots(guildId) >= 2) {
+            2
+        } else {
+            player.sendMessage(lang.msg("command.guild.allyhome.second_locked"))
+            null
+        }
+        else -> {
+            player.sendMessage(lang.msg("command.guild.allyhome.slot_usage"))
+            null
         }
     }
 
     @Subcommand("allyhome")
     @CommandPermission("lumaguilds.guild.allyhome")
     @CommandCompletion("@allyguilds")
-    @Syntax("<guildName> [confirm]")
+    @Syntax("<guildName> [2|confirm]")
     fun onAllyHome(player: Player, guildName: String, @Optional confirm: String?) {
         if (guildName.lowercase() == "confirm" || confirm?.lowercase() == "confirm") {
             handleAllyHomeConfirm(player)
             return
+        }
+        // REQ-180: "/g allyhome <guild> 2" uses that guild's second allied home.
+        val slot = when (confirm?.trim()) {
+            null, "", "1" -> 1
+            "2" -> 2
+            else -> {
+                player.sendMessage(lang.msg("command.guild.allyhome.slot_usage"))
+                return
+            }
         }
 
         val ownGuild = guildService.getPlayerGuilds(player.uniqueId).firstOrNull()
@@ -683,7 +726,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
         }
 
         val targetGuild = resolveAllyTarget(player, guildName, ownGuild) ?: return
-        val targetLocation = resolveAllyHomeLocation(player, ownGuild, targetGuild) ?: return
+        val targetLocation = resolveAllyHomeLocation(player, ownGuild, targetGuild, slot) ?: return
 
         val config = configService.loadConfig()
         if (config.guild.homeTeleportSafetyCheck &&
@@ -691,7 +734,9 @@ class GuildCommand : BaseCommand(), KoinComponent {
             return
         }
 
-        teleportationService.startHomeTeleport(player, targetLocation) {
+        teleportationService.startHomeTeleport(
+            player, targetLocation, stillAllowed = allyHomeStillAllowed(player, ownGuild.id, targetGuild.id, slot),
+        ) {
             player.sendMessage(lang.msg("command.migrated.guild.allyhome.teleported_to_s_ally_home", "guild" to targetGuild.name))
         }
     }
@@ -729,21 +774,33 @@ class GuildCommand : BaseCommand(), KoinComponent {
         return targetGuild
     }
 
+    /** REQ-182: the same access check again when the countdown ends. */
+    private fun allyHomeStillAllowed(
+        player: Player, ownGuildId: java.util.UUID, targetGuildId: java.util.UUID, slot: Int,
+    ): () -> Boolean = {
+        if (ownGuildId == targetGuildId) guildService.canUseOwnAllyHome(player.uniqueId, ownGuildId, slot)
+        else guildService.canUseAllyHome(player.uniqueId, ownGuildId, targetGuildId, slot)
+    }
+
     private fun resolveAllyHomeLocation(
         player: Player,
         ownGuild: net.lumalyte.lg.domain.entities.Guild,
-        targetGuild: net.lumalyte.lg.domain.entities.Guild
+        targetGuild: net.lumalyte.lg.domain.entities.Guild,
+        slot: Int = 1,
     ): Location? {
-        val allyHome = guildService.getAllyHome(targetGuild.id)
+        val allyHome = guildService.getAllyHome(targetGuild.id, slot)
         if (allyHome == null) {
-            player.sendMessage(lang.msg("command.migrated.guild.resolveallyhomelocation.has_no_ally_home_set", "guild" to targetGuild.name))
+            player.sendMessage(
+                if (slot == 2) lang.msg("command.guild.allyhome.no_second", "guild" to targetGuild.name)
+                else lang.msg("command.migrated.guild.resolveallyhomelocation.has_no_ally_home_set", "guild" to targetGuild.name),
+            )
             return null
         }
         val isOwnGuild = targetGuild.id == ownGuild.id
         val allowed = if (isOwnGuild) {
-            guildService.canUseOwnAllyHome(player.uniqueId, ownGuild.id)
+            guildService.canUseOwnAllyHome(player.uniqueId, ownGuild.id, slot)
         } else {
-            guildService.canUseAllyHome(player.uniqueId, ownGuild.id, targetGuild.id)
+            guildService.canUseAllyHome(player.uniqueId, ownGuild.id, targetGuild.id, slot)
         }
         if (!allowed) {
             if (isOwnGuild) {

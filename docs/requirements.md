@@ -656,6 +656,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-182
 **Event-driven.** WHEN a player with Manage home in a host guild opens its allied-home access page on Java or Bedrock THE SYSTEM SHALL let them choose which allied guilds may use the host's allied homes, which ranks of each allowed guild may use them, and which individual players are blocked; WHEN anyone tries to use the host's allied homes THE SYSTEM SHALL allow only a member of an allowed, currently allied guild whose rank is allowed by the host and has Use ally homes in their own guild, and who is not blocked, checking again when the countdown ends.
 
+### REQ-183
+**Ubiquitous.** THE SYSTEM SHALL let a player with Manage home choose, for each allied guild separately on Java and Bedrock, which of their own guild's ranks may use that ally's allied homes; WHERE no choice is stored for an ally THE SYSTEM SHALL use each rank's Use ally homes permission, and the guild owner SHALL always keep access on their own side.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

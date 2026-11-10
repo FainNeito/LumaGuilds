@@ -738,7 +738,7 @@ bedrock:
       set_new: Set New Home
       remove: Remove Home
       access: Home Rank Access
-      ally_access: Ally Home Access
+      ally_access: Allied Homes
     access:
       title: 'Home Access - <guild>'
       description: '<gray>Select a home to configure its rank whitelist.'
@@ -766,9 +766,25 @@ bedrock:
       remove_failed: '<red>❌ Failed to remove the guild home.'
   home_access:
     description: '<gray>Toggle which guild ranks may use this home. The owner rank is always allowed.'
+  allied_homes:
+    set: 'Set allied home <slot> here'
+    move: 'Move allied home <slot> here'
+    remove: 'Remove allied home <slot>'
   ally_home_access:
     missing_guild: '<red>The guild could not be reloaded.'
     no_allies: '<gray>Your guild has no active allies to configure.'
+    blocked_button: 'Blocked players (<count>)'
+    blocked_title: 'Blocked players'
+    blocked_hint: 'Untick a player to unblock them.'
+    saved: '<green>Allied-home access saved.'
+    visitor:
+      title: 'Visitors from <guild>'
+      allowed: 'Allow <guild> to use your allied homes'
+      rank: 'Rank: <rank>'
+      members_header: 'Block players (ticked = blocked)'
+      ours_header: 'Our ranks that may visit <guild> (the owner always can)'
+      ours_rank: 'Our rank: <rank>'
+      block: '<player>'
   member_rank_confirmation:
     title: '⚡ Confirm Rank Change'
     unknown_rank: Unknown
@@ -1759,6 +1775,12 @@ command:
     unknown_claim: Claim was not found.
     unknown_partition: There is no claim partition at your current location.
   guild:
+    allyhome:
+      second_set: "<green>Second allied home set to your current location."
+      second_removed: "<green>Second allied home removed."
+      second_locked: "<red>Your guild unlocks a second allied home at Prestige II."
+      no_second: "<red><guild> has no second allied home."
+      slot_usage: "<red>Use 1 or 2 for the allied home, e.g. <white>/g allyhome \\<guild> 2</white>."
     balance:
       success: '<dark_gray>[<gold>LumaGuilds<dark_gray>] <yellow><guild><gray>''s balance: <gold>$<balance>'
     home:
@@ -4515,17 +4537,83 @@ menu:
       grant: "<yellow>Click to grant"
     back: "<gray>← Back to Homes"
 
+  allied_homes:
+    title: "<white>Allied Homes"
+    button:
+      name: "<gold>Allied Homes"
+      description: "<gray>Set your allied homes and choose who may use them"
+    locked:
+      name: "<gray>Allied Homes <red>(locked)"
+      description: "<gray>Unlocks with the <white>Allied Waypoints</white> reward (guild level 50)."
+      feedback: "<red>Allied homes unlock with the Allied Waypoints reward at guild level 50."
+    slot:
+      name: "<gold>Allied Home <slot>"
+      unset: "<gray>Not set yet."
+      at: "<gray><world> <white><x>, <y>, <z>"
+      set_here: "<yellow>Click to set it where you stand"
+      move_here: "<yellow>Left-click: move it to where you stand"
+      remove: "<yellow>Right-click: remove it"
+      locked:
+        name: "<gray>Allied Home 2 <red>(locked)"
+        description: "<gray>Unlocks at <white>Prestige II</white>."
+    access:
+      description: "<gray>Choose which allies, their ranks and players may visit"
+    info:
+      name: "<yellow>How allied homes work"
+      line_1: "<gray>Allies you allow use <white>/g allyhome <guild></white> or their Homes menu."
+      line_2: "<gray>Your own members reach allied homes the same way."
+    back: "<gray>← Back to Homes"
+    feedback:
+      set: "<green>Allied home set to your current location."
+      removed: "<green>Allied home removed."
+      failed: "<red>Couldn't change that allied home. You may lack permission."
   ally_home_access:
-    title: "<white>Ally-home Access"
+    title: "<white>Allied-home Access"
     permission_denied: "<red>❌ You need MANAGE_HOME to configure ally-home access."
+    save_failed: "<red>Couldn't save that change. Try again."
     ally:
       allowed: "<green>✓ <guild>"
       denied: "<red>✗ <guild>"
-      toggle: '<yellow>Click to toggle inbound access'
+      ranks_all: "<gray>Ranks: every rank"
+      ranks_some: "<gray>Ranks: <white><count></white> picked"
+      toggle: '<yellow>Left-click: allow or deny this ally'
+      configure: '<yellow>Right-click: pick ranks and block players'
+    blocked:
+      name: "<red>Blocked players (<count>)"
+      description: "<gray>Click a head to unblock that player."
+      none: "<gray>No one is blocked. Block players from an ally's page."
+      player: "<red><player>"
+      unblock: "<yellow>Click to unblock"
+    visitor:
+      title: "<white>Visitors from <guild>"
+      ranks_header: "<yellow>Which of their ranks may visit"
+      ranks_hint: "<gray>Their ranks that may use YOUR allied homes. Click to allow or deny."
+      ours_header: "<yellow>Our ranks that may visit <guild>"
+      ours_default: "<gray>Now: ranks with <white>Use ally homes</white> (default)."
+      ours_custom: "<gray>Now: your picks for this ally only."
+      ours_owner: "<gray>The guild owner can always visit."
+      ours_toggle: "<yellow>Click to allow or deny visiting <guild>"
+      ours_reset:
+        name: "<green>Use rank permissions"
+        description: "<gray>Clears your picks for this ally; Use ally homes decides again."
+      rank:
+        allowed: "<green>✓ <rank>"
+        denied: "<red>✗ <rank>"
+        toggle: "<yellow>Click to allow or deny this rank"
+      reset:
+        name: "<green>Allow every rank"
+        description: "<gray>Clears your rank picks for this ally."
+      member:
+        can: "<green><player>"
+        blocked: "<red><player> (blocked)"
+        toggle: "<yellow>Click to block or unblock"
+      previous: "<yellow>← Previous page"
+      next: "<yellow>Next page →"
+      back: "<gray>← Back to allied-home access"
     info:
-      name: "<yellow>Outbound access (read-only)"
-      description: "<gray>To control which of YOUR ranks can use ally homes,"
-      instructions: "<gray>edit the <white>USE_ALLY_HOMES<gray> permission in rank settings."
+      name: "<yellow>Who can use your allied homes"
+      description: "<gray>Pick which allies, which of their ranks, and which players may visit."
+      instructions: "<gray>Visitors also need <white>Use ally homes<gray> in their own guild."
     back: "<gray>← Back to Homes"
 
   bank_security:
@@ -6138,6 +6226,7 @@ menu:
           carry: "<aqua>XP earned past Level 100 carries over, up to the start of Level <level>."
           permanent: "<green>Rewards kept from earlier prestiges, purchased home slots, saved homes, members and gold all stay."
           home_slot: "<green>Your guild also gains one permanent home slot."
+          perk_second_ally_home: "<green>New perk: your guild can set a second allied home (<white>/g setallyhome 2</white>)."
           perk_extra_stall: "<green>New perk: your guild can own one more market stall."
           badge: "<light_purple>Your guild earns the Prestige <tier> badge, and eligible members get its advancement."
           overflow: "<gray>Gold above the new bank capacity stays and can be withdrawn, but nothing can be added until capacity catches up."
@@ -6453,7 +6542,6 @@ menu:
       click: '<yellow>Click to manage'
     ally_access:
       name: '<gold>Ally Home Access'
-      description: '<gray>Choose which allies can use your ally home'
     ally:
       none:
         name: '<gray>No Ally Homes Available'
@@ -7475,6 +7563,7 @@ notification:
       perk: '<gray>  • <green><perk>'
   teleport:
     cooldown: "<red>◷ Please wait <seconds>s before teleporting home again."
+    no_longer_allowed: "<red>Teleport cancelled: you can no longer use that allied home."
     in_combat: '<yellow>◷ Cannot teleport in combat.'
     countdown_started: '<yellow>◷ Teleportation countdown started! Don''t move for <duration>...'
     duration:

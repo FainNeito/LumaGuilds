@@ -1300,7 +1300,8 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Prestige tier perks and allied-home access (REQ-179 to REQ-182)
 
 - [x] **QUICK-TRAVEL-COUNTDOWN** Tag: TDD. REQ-179. Evidence: HomeTravelTimesTest, HomeTravelTest, HomeTeleportCooldownsTest.
-- [ ] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180.
+- [x] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180. Evidence: GuildServiceAllyHomeAccessTest, AllyHomeAccessSQLTest (SQLite + MariaDB), PrestigeClarityTest.
 - [ ] **PRESTIGE-EXTRA-STALL** Tag: TDD. REQ-181 (with EnthusiaMarket).
-- [ ] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182.
+- [x] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182. Evidence: AllyHomeAccessTest, AllyHomeRankPicksTest, AllyHomeVisitorMenuTest, GuildServiceAllyHomeAccessTest.
+- [x] **ALLY-HOME-OUTBOUND** Tag: TDD. REQ-183. Evidence: AllyHomeAccessTest, GuildServiceAllyHomeAccessTest, AllyHomeVisitorMenuTest, AllyHomeAccessSQLTest (SQLite + MariaDB).
   - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.

@@ -81,5 +81,40 @@ countdown-end checks use the current rules (REQ-141 behaviour).
 
 ## Out of scope
 
-- Changing who may set allied homes (still Manage home).
 - Prestige perks beyond these three.
+
+## As built (part 3)
+
+- Storage: `ally_home_visitor_ranks`, `ally_home_blocked_players`,
+  `ally_home_second_homes` (schema v51), loaded into memory at start and written
+  through. Disband removes a guild's rows.
+- Commands: `/g setallyhome [2]`, `/g removeallyhome [2]` (removing works even
+  without the perk), `/g allyhome <guild> [2]`. The home menu lists a second
+  home as "<guild> #2".
+- Access page (Java): allies in rows 1-2 (left-click allow/deny, right-click
+  their page), blocked players in row 3 (click to unblock). Each ally's page:
+  their ranks (click to allow/deny, "Allow every rank" resets) and their
+  members (click to block/unblock).
+- Access page (Bedrock): one button per ally opens a form with the ally toggle,
+  rank toggles and member block toggles; "Blocked players" lists blocks to untick.
+- Rank picks and blocks apply to every visitor, the ally's owner included; the
+  visitor still needs Use ally homes in their own guild. The check runs again
+  when the countdown ends.
+
+## Outbound picks per ally (REQ-183, Fain 2026-11-09)
+
+"I might want members to have access to a certain ally home but not another."
+On each ally's page the guild also picks which of its OWN ranks may use that
+ally's homes. No pick: the rank's Use ally homes permission decides (as
+before). The owner always keeps access. Stored in `ally_home_outbound_ranks`.
+
+## Allied Homes page (Fain, 2026-11-09: "I can't see ally homes in the menu at all")
+
+Allied homes could only be set by command, and the Homes menu hid the whole
+feature unless the guild owned Allied Waypoints (Lv50). Now managers always see
+the door: locked (with how to unlock) without the reward, otherwise it opens
+**Allied Homes**: Allied Home 1 and 2 (left-click set/move here, right-click
+remove; 2 locked below Prestige II), the access page, and a how-it-works note.
+Bedrock's access form gets the same set/move/remove buttons and a locked message.
+Setting, moving and removing allied homes now needs Manage home (was Manage
+members), matching guild homes and the access page (Fain, 2026-11-09).
