@@ -715,6 +715,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-202
 **Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
 
+### REQ-203
+**Event-driven.** WHEN two guilds become allies, end an alliance, become enemies, start or end a truce, make peace, or end a war THE SYSTEM SHALL save one history entry for each guild with the other guild, the change as seen by that guild, the player who made it when there is one, the time and, for a truce, its length in days; IF the entry cannot be saved THEN THE SYSTEM SHALL still complete the change.
+
+### REQ-204
+**Event-driven.** WHEN a player opens a guild's diplomacy history THE SYSTEM SHALL list that guild's history entries newest first, 45 per page on Java and 20 per page on Bedrock, each with its date and the player who made it when there is one.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
