@@ -760,6 +760,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-218
 **Unwanted.** IF a guild already uses an emoji that is no longer offered to it THEN THE SYSTEM SHALL keep showing that emoji and accept it being saved again, until the guild picks a different one.
 
+### REQ-219
+**Event-driven.** WHEN %lumaguilds_guild_prestige_badge_minimessage% is requested THE SYSTEM SHALL return the same badge as %lumaguilds_guild_prestige_badge% with its colour codes written as MiniMessage, so proxy tab lists such as Velocitab show the badge instead of the raw code.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
