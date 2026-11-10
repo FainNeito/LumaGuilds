@@ -245,7 +245,9 @@ class PartyChatCommand : BaseCommand(), KoinComponent {
     @Subcommand("clear")
     @CommandPermission("lumaguilds.partychat")
     @CommandCompletion("")
-    fun onClear(player: Player) {
+    fun onClear(player: Player) = partyChatOff(player)
+
+    internal fun partyChatOff(player: Player) {
         val playerId = player.uniqueId
         val hadActiveParty = preferenceRepository.getByPlayerId(playerId) != null
 
@@ -340,7 +342,7 @@ class PartyChatCommand : BaseCommand(), KoinComponent {
         }
     }
 
-    private fun switchToParty(player: Player, party: net.lumalyte.lg.domain.entities.Party) {
+    internal fun switchToParty(player: Player, party: net.lumalyte.lg.domain.entities.Party) {
         val playerId = player.uniqueId
 
         // Store the active party preference persistently
@@ -362,9 +364,10 @@ class PartyChatCommand : BaseCommand(), KoinComponent {
         }
     }
 
-    private fun sendPartyMessage(player: Player, message: String) {
+    /** Sends one message to [target], or to the player's current party chat when [target] is null. */
+    internal fun sendPartyMessage(player: Player, message: String, target: net.lumalyte.lg.domain.entities.Party? = null) {
         val playerId = player.uniqueId
-        val party = getCurrentActiveParty(playerId)
+        val party = target ?: getCurrentActiveParty(playerId)
 
         if (party == null) {
             player.sendMessage(lang.msg("command.migrated.party_chat.sendpartymessage.you_are_not_in_an_active_party"))

@@ -730,6 +730,24 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-209
 **Event-driven.** WHEN a player turns on guild, ally or mod chat while party chat is on THE SYSTEM SHALL turn party chat off and tell them; WHEN a player switches to party chat while in guild, ally or mod chat THE SYSTEM SHALL move them out of that channel and tell them.
 
+### REQ-210
+**Event-driven.** WHEN a player runs /party THE SYSTEM SHALL open their guild's party menu; WHEN they run /party invite without a guild THE SYSTEM SHALL open the guild-invite page for their guild's party, or the party creation menu IF their guild has no party.
+
+### REQ-211
+**Event-driven.** WHEN a player with Manage Parties runs /party invite with a guild name THE SYSTEM SHALL invite that guild to their guild's party, first creating a party IF their guild has none, and SHALL tell the invited guild's online members how to accept.
+
+### REQ-212
+**Event-driven.** WHEN a player with Manage Parties runs /party accept, /party deny or /party cancel with a guild name THE SYSTEM SHALL accept or deny that guild's request to their guild, or cancel their guild's request to that guild; WHEN no guild is named THE SYSTEM SHALL list the matching requests with clickable actions.
+
+### REQ-213
+**Event-driven.** WHEN a player runs /party info THE SYSTEM SHALL show their guild's party name, leader, guilds, online count and end time; WHEN they run /party list THE SYSTEM SHALL list every active party between guilds with its guilds.
+
+### REQ-214
+**Event-driven.** WHEN a player with Manage Parties runs /party leave, or the party leader or a player with Manage Parties in the leader's guild runs /party disband, THE SYSTEM SHALL ask them to run the same command again within 30 seconds and only then leave or end the party.
+
+### REQ-215
+**Event-driven.** WHEN a player runs /party chat with no message THE SYSTEM SHALL switch party chat on for their guild's party, or off IF it is already on; WHEN they add a message THE SYSTEM SHALL send only that message to the party; WHEN a player with Manage Parties runs /party rename THE SYSTEM SHALL rename the party IF the name is 1 to 32 characters with no spaces.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

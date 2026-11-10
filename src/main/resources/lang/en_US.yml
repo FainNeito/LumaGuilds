@@ -8096,6 +8096,72 @@ guild_ban:
   notify:
     target: '<red>You were banned from <guild>.'
 # REQ-206: a party's page.
+party_command:
+  unnamed: 'Unnamed party'
+  disabled: '<red>Parties are turned off on this server.'
+  no_guild: '<red>You need to be in a guild to use parties.'
+  no_permission: '<red>You need the Manage Parties permission in your guild.'
+  no_party: '<gray>Your guild is not in a party. Use <white>/party invite [guild]<gray> to start one.'
+  unknown_guild: '<red>No guild called <white><guild><red>.'
+  failed: '<red>That didn''t work. Try again from <white>/party<red>.'
+  help:
+    header: '<gold><bold>Party commands</bold> <gray>(click one to fill it in)'
+    menu: '<yellow>/party <gray>— open the party menu'
+    invite: '<yellow>/party invite [guild] <gray>— invite a guild, or open the invite page'
+    accept: '<yellow>/party accept [guild] <gray>— accept a guild''s request'
+    deny: '<yellow>/party deny [guild] <gray>— deny a guild''s request'
+    cancel: '<yellow>/party cancel [guild] <gray>— cancel your guild''s request'
+    info: '<yellow>/party info <gray>— your guild''s party'
+    list: '<yellow>/party list <gray>— every party between guilds'
+    chat: '<yellow>/party chat [message] <gray>— party chat on or off, or send one message'
+    rename: '<yellow>/party rename [name] <gray>— rename your party'
+    leave: '<yellow>/party leave <gray>— your guild leaves the party'
+    disband: '<yellow>/party disband <gray>— end the party (leader''s guild)'
+  invite:
+    created: '<green>Started a new party for your guild.'
+    sent: '<green>Invited <white><guild><green> to your party.'
+    received: '<aqua><guild><gray> invited your guild to a party.'
+    already_in: '<yellow><guild> is already in your party.'
+    already_invited: '<yellow><guild> already has an invite from your guild.'
+    own_guild: '<red>You can''t invite your own guild.'
+  accept:
+    done: '<green>Your guild joined the party with <white><guild><green>.'
+  deny:
+    done: '<gray>Denied the request from <white><guild><gray>.'
+  cancel:
+    done: '<gray>Cancelled your request to <white><guild><gray>.'
+  requests:
+    incoming_header: '<gold>Requests to your guild:'
+    outgoing_header: '<gold>Requests from your guild:'
+    none_incoming: '<gray>No guild has asked your guild to join a party.'
+    none_outgoing: '<gray>Your guild has no requests waiting.'
+    entry: '<gray>• <white><guild>'
+    accept: '<green>[Accept]'
+    deny: '<red>[Deny]'
+    cancel: '<red>[Cancel]'
+    no_request: '<red>There''s no request with <white><guild><red>.'
+  info:
+    date_format: 'MMM d, h:mm a'
+    header: '<gold><bold><party>'
+    leader: '<gray>Leader: <white><player>'
+    guilds: '<gray>Guilds: <white><guilds>'
+    online: '<gray>Online: <white><count>'
+    ends: '<gray>Ends: <white><date>'
+    waiting: '<yellow>Waiting for another guild to accept an invite.'
+  list:
+    header: '<gold>Parties (<count>):'
+    entry: '<gray>• <aqua><party><gray>: <white><guilds>'
+    empty: '<gray>There are no parties right now.'
+  leave:
+    confirm: '<yellow>Run <white>/party leave<yellow> again within 30 seconds to leave <white><party><yellow>. <gray>(click)'
+    done: '<gray>Your guild left <white><party><gray>.'
+  disband:
+    confirm: '<yellow>Run <white>/party disband<yellow> again within 30 seconds to end <white><party><yellow>. <gray>(click)'
+    done: '<gray>Ended <white><party><gray>.'
+    not_leader: '<red>Only the party leader''s guild can end the party. Use <white>/party leave<red> instead.'
+  rename:
+    done: '<green>Party renamed to <white><party><green>.'
+    bad_name: '<red>Party names are 1 to 32 characters with no spaces.'
 party_page:
   title: '<white>Party • <party>'
   card:

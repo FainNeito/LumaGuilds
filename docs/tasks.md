@@ -1356,3 +1356,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **RETIRE-PRIVATE-PARTIES** Tag: TDD. REQ-208. Evidence: PrivatePartyRetirementTest.
 - [x] **ONE-CHAT-AT-A-TIME** Tag: TDD. REQ-209. Evidence: GuildChatListenerTest.
   - References: `docs/plans/2026-11-10-party-chat-only-between-guilds.md`.
+
+## /party commands (REQ-210 to REQ-215)
+
+- [x] **PARTY-COMMAND-MENUS** Tag: TDD. REQ-210. Evidence: PartyCommandContractTest.
+- [x] **PARTY-ACTIONS** Tag: TDD. REQ-211, REQ-212, REQ-214, REQ-215. Evidence: PartyActionsTest, ConfirmWindowTest.
+- [x] **PARTY-INFO** Tag: TDD. REQ-213. Evidence: PartyActionsTest.
+  - References: `docs/plans/2026-11-10-party-commands.md`.
