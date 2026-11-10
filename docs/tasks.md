@@ -1369,3 +1369,8 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PARTY-ACTIONS** Tag: TDD. REQ-211, REQ-212, REQ-214, REQ-215. Evidence: PartyActionsTest, ConfirmWindowTest.
 - [x] **PARTY-INFO** Tag: TDD. REQ-213. Evidence: PartyActionsTest.
   - References: `docs/plans/2026-11-10-party-commands.md`.
+
+## Approved guild emojis (REQ-216 to REQ-218)
+
+- [x] **EMOJI-APPROVED-LIST** Tag: TDD. REQ-216, REQ-217, REQ-218. Evidence: GuildEmojiRulesTest, GuildEmojiChoicesServiceTest.
+  - References: `docs/plans/2026-11-10-approved-guild-emojis.md`.
