@@ -162,7 +162,17 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             peacefulGuildPvpOptIn = config.getBoolean("guild.peaceful_guild_pvp_opt_in", false),
             maxCustomRanks = config.getInt("guild.max_custom_ranks", 10),
             maxRankNameLength = config.getInt("guild.max_rank_name_length", 16),
-            maxMembersPerGuild = config.getInt("guild.max_members_per_guild", 50),
+            maxMembersPerGuild = config.getInt("guild.max_members_per_guild", 100),
+            // REQ-190: invalid values fall back to the defaults rather than failing startup.
+            memberCapacity = runCatching {
+                net.lumalyte.lg.config.MemberCapacityConfig(
+                    enabled = config.getBoolean("guild.member_capacity.enabled", true),
+                    base = config.getInt("guild.member_capacity.base", 10),
+                    perStep = config.getInt("guild.member_capacity.per_step", 5),
+                    stepLevels = config.getInt("guild.member_capacity.step_levels", 5),
+                    max = config.getInt("guild.member_capacity.max", 100),
+                )
+            }.getOrElse { net.lumalyte.lg.config.MemberCapacityConfig() },
             homeTeleportCooldownSeconds = config.getInt("guild.home_teleport_cooldown_seconds", 5),
             homeSetCooldownMinutes = config.getInt("guild.home_set_cooldown_minutes", 10),
             homeTeleportWarmupSeconds = config.getInt("guild.home_teleport_warmup_seconds", 3),

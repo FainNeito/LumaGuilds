@@ -187,6 +187,7 @@ tasks.register<Test>("mariaDbRewardTest") {
         includeTestsMatching("*PrestigeCreditLedgerSQLTest")
         includeTestsMatching("*PrestigeTombstoneSQLTest")
         includeTestsMatching("*AllyHomeAccessSQLTest")
+        includeTestsMatching("*MemberCapacityFloorSQLTest")
         includeTestsMatching("*ChronicleGoalSQLTest")
         includeTestsMatching("*GuildCreation*SQLTest")
         includeTestsMatching("*GuildCosmeticUnlockRepositorySQLiteTest")

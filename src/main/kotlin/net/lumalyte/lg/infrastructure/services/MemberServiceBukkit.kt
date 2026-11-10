@@ -30,6 +30,10 @@ class MemberServiceBukkit(
     private val adminOverrideService: AdminOverrideService,
     private val guildRewards: net.lumalyte.lg.application.services.GuildRewardService? = null,
     private val invalidateClaimPermissionCache: (UUID) -> Unit = {},
+    // REQ-190: level-based capacity. Null config (tests, partial wiring) keeps the old behaviour.
+    private val memberCapacity: (() -> net.lumalyte.lg.config.MainConfig)? = null,
+    private val prestigeCount: (UUID) -> Int? = { null },
+    private val capacityFloors: net.lumalyte.lg.application.persistence.MemberCapacityFloors? = null,
 ) : MemberService {
 
     private val logger = LoggerFactory.getLogger(MemberServiceBukkit::class.java)
@@ -41,6 +45,10 @@ class MemberServiceBukkit(
     override fun getMemberLimits(guildIds: Set<UUID>): Map<UUID, Int> {
         if (guildIds.isEmpty()) return emptyMap()
         val levelRewards by lazy { progressionConfigService.getProgressionConfig().getActiveLevelRewards() }
+        val settings = memberCapacity?.let { runCatching { it() }.getOrNull() }
+        if (settings != null && settings.guild.memberCapacity.enabled) {
+            return guildIds.associateWith { guildId -> levelCapacity(guildId, settings) }
+        }
         return guildIds.associateWith { guildId ->
             guildRewards?.entitlementsIfEnabled(guildId)?.let { return@associateWith it.memberCapacity }
             val progression = progressionRepository.getGuildProgression(guildId)
@@ -54,6 +62,16 @@ class MemberServiceBukkit(
         }
     }
     
+    /** REQ-190: a failed level or prestige read counts as level 1 / not prestiged. */
+    private fun levelCapacity(guildId: UUID, settings: net.lumalyte.lg.config.MainConfig): Int {
+        val level = runCatching { progressionRepository.getGuildProgression(guildId)?.currentLevel }.getOrNull() ?: 1
+        val prestige = runCatching { prestigeCount(guildId) }.getOrNull() ?: 0
+        val floor = runCatching { capacityFloors?.floor(guildId) }.getOrNull()
+        return net.lumalyte.lg.domain.values.GuildMemberCapacity.limit(
+            level, prestige, floor, settings.guild.memberCapacity, settings.guild.maxMembersPerGuild,
+        )
+    }
+
     override fun addMember(playerId: UUID, guildId: UUID, rankId: UUID): Member? {
         // Check if guild exists
         if (guildRepository.getById(guildId) == null) {
