@@ -35,4 +35,11 @@ class PrestigeCreditLedgerSQL(private val storage: Storage<Database>) : Prestige
                 " INTO guild_prestige_member_credits (player_id, transaction_id, delivered_at) VALUES (?, ?, ?)",
             playerId.toString(), transactionId.toString(), at.toEpochMilli(),
         ) == 1
+
+    override fun forget(transactionIds: Set<UUID>): Int =
+        transactionIds.sumOf { id ->
+            storage.connection.executeUpdate(
+                "DELETE FROM guild_prestige_member_credits WHERE transaction_id = ?", id.toString(),
+            )
+        }
 }

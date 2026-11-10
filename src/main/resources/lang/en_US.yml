@@ -7238,6 +7238,32 @@ permission:
     lore: Allows you to view lecterns
     name: View
 admin:
+  prestige:
+    usage: '<gray>Usage: <white>/lumaguilds prestige info|set|grant|rerun \<guild> ...'
+    guild_not_found: '<red>No guild named <white><guild></white>.'
+    unavailable: '<red>Prestige data for <white><guild></white> could not be read or changed.'
+    info:
+      header: '<gold><guild></gold> <gray>— Prestige <white><tier></white> (<count>/<max>), level <white><level>'
+      kept: '<gray>Kept rewards: <white><rewards>'
+      no_history: '<gray>No applied prestiges.'
+      record: '<gray> • Prestige <white><tier></white> on <white><date></white>, kept <white><reward></white>, by <white><player>'
+      adjustment: '<yellow> • Staff set <old> → <new> on <date> (<player>)'
+    set:
+      preview: '<yellow><guild>: prestige <white><old></white> → <white><new></white>, removing the kept rewards of those tiers: <white><rewards></white>. Level, XP and gold stay. Run <white><confirm></white> to apply.'
+      done: '<green><guild>: prestige set <old> → <new>. Removed kept rewards: <rewards>.'
+      raise: '<yellow>Each prestige keeps a reward, so raise <guild> one tier at a time with <white>/lumaguilds prestige grant</white>.'
+      unchanged: '<gray><guild> already has that prestige count.'
+      range: '<red>The count must be between 0 and <max>.'
+    grant:
+      choices: '<yellow>Pick the reward <guild> keeps: <white><choices>'
+      none: '<red><guild> has no prestige choices left (it may be at the maximum).'
+      preview: '<yellow>Grant <guild> a free prestige keeping <white><reward></white>? Its level resets as for a normal prestige and everyone is told. Run <white><confirm></white>.'
+      done: '<green><guild> is now Prestige <tier> (granted by staff).'
+      rejected: '<red>Grant refused: <reason>.'
+    rerun:
+      none: '<gray><guild> has no applied prestiges to re-run.'
+      preview: '<yellow>Re-run member rewards for <guild> (Prestige <tiers>)? Members who already got them may get them twice. Run <white><confirm></white>.'
+      done: '<green>Re-ran member rewards for <guild> (Prestige <tiers>). Online members are credited now, others on join.'
   owner_recovery:
     help: '<yellow>/lumaguilds owner recover \<guild-uuid> \<member-uuid> <gray>- Preview recovery of an ownerless guild'
     usage: '<yellow>Usage: /lumaguilds owner recover \<guild-uuid> \<member-uuid> [confirm \<token>]. Use full UUIDs; first run without confirmation.'
@@ -8152,3 +8178,10 @@ achievements:
   tree_find_hint: '<gold>. Select the banner tab (the renderer may call it Enthusia), then look for Guild Mastery milestones and their descriptions. Drag the tree to pan. Your saved progress and tracked goal are unchanged.</gold>'
   renderer_unavailable: '<yellow>The optional EnthusiaAdvancements renderer is unavailable. Tracking and personal rewards remain available in this dialog.</yellow>'
   back: '<white>Back to guild menu</white>'
+discord:
+  prestige:
+    title: '{guild} reached Prestige {tier}'
+    actor: 'Prestiged by {player}'
+    kept: 'Reward kept: {reward}'
+    first: 'First guild to reach Prestige {tier}!'
+    footer: 'Enthusia SMP'
