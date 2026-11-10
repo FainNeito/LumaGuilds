@@ -35,7 +35,12 @@ class GuildPrestigeStandings(
     }
 
     override fun prestiged(completion: PrestigeCompletion) {
-        standings.remove(completion.guildId)
+        forget(completion.guildId)
+    }
+
+    /** Drops cached standings after a change outside a prestige (REQ-185 staff correction). */
+    fun forget(guildId: UUID) {
+        standings.remove(guildId)
         firstHolders = null
     }
 

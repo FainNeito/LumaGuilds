@@ -31,4 +31,19 @@ class PrestigeCreditLedgerSQLTest : RewardSqlTestFixture() {
         assertEquals(setOf(first, second), again.delivered(player))
         assertEquals(setOf(first), again.delivered(other))
     }
+
+    // REQ-187: staff can make a guild's prestiges creditable again.
+    @Test
+    fun `forgetting prestiges clears them for every member`() {
+        val storage = openStorage()
+        migrateProductionSchema(storage)
+        val ledger = PrestigeCreditLedgerSQL(storage)
+        ledger.record(player, first, Instant.ofEpochMilli(1_000))
+        ledger.record(other, first, Instant.ofEpochMilli(1_000))
+        ledger.record(player, second, Instant.ofEpochMilli(1_000))
+        assertEquals(2, ledger.forget(setOf(first)))
+        assertEquals(setOf(second), ledger.delivered(player))
+        assertEquals(emptySet(), ledger.delivered(other))
+        assertEquals(0, ledger.forget(emptySet()))
+    }
 }

@@ -53,6 +53,10 @@ class LumaGuildsCommand(
     private val progressionService: ProgressionService by inject()
     private val memberService: MemberService by inject()
     private val ownerRecovery by lazy { GuildOwnerRecoveryCommand(memberService, lang) }
+    private val prestigeStaff by lazy {
+        val catalog = getKoin().get<net.lumalyte.lg.domain.rewards.RewardCatalog>()
+        PrestigeStaffCommand({ getKoin().get() }, guildService, lang, rewardName = { catalog.find(it)?.name ?: it })
+    }
 
     // Resolved lazily and nullable: GuildRolePermissionResolver is only registered when
     // claims are enabled. Touching it via `by inject()` would crash the override command
@@ -76,6 +80,7 @@ class LumaGuildsCommand(
             "chapter" -> handleChapter(sender, args)
             "override" -> handleOverride(sender)
             "owner" -> ownerRecovery.execute(sender, args)
+            "prestige" -> prestigeStaff.execute(sender, args)
             "spawnbanner" -> handleSpawnBanner(sender, args)
             "warcutover" -> handleWarCutover(sender, args)
             "help" -> showHelp(sender)
@@ -741,9 +746,10 @@ class LumaGuildsCommand(
         return when (args.size) {
             1 -> mutableListOf(
                 "reload", "progressionreload", "xp", "disband", "migrate", "chapter", "override", "owner",
-                "spawnbanner", "warcutover", "help"
+                "spawnbanner", "warcutover", "help", "prestige"
             ).filter {
-                it.startsWith(args[0]) && (it != "owner" || sender.hasPermission(GuildOwnerRecoveryCommand.PERMISSION))
+                it.startsWith(args[0]) && (it != "owner" || sender.hasPermission(GuildOwnerRecoveryCommand.PERMISSION)) &&
+                    (it != "prestige" || sender.hasPermission(PrestigeStaffCommand.PERMISSION))
             }.toMutableList()
             2 -> when (args[0].lowercase()) {
                 "owner" -> if (sender.hasPermission(GuildOwnerRecoveryCommand.PERMISSION)) {
@@ -755,6 +761,9 @@ class LumaGuildsCommand(
                         .toMutableList()
                 }
                 "xp" -> mutableListOf("give").filter { it.startsWith(args[1], ignoreCase = true) }.toMutableList()
+                "prestige" -> if (sender.hasPermission(PrestigeStaffCommand.PERMISSION)) {
+                    PrestigeStaffCommand.SUBCOMMANDS.filter { it.startsWith(args[1], ignoreCase = true) }.toMutableList()
+                } else mutableListOf()
                 "migrate" -> mutableListOf("confirm")
                 "warcutover" -> mutableListOf("CONFIRM")
                 "chapter" -> mutableListOf("status", "backup", "postpone", "retry", "force")
@@ -774,6 +783,11 @@ class LumaGuildsCommand(
                     mutableListOf()
                 }
                 "disband" -> mutableListOf("confirm")
+                "prestige" -> if (sender.hasPermission(PrestigeStaffCommand.PERMISSION)) {
+                    net.lumalyte.lg.utils.GuildResolver.suggestions(guildService)
+                        .filter { it.contains(args[2], ignoreCase = true) }
+                        .toMutableList()
+                } else mutableListOf()
                 "spawnbanner" -> if (args[1].toIntOrNull() != null) {
                     SpawnBannerCategory.entries
                         .map { it.commandName }
