@@ -259,4 +259,21 @@ class GuildServiceAllyHomeAccessTest {
         val svc = makeService(ah, setOf(sourceGuildId), usable, outbound = mapOf(UUID.randomUUID() to emptySet()))
         assertTrue(svc.canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
     }
+
+    // Setting and removing allied homes needs Manage home, like every other home.
+    @Test
+    fun `Manage home is enough to set and remove an allied home`() {
+        every { accessRepository.setSecondHome(any(), any()) } returns true
+        every { accessRepository.secondHome(sourceGuildId) } returns ah
+        val svc = makeService(ah, setOf(sourceGuildId), setOf(RankPermission.MANAGE_HOME), targetPrestige = 2)
+        assertTrue(svc.setAllyHome(sourceGuildId, ah, memberPlayerId, slot = 2))
+        assertTrue(svc.removeAllyHome(sourceGuildId, memberPlayerId, slot = 2))
+    }
+
+    @Test
+    fun `Manage members alone no longer sets an allied home`() {
+        every { accessRepository.setSecondHome(any(), any()) } returns true
+        val svc = makeService(ah, setOf(sourceGuildId), setOf(RankPermission.MANAGE_MEMBERS), targetPrestige = 2)
+        assertFalse(svc.setAllyHome(sourceGuildId, ah, memberPlayerId, slot = 2))
+    }
 }

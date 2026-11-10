@@ -557,7 +557,7 @@ class GuildServiceBukkit(
     override fun setAllyHome(guildId: UUID, home: GuildHome, actorId: UUID, slot: Int): Boolean {
         try {
             val guild = guildRepository.getById(guildId) ?: return false
-            if (!hasPermission(actorId, guildId, RankPermission.MANAGE_MEMBERS)) {
+            if (!hasPermission(actorId, guildId, RankPermission.MANAGE_HOME)) {
                 logger.warn("Player $actorId attempted to set ally home for guild $guildId without permission")
                 return false
             }
@@ -580,7 +580,7 @@ class GuildServiceBukkit(
     override fun removeAllyHome(guildId: UUID, actorId: UUID, slot: Int): Boolean {
         try {
             val guild = guildRepository.getById(guildId) ?: return false
-            if (!hasPermission(actorId, guildId, RankPermission.MANAGE_MEMBERS)) {
+            if (!hasPermission(actorId, guildId, RankPermission.MANAGE_HOME)) {
                 logger.warn("Player $actorId attempted to remove ally home for guild $guildId without permission")
                 return false
             }

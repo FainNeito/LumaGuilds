@@ -80,7 +80,6 @@ countdown-end checks use the current rules (REQ-141 behaviour).
 
 ## Out of scope
 
-- Changing who may set allied homes (still Manage home).
 - Prestige perks beyond these three.
 
 ## As built (part 3)
@@ -116,3 +115,5 @@ the door: locked (with how to unlock) without the reward, otherwise it opens
 **Allied Homes**: Allied Home 1 and 2 (left-click set/move here, right-click
 remove; 2 locked below Prestige II), the access page, and a how-it-works note.
 Bedrock's access form gets the same set/move/remove buttons and a locked message.
+Setting, moving and removing allied homes now needs Manage home (was Manage
+members), matching guild homes and the access page (Fain, 2026-11-09).
