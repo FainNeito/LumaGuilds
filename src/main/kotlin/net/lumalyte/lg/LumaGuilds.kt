@@ -911,7 +911,9 @@ class LumaGuilds : JavaPlugin() {
      */
     private fun registerNonClaimCommands() {
         commandManager.registerCommand(GuildCommand())
-        commandManager.registerCommand(PartyChatCommand())
+        val partyChatCommand = PartyChatCommand()
+        commandManager.registerCommand(partyChatCommand)
+        commandManager.registerCommand(net.lumalyte.lg.interaction.commands.PartyCommand(partyChatCommand))
         commandManager.registerCommand(QuickGuildChatCommand())
         commandManager.registerCommand(QuickAllyChatCommand())
         commandManager.registerCommand(QuickModChatCommand())

@@ -46,7 +46,7 @@ class MenuFactory(
      * Determines if Bedrock menus should be used for a player based on configuration and platform detection
      * Includes enhanced error handling and logging
      */
-    private fun shouldUseBedrockMenus(player: Player): Boolean {
+    internal fun shouldUseBedrockMenus(player: Player): Boolean {
         return try {
             val config = configService.loadConfig()
 
