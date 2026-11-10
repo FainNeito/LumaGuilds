@@ -1335,4 +1335,5 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **GUILD-CARD-YES-NO** Tag: TDD. REQ-195. Evidence: GuildCardFactsTest. The shop line waits for EnthusiaMarket to register `GuildShopLookup`.
 - [x] **GUILD-RELATIONS-PAGE** Tag: TDD. REQ-196. Evidence: GuildCardFactsTest (rows), GuildInfoExpandableRelationsWiringTest.
 - [x] **KICK-HIERARCHY** Tag: TDD. REQ-197. Evidence: GuildBanMembershipTest.
+- [x] **GUILD-MENU-SIMPLIFIED** Tag: TDD. REQ-198. Evidence: GuildDashboardLayoutContractTest, GuildDashboardFillerItemTest.
   - References: `docs/plans/2026-11-10-guild-info-redesign.md`.

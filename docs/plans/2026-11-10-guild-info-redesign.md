@@ -22,6 +22,19 @@ demote or kick. Fain approved a single page in a phone preview on 2026-11-10
   guild home, banner, vault and guild shop. It shows only whether a home is
   set, not how many or which.
 
+## Guild menu (REQ-198)
+
+Fain approved a simplified guild menu on 2026-11-10 (the "Guild Menu Simplified"
+mockup). Members is removed because it opened the same page as Information.
+
+| Row | Slots |
+| --- | --- |
+| Top | Information 2, Progression 3, guild banner 4, Quests 5, Statistics 6 |
+| Middle | Ranks 11, Economy 12, Settings 13, Guild Stalls 14, Recruitment 15 |
+| Bottom | Getting Started 18, Diplomacy 21, Warfare 23, Guild Actions 26 |
+
+Guild Actions stays alone in a corner so leave and disband are hard to misclick.
+
 ## Layout (Java)
 
 Row 0, centred: description (2), level (3), guild card (4), prestige (5),

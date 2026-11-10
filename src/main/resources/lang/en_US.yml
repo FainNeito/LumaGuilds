@@ -2980,14 +2980,9 @@ menu:
         name: '<white>⚔ <gray><display_name>'
       information:
         lore:
-          line_1: '<gray>Overview, members,'
-          line_2: '<gray>allies and wars at a glance'
+          line_1: '<gray>Members, overview,'
+          line_2: '<gray>allies and wars'
         name: '<blue>Information'
-      members:
-        lore:
-          line_1: '<gray>Member list, invites,'
-          line_2: '<gray>kicks and promotions'
-        name: '<aqua>Members'
       progression:
         lore:
           line_1: '<gray>Guild leveling, XP,'

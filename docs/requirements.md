@@ -700,6 +700,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-197
 **Unwanted behaviour.** IF a player who is not the target removes a member and the actor's rank does not outrank the target's rank THEN THE SYSTEM SHALL refuse the removal.
 
+### REQ-198
+**Ubiquitous.** THE SYSTEM SHALL show the Java guild menu as 3 rows with Information, Progression, the guild banner, Quests and Statistics centred on the top row; Ranks, Economy, Settings, Guild Stalls and Recruitment centred on the middle row; and Getting Started, Diplomacy, Warfare and Guild Actions on the bottom row with Guild Actions alone in the right corner; THE SYSTEM SHALL NOT show a separate Members button.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
