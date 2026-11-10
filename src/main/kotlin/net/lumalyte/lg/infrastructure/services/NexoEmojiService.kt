@@ -262,6 +262,15 @@ class NexoEmojiService internal constructor(
      * @param emoji The emoji placeholder to check.
      * @return true if the emoji exists in Nexo, false otherwise.
      */
+    /** The Nexo font of the glyph drawn with [c], or null for ordinary text. */
+    fun glyphFont(c: Char): String? = try {
+        nexoFontManager()?.let { manager -> manager.unicodeGlyphMap[c]?.let { manager.glyphFromID(it)?.font?.asString() } }
+    } catch (_: RuntimeException) {
+        null
+    } catch (_: LinkageError) {
+        null
+    }
+
     fun doesEmojiExist(emoji: String): Boolean = resolveEmoji(emoji) != null
 
     /**

@@ -61,4 +61,14 @@ class PrestigePlaceholderTest {
         assertEquals("<white>\uB025", PrestigePlaceholder.value("guild_prestige_badge_minimessage", one, badges, 6))
         assertEquals("", PrestigePlaceholder.value("guild_prestige_badge_minimessage", PrestigeStanding(0, null, 0), badges, 6))
     }
+
+    @org.junit.jupiter.api.Test
+    fun `badge glyphs keep their Nexo font so the client draws the icon`() {
+        val badges = listOf("", "&f\uB025")
+        val fontOf: (Char) -> String? = { if (it == '\uB025') "nexo:default" else null }
+        assertEquals(
+            "<white><font:nexo:default>\uB025</font>",
+            PrestigePlaceholder.value("guild_prestige_badge_minimessage", PrestigeStanding(1, null, 0), badges, 6, fontOf),
+        )
+    }
 }

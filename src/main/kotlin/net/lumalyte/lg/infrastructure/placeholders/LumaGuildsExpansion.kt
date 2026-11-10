@@ -181,7 +181,7 @@ class LumaGuildsExpansion : PlaceholderExpansion(), KoinComponent {
         if (ident.startsWith("source_")) return sourceUsagePlaceholder(guildId, ident)
         if (ident.startsWith("guild_prestige")) {
             val settings = prestigeSettings()
-            return PrestigePlaceholder.value(ident, safePrestigeStanding(guildId), settings.badges, settings.maxCount)
+            return PrestigePlaceholder.value(ident, safePrestigeStanding(guildId), settings.badges, settings.maxCount) { nexoEmojiService.glyphFont(it) }
         }
 
         return when (identifier.lowercase()) {
