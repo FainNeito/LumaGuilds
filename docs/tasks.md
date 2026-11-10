@@ -1337,3 +1337,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **KICK-HIERARCHY** Tag: TDD. REQ-197. Evidence: GuildBanMembershipTest.
 - [x] **GUILD-MENU-SIMPLIFIED** Tag: TDD. REQ-198. Evidence: GuildDashboardLayoutContractTest, GuildDashboardFillerItemTest.
   - References: `docs/plans/2026-11-10-guild-info-redesign.md`.
+
+## Simplified guild statistics (REQ-199 to REQ-202)
+
+- [x] **KILL-LOG** Tag: TDD. REQ-199, REQ-200. Evidence: KillRecordingTest, GuildKillLogSQLTest (SQLite + MariaDB), KillServiceLogTest.
+- [x] **STATS-MENU** Tag: TDD. REQ-201, REQ-202. Evidence: GuildStatisticsLayoutContractTest, GuildStatisticsSeason2ContractTest, BedrockGuildStatisticsTruthfulnessContractTest.
+  - References: `docs/plans/2026-11-10-statistics-simplified.md`.

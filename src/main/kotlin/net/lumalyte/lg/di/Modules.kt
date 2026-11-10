@@ -887,7 +887,14 @@ fun progressionModule() = module {
     }
 
     // Services
-    single<KillService> { KillServiceBukkit(get()) }
+    // REQ-199: kill stats come from the kill log; the old kill tables were never written.
+    single<net.lumalyte.lg.application.persistence.GuildKillLog> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.GuildKillLogSQL(get())
+    }
+    single<KillService> {
+        val members = get<MemberService>()
+        net.lumalyte.lg.infrastructure.services.KillServiceLog(get(), guildOf = { members.getPlayerGuilds(it).singleOrNull() })
+    }
     single<CombatService> { CombatServiceBukkit(get(), get(), get(), get()) }
     single<PlaytimeActivityService> { PlaytimeActivityServiceBukkit() }
     single {

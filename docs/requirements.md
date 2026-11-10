@@ -703,6 +703,18 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-198
 **Ubiquitous.** THE SYSTEM SHALL show the Java guild menu as 3 rows with Information, Progression, the guild banner, Quests and Statistics centred on the top row; Ranks, Economy, Settings, Guild Stalls and Recruitment centred on the middle row; and Getting Started, Diplomacy, Warfare and Guild Actions on the bottom row with Guild Actions alone in the right corner; THE SYSTEM SHALL NOT show a separate Members button.
 
+### REQ-199
+**Event-driven.** WHEN a player kills another player THE SYSTEM SHALL save the killer, victim, each player's guild, the weapon and the time to the kill log, unless the killer is the victim, neither player is in a guild, both are in the same guild, or the same killer killed the same victim within the last 10 minutes.
+
+### REQ-200
+**Ubiquitous.** THE SYSTEM SHALL compute a guild's kills, deaths and kill/death ratio from the kill log, where the ratio is kills divided by deaths, or kills when there are no deaths, for all time and for any time range.
+
+### REQ-201
+**Ubiquitous.** THE SYSTEM SHALL show the Java guild statistics menu as 3 rows with Combat, Wars, Recent Activity, Rivalries and Achievements centred on the top row, Top Killers, Top Contributors and Top Inviters centred on the middle row, and Back in the bottom row, and SHALL NOT show Member Statistics, Performance, K/D Analysis, Period Statistics, Guild Comparison or Refresh.
+
+### REQ-202
+**Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
