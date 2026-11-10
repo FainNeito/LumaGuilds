@@ -1363,3 +1363,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PARTY-ACTIONS** Tag: TDD. REQ-211, REQ-212, REQ-214, REQ-215. Evidence: PartyActionsTest, ConfirmWindowTest.
 - [x] **PARTY-INFO** Tag: TDD. REQ-213. Evidence: PartyActionsTest.
   - References: `docs/plans/2026-11-10-party-commands.md`.
+
+## Expired party invites (REQ-220)
+
+- [x] **EXPIRED-PARTY-REQUESTS** Tag: TDD. REQ-220. Evidence: PartyServiceExpiredRequestTest.

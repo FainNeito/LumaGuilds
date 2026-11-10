@@ -544,11 +544,13 @@ class PartyServiceBukkit(
     }
     
     override fun getPendingRequestsForGuild(guildId: UUID): Set<PartyRequest> {
-        return partyRequestRepository.getPendingRequestsForGuild(guildId)
+        // REQ-220: the cleanup task marks expired requests later; never offer one meanwhile.
+        return partyRequestRepository.getPendingRequestsForGuild(guildId).filterTo(mutableSetOf()) { it.isValid() }
     }
     
     override fun getPendingRequestsFromGuild(guildId: UUID): Set<PartyRequest> {
-        return partyRequestRepository.getPendingRequestsFromGuild(guildId)
+        // REQ-220: the cleanup task marks expired requests later; never offer one meanwhile.
+        return partyRequestRepository.getPendingRequestsFromGuild(guildId).filterTo(mutableSetOf()) { it.isValid() }
     }
     
     override fun canManageParties(playerId: UUID, guildId: UUID): Boolean {

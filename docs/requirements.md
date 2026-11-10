@@ -748,6 +748,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-215
 **Event-driven.** WHEN a player runs /party chat with no message THE SYSTEM SHALL switch party chat on for their guild's party, or off IF it is already on; WHEN they add a message THE SYSTEM SHALL send only that message to the party; WHEN a player with Manage Parties runs /party rename THE SYSTEM SHALL rename the party IF the name is 1 to 32 characters with no spaces.
 
+### REQ-220
+**Unwanted.** IF a party request has expired THEN THE SYSTEM SHALL leave it out of every request list, menu and /party command, so players are never offered an invite that can no longer be accepted, and SHALL say how long invites last when a guild has no request to act on.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

@@ -8139,7 +8139,7 @@ party_command:
     accept: '<green>[Accept]'
     deny: '<red>[Deny]'
     cancel: '<red>[Cancel]'
-    no_request: '<red>There''s no request with <white><guild><red>.'
+    no_request: '<red>There''s no request with <white><guild><red>. Invites last 15 minutes, so ask them to send a new one.'
   info:
     date_format: 'MMM d, h:mm a'
     header: '<gold><bold><party>'
