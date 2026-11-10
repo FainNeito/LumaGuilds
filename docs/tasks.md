@@ -1314,3 +1314,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PRESTIGE-STAFF-RERUN** Tag: TDD. REQ-187. Evidence: PrestigeCreditLedgerSQLTest, PrestigeStaffServiceTest, PrestigeStaffCommandTest.
 - [x] **PRESTIGE-DISCORD-WEBHOOK** Tag: TDD. REQ-188. Evidence: PrestigeDiscordPostTest.
   - References: `docs/plans/2026-11-09-prestige-staff-and-discord.md`.
+
+## Command completions (REQ-189)
+
+- [x] **COMMAND-COMPLETIONS** Tag: TDD. REQ-189. Evidence: LumaGuildsCompletionsTest, GuildCommandCompletionContractTest, LumaGuildsCommandTest. Every `/g` and `/lumaguilds` argument suggests values or a `<hint>`.

@@ -760,6 +760,20 @@ class LumaGuilds : JavaPlugin() {
                 .mapNotNull { Bukkit.getOfflinePlayer(it.playerId).name }
         }
 
+        // REQ-189: /g sethome offers the guild's existing homes (to move one) and a hint for a new name.
+        commandManager.commandCompletions.registerAsyncCompletion("sethomenames") { context ->
+            val player = context.player ?: return@registerAsyncCompletion listOf("<name>")
+            val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
+            val guild = guildService.getPlayerGuilds(player.uniqueId).firstOrNull()
+                ?: return@registerAsyncCompletion listOf("<name>")
+            guildService.getHomes(guild.id).homeNames.sorted() + "<name>"
+        }
+
+        // REQ-189: /g help topics.
+        commandManager.commandCompletions.registerCompletion("helptopics") { _ ->
+            net.lumalyte.lg.interaction.help.HelpTopics.all.map { it.slug }
+        }
+
         commandManager.commandCompletions.registerAsyncCompletion("guilds") { _ ->
             val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
             net.lumalyte.lg.utils.GuildResolver.suggestions(guildService)

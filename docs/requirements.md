@@ -674,6 +674,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-188
 **Event-driven.** WHEN a prestige is newly committed AND the Discord webhook is enabled with a URL THE SYSTEM SHALL post one embed naming the guild, the tier in Roman numerals, the actor, the kept reward and whether it is the first guild to reach that tier, off the main thread; IF the request fails or takes longer than 10 seconds THEN THE SYSTEM SHALL log it and the prestige SHALL stay applied.
 
+### REQ-189
+**Ubiquitous.** THE SYSTEM SHALL tab-complete every argument of every `/g` and `/lumaguilds` subcommand the sender may use: known values (guilds, players, members, homes, ranks, rewards, tiers, slots, `confirm`) where the argument has them, and otherwise one `<hint>` naming what to type, which disappears once the sender starts typing.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
