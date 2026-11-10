@@ -26,8 +26,9 @@ access control is for every guild, not just prestiged ones.
 2. EnthusiaMarket `feature/guild-stall-cap`: the cap (REQ-181, Market REQ-399).
 3. LumaGuilds follow-up: second allied home (REQ-180) and allied-home access
    (REQ-182); both change how allied homes are stored.
-- Quicker home teleports were first planned as a Prestige I perk. Fain moved
-  them into Quick Travel instead (2026-11-09): see "Quick Travel" below.
+
+Quicker home teleports were first planned as a Prestige I perk. Fain moved
+them into Quick Travel instead (2026-11-09): see "Quick Travel" below.
 
 ## Quick Travel (every guild, bought as a level reward)
 
