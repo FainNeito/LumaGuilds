@@ -627,7 +627,6 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             minPartyNameLength = config.getInt("party.min_party_name_length", 1),
             defaultPartyDurationHours = config.getInt("party.default_party_duration_hours", 24),
             maxSimultaneousPartiesPerGuild = config.getInt("party.max_simultaneous_parties_per_guild", 3),
-            allowPrivateParties = config.getBoolean("party.allow_private_parties", true),
             partyChatEnabled = config.getBoolean("party.party_chat_enabled", true),
             partyChatPriority = config.getInt("party.party_chat_priority", 100),
             useMiniMessage = config.getBoolean("party.use_minimessage", true),

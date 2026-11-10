@@ -34,6 +34,7 @@ class PartyChatCommand : BaseCommand(), KoinComponent {
     private val partyRepository: PartyRepository by inject()
     private val preferenceRepository: PlayerPartyPreferenceRepository by inject()
     private val configService: ConfigService by inject()
+    private val guildChat: net.lumalyte.lg.interaction.listeners.GuildChatListener by inject()
 
     private fun checkPartiesEnabled(player: Player): Boolean {
         if (!configService.loadConfig().partiesEnabled) {
@@ -348,6 +349,10 @@ class PartyChatCommand : BaseCommand(), KoinComponent {
 
         if (success) {
             player.sendMessage(lang.msg("command.migrated.party_chat.switchtoparty.switched_to_party", "unnamed" to (party.name ?: lang.raw("command.migrated.party_chat.common.unnamed"))))
+            // REQ-209: one chat at a time.
+            if (guildChat.leaveGuildChannels(player)) {
+                player.sendMessage(lang.msg("command.migrated.party_chat.switchtoparty.guild_chat_off"))
+            }
             player.sendMessage(lang.msg("command.migrated.party_chat.switchtoparty.all_your_messages_will_now_go_to"))
             player.sendMessage(lang.msg("command.migrated.party_chat.switchtoparty.use_pc_to_see_current_party_info"))
             player.sendMessage(lang.msg("command.migrated.party_chat.showcurrentpartyinfo.use_pc_switch_global_to_return_to"))

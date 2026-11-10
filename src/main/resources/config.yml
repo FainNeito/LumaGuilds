@@ -506,7 +506,6 @@ party:
   min_party_name_length: 1
   default_party_duration_hours: 24
   max_simultaneous_parties_per_guild: 3
-  allow_private_parties: true  # Allow creation of private guild-only parties
 
   # Party Chat
   party_chat_enabled: true

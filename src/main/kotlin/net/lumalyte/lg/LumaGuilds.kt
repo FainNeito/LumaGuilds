@@ -419,14 +419,6 @@ class LumaGuilds : JavaPlugin() {
         // Progression system info
         logColored("📈 Progression: XP rate ${config.progression.playerKillXp} (player kills), ${config.progression.cropBreakXp} (crops)")
 
-        // Party system info
-        val partyStatus = if (config.party.allowPrivateParties) {
-            "✓ Private parties allowed"
-        } else {
-            "✗ Private parties disabled"
-        }
-        logColored(partyStatus)
-
         // War system info
         logColored("⚔️ War system: Kill-based objectives, High-stakes wagering")
     }
@@ -1061,9 +1053,13 @@ class LumaGuilds : JavaPlugin() {
             logColored("❌ Failed to start weekly quest coordinator: ${e.message}")
         }
 
-        // Register guild channel creation listener (for creating default channels)
-        val guildChannelCreationListener = get().get<net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener>()
-        server.pluginManager.registerEvents(guildChannelCreationListener, this)
+        // REQ-208: end the old single-guild parties (Guild_Chat, Officer_Chat, Leader_Chat).
+        try {
+            val ended = get().get<net.lumalyte.lg.application.services.PrivatePartyRetirement>().run()
+            if (ended > 0) logColored("✓ Ended $ended single-guild parties; guild chat now uses /g chat")
+        } catch (e: Exception) {
+            logColored("❌ Failed to end single-guild parties: ${e.message}")
+        }
 
         // Register vault protection listener
         vaultProtectionListener = net.lumalyte.lg.infrastructure.listeners.VaultProtectionListener()

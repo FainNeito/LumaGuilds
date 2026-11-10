@@ -416,7 +416,6 @@ data class PartyConfig(
     var minPartyNameLength: Int = 1,
     var defaultPartyDurationHours: Int = 24,
     var maxSimultaneousPartiesPerGuild: Int = 3,
-    var allowPrivateParties: Boolean = true, // Allow creation of private guild-only parties
 
     // Party Chat
     var partyChatEnabled: Boolean = true,
