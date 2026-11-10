@@ -39,6 +39,7 @@ class GuildPrestigeConfirmationMenu(
     private val lang: LangService by inject()
     private val catalog: RewardCatalog by inject()
     private val config: ConfigService by inject()
+    private val perks: net.lumalyte.lg.application.services.GuildPrestigePerks by inject()
 
     internal fun createGui(): ChestGui {
         val gui = ChestGui(3, lang.guiTitle("menu.guild_progression.prestige.confirmation.title"))
@@ -63,6 +64,7 @@ class GuildPrestigeConfirmationMenu(
                 carryOverLine(),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.permanent"),
                 lang.gui("menu.guild_progression.prestige.confirmation.summary.home_slot"),
+            ) + prestigePerkLines(lang, perks.forConfig(), quote.expectedPrestigeCount + 1) + listOf(
                 lang.gui(
                     "menu.guild_progression.prestige.confirmation.summary.badge",
                     "tier" to PrestigeNumeral.of(quote.expectedPrestigeCount + 1),

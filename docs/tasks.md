@@ -1283,3 +1283,25 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PRESTIGE-CARRYOVER** Tag: TDD.
   - References: REQ-175; Discord "Prestige Suggestions" (carry excess XP forward). Evidence: `ExperienceAwardTransaction` keeps adding XP at level 100; `PrestigeRepositorySQL` sets `total_experience = 0`.
   - Result: `progression.prestige.carry_over` (`enabled: false`, `landing_level: 5`). `PrestigeCarryOver` keeps the XP earned after level 100, capped at the start of the landing level; the prestige transaction sets XP, level, level progress, `guilds.level` and post-prestige capacity from it. The Java and Bedrock confirmation say whether XP carries over or resets, and the confirming player is told how much carried and the starting level. `PrestigeCarryOverTest` and the repository carry test failed against a scaffold (3), then passed. Full suite 2490 tests and the MariaDB profile (134) pass.
+
+## Reasonable quest targets (REQ-176, REQ-177)
+
+- [x] **QUEST-TARGETS** Tag: TDD.
+  - References: REQ-176, REQ-177; Discord "Prestige Suggestions" (kelp, cactus, phantoms, oddly specific block placement). Evidence: `BukkitQuestTargetProvider` offers every spawnable living entity and every placeable block; `QuestProgressListener` counts a harvest only at `age == maximumAge`, which kelp, cactus, sugar cane and bamboo almost never show.
+  - Result: `QuestTargetPool` allowlists kill targets (hostiles, bosses, six farm animals; phantom, breeze, creaking, evoker and piglin brute rare), harvest crops (thirteen) and full building blocks for place quests. `GrownPlantHarvest` counts sugar cane, cactus, kelp and bamboo at any growth stage with the column above, minus player-placed blocks. Quest descriptions add "(blocks placed by players don't count)" to natural mining and "(fully grown only)" to age-based crops. `QuestTargetPoolTest` and `GrownPlantHarvestTest` failed (6 of 7), then passed. Full suite 2498 tests, 0 failures. Quests already generated this week keep their targets until the next reset.
+  - Production check (2026-11-09, 39 quests over 7 weeks): 19 were never completed by any guild. Impossible ones included mining candle cake, crimson wall hanging signs, dead fire coral wall fans and warped roots; crafting 2,000 waxed oxidized copper bulbs, 1,100 yellow banners and 210 diamond hoes; smelting 1,100 white glazed terracotta. Kelp reached 62 of 5,000 and cactus 2 of 6,500 (the growth-age bug). The pools now also cover mining (world-generated blocks only), smelting (common goods) and crafting (no waxed or weathered copper; 64 to 800 stackables, 8 to 64 tools and armor). Full suite 2503 tests, 0 failures.
+
+## Weekend XP boost and prestige fees (REQ-178)
+
+- [x] **WEEKEND-XP-BOOST** Tag: TDD.
+  - References: REQ-178; production copy 2026-11-09: the busiest guild (Everlights) earns about 27,750 XP a day, so a 5,446,893 XP climb takes about 6.5 months; daily caps were hit on under 1% of guild-days; only 3 of 171 guilds hold 10,000 gold and none of the three level-100 guilds can pay the first fee. Fain first chose a 2x boost for prestiged guilds, then replaced it with 2x XP on weekends (Saturday and Sunday, New York time) for every guild; fees were first lowered to 2.5k rising to 15k, then set to 20% below the original (8k, 16k, then 24k).
+  - Result: `progression.weekend_boost` (enabled, multiplier 2.0, days SATURDAY and SUNDAY, timezone America/New_York). `ActiveExperienceBoost` turns the current weekend day into a one-day boost window for every source but WEEKLY_ACTIVITY and ADMIN_BONUS, and picks the larger of it and any dated `xp_boost`; awards and bank deposit quotes both use it. Bad day names, time zones or multipliers fall back to the defaults. Default fees are 8,000, 16,000, then 24,000. `ActiveExperienceBoostTest` failed (2 of 4), then passed. Full suite 2494 tests, 0 failures.
+
+## Prestige tier perks and allied-home access (REQ-179 to REQ-182)
+
+- [x] **QUICK-TRAVEL-COUNTDOWN** Tag: TDD. REQ-179. Evidence: HomeTravelTimesTest, HomeTravelTest, HomeTeleportCooldownsTest.
+- [x] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180. Evidence: GuildServiceAllyHomeAccessTest, AllyHomeAccessSQLTest (SQLite + MariaDB), PrestigeClarityTest.
+- [ ] **PRESTIGE-EXTRA-STALL** Tag: TDD. REQ-181 (with EnthusiaMarket).
+- [x] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182. Evidence: AllyHomeAccessTest, AllyHomeRankPicksTest, AllyHomeVisitorMenuTest, GuildServiceAllyHomeAccessTest.
+- [x] **ALLY-HOME-OUTBOUND** Tag: TDD. REQ-183. Evidence: AllyHomeAccessTest, GuildServiceAllyHomeAccessTest, AllyHomeVisitorMenuTest, AllyHomeAccessSQLTest (SQLite + MariaDB).
+  - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.

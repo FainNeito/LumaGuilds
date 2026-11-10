@@ -635,6 +635,30 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-175
 **Optional.** WHERE prestige XP carry-over is enabled (default off) THE SYSTEM SHALL, when a prestige commits, start the guild's next climb with the XP it earned after reaching level 100, capped at the XP needed to reach the configured landing level (default 5), SHALL set the guild's level, level progress and post-prestige bank capacity from that carried XP in the same transaction, SHALL tell the confirming player how much XP carried over and the level the guild starts at, and SHALL state the carry-over and its cap on the Java and Bedrock confirmation; WHILE carry-over is disabled THE SYSTEM SHALL keep resetting XP to 0.
 
+### REQ-176
+**Ubiquitous.** THE SYSTEM SHALL generate weekly quests only from targets a guild can reasonably work on: kill quests only for hostile mobs, bosses and common farm animals (never villagers, traders, golems, pets, mounts, armor stands, mannequins or mobs that never spawn naturally), with phantoms, breezes, creakings, evokers and piglin brutes counted as rare; harvest quests only for farm crops (wheat, carrots, potatoes, beetroots, nether wart, cocoa, sweet berries, torchflowers, pitcher plants, sugar cane, cactus, kelp and bamboo); place quests only for full building blocks (planks, logs, wood, stone, bricks, concrete, wool, terracotta, glass and similar) rather than stairs, slabs, walls, panes, waxed or weathered copper and other decorative variants; mining quests only for blocks that generate in the world (stone types, ores, logs, sand, gravel, nether and end blocks and similar), never wall-mounted, potted or placed-only blocks; smelting quests only for common smelted goods (ingots, nuggets, glass, stone, bricks, cooked food and similar); and crafting quests never for waxed or weathered copper, with amounts that a guild can make in a week (64 to 800 stackable items, 8 to 64 tools or armor).
+
+### REQ-177
+**Event-driven.** WHEN a member breaks sugar cane, cactus, kelp or bamboo THE SYSTEM SHALL count it toward a matching harvest quest regardless of the plant's growth stage, counting the broken block and the blocks of the same plant above it that break with it, except blocks a player placed; and WHEN a quest is shown THE SYSTEM SHALL say that mining quests count only blocks not placed by players and that age-based crops count only when fully grown.
+
+### REQ-178
+**State-driven.** WHILE the weekend XP boost is enabled (default on) and the current time falls on one of its days in its time zone (default Saturday and Sunday, America/New_York) THE SYSTEM SHALL multiply XP from every guild activity by its multiplier (default 2), rounding down, for every guild, except weekly-quest and admin-granted XP; WHILE a dated XP boost is also active THE SYSTEM SHALL apply only the larger of the two, never both. The default prestige fees SHALL be 8,000, 16,000, 24,000, 24,000, 24,000 and 24,000 gold for prestiges I to VI.
+
+### REQ-179
+**State-driven.** WHILE a guild owns Quick Travel (best tier applies) THE SYSTEM SHALL shorten its members' guild-home and allied-home teleport countdown from 5 seconds to 5 x the Quick Travel multiplier rounded down (at least 1 second) and the cooldown between those teleports to the configured cooldown x the same multiplier, and SHALL apply that one cooldown to command and menu teleports on Java and Bedrock alike; IF the guild's Quick Travel cannot be read THEN THE SYSTEM SHALL use the standard countdown and cooldown.
+
+### REQ-180
+**State-driven.** WHILE a guild's current prestige tier is at least the second-ally-home tier (default II) THE SYSTEM SHALL let it keep a second allied home under the same access rules as the first, with set, move, remove and teleport on Java and Bedrock.
+
+### REQ-181
+**Ubiquitous.** THE SYSTEM SHALL tell EnthusiaMarket how many extra guild-owned stalls a guild may own (1 at or above the extra-stall tier, default III, otherwise 0), and EnthusiaMarket SHALL refuse a guild stall purchase that would take the guild above its configured guild stall limit (default 1) plus that bonus, without removing any stall a guild already owns.
+
+### REQ-182
+**Event-driven.** WHEN a player with Manage home in a host guild opens its allied-home access page on Java or Bedrock THE SYSTEM SHALL let them choose which allied guilds may use the host's allied homes, which ranks of each allowed guild may use them, and which individual players are blocked; WHEN anyone tries to use the host's allied homes THE SYSTEM SHALL allow only a member of an allowed, currently allied guild whose rank is allowed by the host and has Use ally homes in their own guild, and who is not blocked, checking again when the countdown ends.
+
+### REQ-183
+**Ubiquitous.** THE SYSTEM SHALL let a player with Manage home choose, for each allied guild separately on Java and Bedrock, which of their own guild's ranks may use that ally's allied homes; WHERE no choice is stored for an ally THE SYSTEM SHALL use each rank's Use ally homes permission, and the guild owner SHALL always keep access on their own side.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

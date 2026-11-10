@@ -149,6 +149,13 @@ class LumaGuilds : JavaPlugin() {
         )
         logColored("✓ GuildVisualLookup registered in ServicesManager for cross-plugin integration")
         Bukkit.getServicesManager().register(
+            net.lumalyte.lg.api.GuildPrestigePerkLookup::class.java,
+            net.lumalyte.lg.api.GuildPrestigePerkLookupImpl(get().get()),
+            this,
+            ServicePriority.Normal,
+        )
+        logColored("✓ GuildPrestigePerkLookup registered in ServicesManager for Market stall caps")
+        Bukkit.getServicesManager().register(
             net.lumalyte.lg.api.GuildAllianceLookup::class.java,
             net.lumalyte.lg.api.GuildAllianceLookupImpl(get().get()),
             this,

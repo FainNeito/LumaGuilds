@@ -369,6 +369,25 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
         )
     }
     
+    /** REQ-178: bad day names or time zones fall back to the defaults instead of failing startup. */
+    private fun loadWeekendBoost(): net.lumalyte.lg.config.WeekendBoostConfig {
+        val defaults = net.lumalyte.lg.config.WeekendBoostConfig()
+        val prefix = "progression.weekend_boost"
+        val days = config.getStringList("$prefix.days")
+            .mapNotNull { runCatching { java.time.DayOfWeek.valueOf(it.trim().uppercase(Locale.ROOT)) }.getOrNull() }
+            .toSet().ifEmpty { defaults.days }
+        val zone = config.getString("$prefix.timezone")?.let { runCatching { java.time.ZoneId.of(it) }.getOrNull() }
+            ?: defaults.zone
+        val multiplier = config.getDouble("$prefix.multiplier", defaults.multiplier).takeIf { it.isFinite() && it >= 1.0 }
+            ?: defaults.multiplier
+        return net.lumalyte.lg.config.WeekendBoostConfig(
+            enabled = config.getBoolean("$prefix.enabled", defaults.enabled),
+            multiplier = multiplier,
+            days = days,
+            zone = zone,
+        )
+    }
+
     private fun loadExperienceBoost(): net.lumalyte.lg.domain.values.ExperienceBoost? {
         if (!config.getBoolean("progression.xp_boost.enabled", false)) return null
         val prefix = "progression.xp_boost"
@@ -384,7 +403,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
     private fun loadProgressionConfig(): ProgressionConfig {
         val prestigeMax = config.getInt("progression.prestige.max_count", 6).coerceIn(1, 6)
         val prestigeFees = config.getLongList("progression.prestige.fees").ifEmpty {
-            listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L)
+            listOf(8_000L, 16_000L, 24_000L, 24_000L, 24_000L, 24_000L)
         }
         return ProgressionConfig(
             maxLevel = config.getInt("progression.max_level", 100).coerceIn(1, 100),
@@ -404,6 +423,11 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                 carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(
                     enabled = config.getBoolean("progression.prestige.carry_over.enabled", false),
                     landingLevel = config.getInt("progression.prestige.carry_over.landing_level", 5).coerceIn(1, 99),
+                ),
+                // REQ-180, REQ-181: a tier of 0 or less gives the perk to every guild.
+                perks = net.lumalyte.lg.config.PrestigePerksConfig(
+                    secondAllyHomeTier = config.getInt("progression.prestige.perks.second_ally_home_tier", 2),
+                    extraStallTier = config.getInt("progression.prestige.perks.extra_stall_tier", 3),
                 ),
                 fanfare = net.lumalyte.lg.config.PrestigeFanfareConfig(
                     enabled = config.getBoolean("progression.prestige.fanfare.enabled", true),
@@ -449,6 +473,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             ),
             sourcePolicies = loadExperiencePolicies(),
             xpBoost = loadExperienceBoost(),
+            weekendBoost = loadWeekendBoost(),
             materialPools = loadMaterialPools(),
             entityPools = loadEntityPools(),
 

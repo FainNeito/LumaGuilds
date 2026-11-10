@@ -454,12 +454,14 @@ val DEFAULT_PRESTIGE_BADGES = listOf("", "✦I", "✦II", "✦III", "✦IV", "�
 data class PrestigeConfig(
     var enabled: Boolean = true,
     var maxCount: Int = 6,
-    var fees: List<Long> = listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L),
+    // REQ-178: 20% below the original 10k/20k/30k fees (Fain, 2026-11-09).
+    var fees: List<Long> = listOf(8_000L, 16_000L, 24_000L, 24_000L, 24_000L, 24_000L),
     var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
     /** REQ-155 placeholder badges; index 0 is "no prestige". */
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
     var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
     var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
+    var perks: PrestigePerksConfig = PrestigePerksConfig(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }
@@ -474,6 +476,12 @@ data class PrestigeConfig(
     }
 }
 
+/** REQ-180, REQ-181: the prestige tier at which each practical perk unlocks. */
+data class PrestigePerksConfig(
+    val secondAllyHomeTier: Int = 2,
+    val extraStallTier: Int = 3,
+)
+
 /** REQ-175: XP earned past level 100 can start the next climb, up to the start of [landingLevel]. */
 data class PrestigeCarryOverConfig(
     var enabled: Boolean = false,
@@ -481,6 +489,18 @@ data class PrestigeCarryOverConfig(
 ) {
     init {
         require(landingLevel in 1..99) { "Prestige carry-over landing level must be between 1 and 99" }
+    }
+}
+
+/** REQ-178: every guild earns [multiplier] times activity XP on [days] in [zone]. */
+data class WeekendBoostConfig(
+    val enabled: Boolean = true,
+    val multiplier: Double = 2.0,
+    val days: Set<java.time.DayOfWeek> = setOf(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY),
+    val zone: java.time.ZoneId = java.time.ZoneId.of("America/New_York"),
+) {
+    init {
+        require(multiplier.isFinite() && multiplier >= 1.0) { "Weekend XP multiplier must be at least 1" }
     }
 }
 
@@ -522,7 +542,8 @@ data class ProgressionConfig(
     // 0 in either field disables the cleanup task entirely.
     var transactionRetentionDays: Int = 90,
     var transactionCleanupIntervalHours: Int = 24,
-    val xpBoost: net.lumalyte.lg.domain.values.ExperienceBoost? = null
+    val xpBoost: net.lumalyte.lg.domain.values.ExperienceBoost? = null,
+    val weekendBoost: WeekendBoostConfig = WeekendBoostConfig()
 )
 
 object ChapterTwoExperiencePolicies {

@@ -275,6 +275,11 @@ class SQLiteMigrations(private val plugin: JavaPlugin, private val connection: C
                 updateDatabaseVersion(PrestigeTombstoneSchema.VERSION)
                 dbVersion = PrestigeTombstoneSchema.VERSION
             }
+            AllyHomeAccessSchema.create(connection, mariaDb = false)
+            if (dbVersion < AllyHomeAccessSchema.VERSION) {
+                updateDatabaseVersion(AllyHomeAccessSchema.VERSION)
+                dbVersion = AllyHomeAccessSchema.VERSION
+            }
             GuildDescriptionSchema.ensure(connection)
             // Validate that all required tables exist, recreate if missing
             validateAndRepairSchema()
@@ -1472,6 +1477,8 @@ class SQLiteMigrations(private val plugin: JavaPlugin, private val connection: C
             GuildHomeActivationSchema.ACTIVATIONS_TABLE, GuildHomeActivationSchema.CREDITS_TABLE,
             InviteBlockSchema.TABLE, BankDepositXpSchema.DELIVERIES, BankDepositXpSchema.SEQUENCES,
             PrestigeTombstoneSchema.TABLE,
+            AllyHomeAccessSchema.VISITOR_RANKS, AllyHomeAccessSchema.BLOCKED, AllyHomeAccessSchema.SECOND_HOMES,
+            AllyHomeAccessSchema.OUTBOUND_RANKS,
             BankContributionSchema.ACCOUNTS,
             BankContributionSchema.RECEIPTS,
             BankContributionSchema.QUESTS,

@@ -415,6 +415,9 @@ fun guildsModule() = module {
     single<MemberRepository> { MemberRepositorySQLite(get()) }
     single<RelationRepository> { RelationRepositorySQLite(get()) }
     single<GuildInvitationRepository> { GuildInvitationRepositorySQLite(get()) }
+    single<net.lumalyte.lg.application.persistence.AllyHomeAccessRepository> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.AllyHomeAccessRepositorySQL(get())
+    }
     single<net.lumalyte.lg.application.persistence.InviteBlockRepository> {
         net.lumalyte.lg.infrastructure.persistence.guilds.InviteBlockRepositorySQL(get())
     }
@@ -440,6 +443,8 @@ fun guildsModule() = module {
     single<GuildService> {
         GuildServiceBukkit(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            allyHomeAccess = get(),
+            prestigePerks = getOrNull(),
         )
     }
     single<RankService> {
@@ -717,6 +722,12 @@ fun progressionModule() = module {
             as net.lumalyte.lg.application.persistence.PrestigeHistory
     }
     single { net.lumalyte.lg.application.services.GuildPrestigeStandings(get(), get()) }
+    single {
+        val configService = get<net.lumalyte.lg.application.services.ConfigService>()
+        net.lumalyte.lg.application.services.GuildPrestigePerks(get()) {
+            net.lumalyte.lg.domain.rewards.PrestigePerks(configService.loadConfig().progression.prestige.perks)
+        }
+    }
     single<net.lumalyte.lg.application.persistence.DisbandedPrestigeGuilds> {
         net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeTombstonesSQL(get())
     }
@@ -838,7 +849,9 @@ fun progressionModule() = module {
     single {
         val config = get<ConfigService>()
         net.lumalyte.lg.application.services.PermanentExperienceService(get(), get()) {
-            config.loadConfig().progression.xpBoost
+            // REQ-178: the dated boost or today's weekend boost, whichever is larger.
+            val progression = config.loadConfig().progression
+            net.lumalyte.lg.domain.values.ActiveExperienceBoost.at(java.time.Instant.now(), progression.xpBoost, progression.weekendBoost)
         }
     }
     single {
@@ -1261,7 +1274,11 @@ fun utilitiesModule() = module {
 
     // Other utilities
     single<net.lumalyte.lg.infrastructure.services.TeleportationService> {
-        net.lumalyte.lg.infrastructure.services.TeleportationService(get(), get())
+        // REQ-179: Quick Travel shortens the home countdown and cooldown.
+        net.lumalyte.lg.infrastructure.services.TeleportationService(
+            get(), get(),
+            net.lumalyte.lg.application.services.HomeTravel(get(), get(), get()),
+        )
     }
 }
 
