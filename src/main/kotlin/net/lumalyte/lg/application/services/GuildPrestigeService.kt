@@ -94,6 +94,46 @@ class GuildPrestigeService(
                 else -> null
             }
         }
+        return settle(quote, confirmation)
+    }
+
+    /** REQ-186: the prestige choices a staff grant may keep (those of a level 100 guild). */
+    fun grantChoices(guildId: UUID): List<RewardDefinition> = try {
+        val settings = config.loadConfig()
+        val snapshot = (owners.read(guildId) as? RewardOwnershipRead.Found)?.snapshot
+        if (snapshot == null || snapshot.ownership.prestigeCount >= settings.progression.prestige.maxCount) {
+            emptyList()
+        } else {
+            resolver.resolve(100, snapshot.ownership, settings.bank.maxBankBalance.toLong(), settings.guild.maxMembersPerGuild)
+                .prestigeChoices
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /**
+     * REQ-186: a staff prestige with no fee and no level requirement. Announcements,
+     * fanfare, credits and every listener run as for a guild's own prestige.
+     */
+    fun staffGrant(actorId: UUID, guildId: UUID, retainedRewardId: String): PrestigeResult {
+        val snapshot = (runCatching { owners.read(guildId) }.getOrNull() as? RewardOwnershipRead.Found)?.snapshot
+            ?: return PrestigeResult.Rejected(PrestigeRejection.UNINITIALIZED)
+        val quote = PrestigeQuote(
+            transactionId = UUID.randomUUID(),
+            guildId = guildId,
+            actorId = actorId,
+            retainedRewardId = retainedRewardId,
+            quotedFee = 0,
+            expectedOwnershipVersion = snapshot.version,
+            expectedPrestigeCount = snapshot.ownership.prestigeCount,
+        )
+        return settle(quote, repository.grantWithCommitStatus(quote))
+    }
+
+    private fun settle(
+        quote: PrestigeQuote,
+        confirmation: net.lumalyte.lg.application.persistence.PrestigeConfirmation,
+    ): PrestigeResult {
         val result = confirmation.result
         if (result is PrestigeResult.Applied) {
             if (confirmation.newlyCommitted) {

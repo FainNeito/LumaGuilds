@@ -319,6 +319,7 @@ permissions:
     children:
       bellclaims.admin: true
       lumaguilds.admin.xp: true
+      lumaguilds.admin.prestige: true
 
   bellclaims.admin:
     description: Allows access to admin commands including guild override mode
@@ -326,6 +327,10 @@ permissions:
 
   lumaguilds.admin.xp:
     description: Grant permanent guild XP with /lumaguilds xp give
+    default: op
+
+  lumaguilds.admin.prestige:
+    description: Inspect, set, grant and re-run guild prestige with /lumaguilds prestige
     default: op
 
   lumaguilds.admin.owner.recover:

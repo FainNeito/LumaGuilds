@@ -760,6 +760,20 @@ class LumaGuilds : JavaPlugin() {
                 .mapNotNull { Bukkit.getOfflinePlayer(it.playerId).name }
         }
 
+        // REQ-189: /g sethome offers the guild's existing homes (to move one) and a hint for a new name.
+        commandManager.commandCompletions.registerAsyncCompletion("sethomenames") { context ->
+            val player = context.player ?: return@registerAsyncCompletion listOf("<name>")
+            val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
+            val guild = guildService.getPlayerGuilds(player.uniqueId).firstOrNull()
+                ?: return@registerAsyncCompletion listOf("<name>")
+            guildService.getHomes(guild.id).homeNames.sorted() + "<name>"
+        }
+
+        // REQ-189: /g help topics.
+        commandManager.commandCompletions.registerCompletion("helptopics") { _ ->
+            net.lumalyte.lg.interaction.help.HelpTopics.all.map { it.slug }
+        }
+
         commandManager.commandCompletions.registerAsyncCompletion("guilds") { _ ->
             val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
             net.lumalyte.lg.utils.GuildResolver.suggestions(guildService)
@@ -789,7 +803,6 @@ class LumaGuilds : JavaPlugin() {
         commandManager.commandCompletions.registerAsyncCompletion("allyguilds") { context ->
             val player = context.player ?: return@registerAsyncCompletion emptyList()
             val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
-            val relationService = get().get<net.lumalyte.lg.application.services.RelationService>()
             val guilds = guildService.getPlayerGuilds(player.uniqueId)
             if (guilds.isEmpty()) return@registerAsyncCompletion emptyList()
             val sourceGuild = guilds.first()
@@ -799,15 +812,9 @@ class LumaGuilds : JavaPlugin() {
                 guildService.canUseOwnAllyHome(player.uniqueId, sourceGuild.id)) {
                 results.add(sourceGuild.name)
             }
-            relationService
-                .getGuildRelationsByType(sourceGuild.id, net.lumalyte.lg.domain.entities.RelationType.ALLY)
-                .mapNotNullTo(results) { rel ->
-                    val otherId = rel.getOtherGuild(sourceGuild.id)
-                    val other = guildService.getGuild(otherId) ?: return@mapNotNullTo null
-                    if (other.allyHome == null) return@mapNotNullTo null
-                    if (!guildService.canUseAllyHome(player.uniqueId, sourceGuild.id, other.id)) return@mapNotNullTo null
-                    other.name
-                }
+            guildService.getAllyHomeEntries(sourceGuild.id)
+                .filter { e -> e.guildId?.let { guildService.canUseAllyHome(player.uniqueId, sourceGuild.id, it, e.slot) } == true }
+                .mapTo(results) { it.guildName }
             results.distinct().sorted()
         }
 

@@ -106,6 +106,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("create")
     @CommandPermission("lumaguilds.guild.create")
+    @CommandCompletion("<name> @nothing")
     fun onCreate(player: Player, name: String, @Optional banner: String?) {
         val playerId = player.uniqueId
 
@@ -246,6 +247,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     
     @Subcommand("rename")
     @CommandPermission("lumaguilds.guild.rename")
+    @CommandCompletion("<new_name>")
     fun onRename(player: Player, newName: String) {
         val playerId = player.uniqueId
 
@@ -325,6 +327,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     
     @Subcommand("sethome")
     @CommandPermission("lumaguilds.guild.sethome")
+    @CommandCompletion("@sethomenames confirm")
     fun onSetHome(player: Player, @Optional homeName: String?, @Optional confirm: String?) {
         val playerId = player.uniqueId
 
@@ -463,7 +466,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("home")
     @CommandPermission("lumaguilds.guild.home")
-    @CommandCompletion("@guildaccessiblehomes")
+    @CommandCompletion("@guildaccessiblehomes confirm")
     fun onHome(player: Player, @Optional homeName: String?, @Optional confirm: String?) {
         // Handle "/guild home confirm" — ACF puts "confirm" into homeName, not confirm param
         val isConfirm = confirm?.lowercase() == "confirm" || homeName?.lowercase() == "confirm"
@@ -623,6 +626,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     @Subcommand("setallyhome")
     @CommandPermission("lumaguilds.guild.sethome")
     @Syntax("[2]")
+    @CommandCompletion("1|2")
     fun onSetAllyHome(player: Player, @Optional slotArg: String?) {
         val playerId = player.uniqueId
         val guilds = guildService.getPlayerGuilds(playerId)
@@ -656,6 +660,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
     @Subcommand("removeallyhome")
     @CommandPermission("lumaguilds.guild.sethome")
     @Syntax("[2]")
+    @CommandCompletion("1|2")
     fun onRemoveAllyHome(player: Player, @Optional slotArg: String?) {
         val playerId = player.uniqueId
         val guilds = guildService.getPlayerGuilds(playerId)
@@ -702,7 +707,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("allyhome")
     @CommandPermission("lumaguilds.guild.allyhome")
-    @CommandCompletion("@allyguilds")
+    @CommandCompletion("@allyguilds 1|2|confirm")
     @Syntax("<guildName> [2|confirm]")
     fun onAllyHome(player: Player, guildName: String, @Optional confirm: String?) {
         if (guildName.lowercase() == "confirm" || confirm?.lowercase() == "confirm") {
@@ -2091,6 +2096,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("tag")
     @CommandPermission("lumaguilds.guild.tag")
+    @CommandCompletion("<tag>")
     fun onTag(player: Player, @Optional tag: String?) {
         val playerId = player.uniqueId
 
@@ -2225,6 +2231,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("description|desc")
     @CommandPermission("lumaguilds.guild.description")
+    @CommandCompletion("<description>")
     fun onDescription(player: Player, @Optional description: String?) {
         val playerId = player.uniqueId
 
@@ -2645,6 +2652,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("start|gettingstarted")
     @CommandPermission("lumaguilds.guild.help")
+    @CommandCompletion("@nothing")
     fun onGettingStarted(player: Player, @Optional guildId: String?) {
         val selected = if (guildId == null) guildService.getPlayerGuilds(player.uniqueId).firstOrNull()?.id else {
             try { java.util.UUID.fromString(guildId) } catch (_: IllegalArgumentException) {
@@ -2668,6 +2676,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("help")
     @CommandPermission("lumaguilds.guild.help")
+    @CommandCompletion("@helptopics")
     fun onHelp(player: Player, @Optional topic: String?) {
         val renderer = HelpTopicsRenderer
         if (topic.isNullOrBlank()) {
@@ -2829,7 +2838,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
 
     @Subcommand("truce")
     @CommandPermission("lumaguilds.guild.truce")
-    @CommandCompletion("@guilds")
+    @CommandCompletion("@guilds <days>")
     fun onTruce(player: Player, guildName: String, @Optional durationDays: Int?) {
         val playerId = player.uniqueId
 
