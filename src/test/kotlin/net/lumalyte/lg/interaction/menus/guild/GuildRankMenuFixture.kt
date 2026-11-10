@@ -91,6 +91,7 @@ internal abstract class GuildRankMenuFixture {
             single { mockk<NexoEmojiService>(relaxed = true) }
             single { mockk<net.lumalyte.lg.application.persistence.PrestigeHistory>(relaxed = true) }
             single { mockk<MenuFactory>(relaxed = true) }
+            single { mockk<net.lumalyte.lg.application.services.GuildBanService>(relaxed = true) }
         }
     }
 
@@ -108,6 +109,9 @@ internal abstract class GuildRankMenuFixture {
         every { members.getGuildMembers(guild.id) } returns setOf(member)
         every { members.getMemberCount(guild.id) } returns 1
         every { members.getMembersByRank(guild.id, rankId) } returns setOf(member)
+        every { members.getMember(player.uniqueId, guild.id) } returns member
+        every { members.hasPermission(any(), any(), any()) } returns true
+        every { members.getMemberLimit(guild.id) } returns 10
         return members
     }
 

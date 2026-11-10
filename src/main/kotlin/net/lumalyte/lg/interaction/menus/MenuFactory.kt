@@ -317,7 +317,8 @@ class MenuFactory(
             // Use Bedrock guild member list menu with SimpleForm and player heads
             BedrockGuildMemberListMenu(menuNavigator, player, guild, logger)
         } else {
-            GuildMemberListMenu(menuNavigator, player, guild)
+            // REQ-191: on Java the member list is part of the guild page.
+            GuildInfoMenu(menuNavigator, player, guild)
         }
     }
 
@@ -607,7 +608,8 @@ class MenuFactory(
         return if (shouldUseBedrockMenus(player)) {
             net.lumalyte.lg.interaction.menus.bedrock.BedrockGuildMemberManagementMenu(menuNavigator, player, guild, logger)
         } else {
-            net.lumalyte.lg.interaction.menus.guild.GuildMemberManagementMenu(menuNavigator, player, guild)
+            // REQ-191/REQ-193: on Java members are managed from the guild page.
+            GuildInfoMenu(menuNavigator, player, guild)
         }
     }
 

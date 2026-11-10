@@ -34,6 +34,8 @@ class MemberServiceBukkit(
     private val memberCapacity: (() -> net.lumalyte.lg.config.MainConfig)? = null,
     private val prestigeCount: (UUID) -> Int? = { null },
     private val capacityFloors: net.lumalyte.lg.application.persistence.MemberCapacityFloors? = null,
+    // REQ-194: banned players are never added. Null (tests, partial wiring) skips the check.
+    private val guildBans: net.lumalyte.lg.application.persistence.GuildBanRepository? = null,
 ) : MemberService {
 
     private val logger = LoggerFactory.getLogger(MemberServiceBukkit::class.java)
@@ -86,6 +88,17 @@ class MemberServiceBukkit(
             return null
         }
         
+        // REQ-194: banned players never join, whatever the route; an unreadable ban list refuses too.
+        guildBans?.let { bans ->
+            val banned = runCatching { bans.isBanned(guildId, playerId) }
+                .onFailure { logger.error("Unable to read bans for guild $guildId; refusing $playerId", it) }
+                .getOrDefault(true)
+            if (banned) {
+                logger.info("Refused to add $playerId to guild $guildId: banned")
+                return null
+            }
+        }
+
         // Check if player is already a member
         if (memberRepository.isPlayerInGuild(playerId, guildId)) {
             logger.warn("Player $playerId is already a member of guild $guildId")
@@ -161,6 +174,15 @@ class MemberServiceBukkit(
         if (rank == null || rank.guildId != guildId || rank.priority == 0) {
             logger.warn("Cannot remove Owner or invalid-rank member $playerId from guild $guildId (actor=$actorId)")
             return false
+        }
+
+        // REQ-197: removing someone else needs a strictly higher rank.
+        if (actorId != playerId) {
+            val actorRank = memberRepository.getByPlayerAndGuild(actorId, guildId)?.let { rankRepository.getById(it.rankId) }
+            if (actorRank == null || actorRank.guildId != guildId || actorRank.priority >= rank.priority) {
+                logger.warn("Player $actorId cannot remove $playerId from guild $guildId: not a higher rank")
+                return false
+            }
         }
 
         val result = memberRepository.remove(playerId, guildId)

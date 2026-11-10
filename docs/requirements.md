@@ -679,6 +679,27 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-189
 **Ubiquitous.** THE SYSTEM SHALL tab-complete every argument of every `/g` and `/lumaguilds` subcommand the sender may use: known values (guilds, players, members, homes, ranks, rewards, tiers, slots, `confirm`) where the argument has them, and otherwise one `<hint>` naming what to type, which disappears once the sender starts typing.
 
+### REQ-191
+**Event-driven.** WHEN a player opens a guild's info page THE SYSTEM SHALL show one 6-row page with the description, level, guild card, prestige and relations items centred in the top row, the guild's members as heads in the next four rows (36 per page, sorted by rank from highest to lowest by default), and previous page, page, sort, back and next page items in the bottom row; WHEN the player clicks sort THE SYSTEM SHALL cycle the order through rank, online first and name.
+
+### REQ-192
+**Ubiquitous.** THE SYSTEM SHALL show every viewer each member's rank, online status or last seen time, and join date; THE SYSTEM SHALL show a member's bank contribution only to members of that guild; THE SYSTEM SHALL show the invite and banned players items only to viewers with the Manage Members permission in that guild.
+
+### REQ-193
+**Event-driven.** WHEN a player clicks a member's head THE SYSTEM SHALL open that member's page; WHERE the viewer has Manage Members in that guild THE SYSTEM SHALL show Promote, Demote, Kick and Ban on it, each usable only when the viewer outranks the member and, for Promote, only when the new rank stays below the viewer's, and SHALL otherwise show the button greyed with the reason; THE SYSTEM SHALL ask for confirmation before a kick or a ban.
+
+### REQ-194
+**Event-driven.** WHEN a player with Manage Members bans a player from their guild THE SYSTEM SHALL remove the target from the guild if they are a member, save the ban and delete that guild's pending invites to the target; IF the target is the owner or the actor does not outrank a member target THEN THE SYSTEM SHALL change nothing; WHILE a ban is saved THE SYSTEM SHALL refuse to add the player to that guild by any route and SHALL refuse new invites and applications to it; IF the ban list cannot be read THEN THE SYSTEM SHALL refuse the join; WHEN a player with Manage Members unbans the player THE SYSTEM SHALL delete the ban.
+
+### REQ-195
+**Ubiquitous.** THE SYSTEM SHALL show on the guild card Yes or No for whether the guild has a home set, a banner, a placed vault and, when a guild shop lookup is registered, a guild shop, without showing how many homes there are or where they are.
+
+### REQ-196
+**Event-driven.** WHEN a player clicks relations on a guild's info page THE SYSTEM SHALL open a page listing allies, enemies and active truces on separate rows, up to 8 guilds each with an item opening the full list when there are more, where clicking a guild opens its info page.
+
+### REQ-197
+**Unwanted behaviour.** IF a player who is not the target removes a member and the actor's rank does not outrank the target's rank THEN THE SYSTEM SHALL refuse the removal.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
