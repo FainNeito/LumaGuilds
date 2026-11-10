@@ -1343,3 +1343,8 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **KILL-LOG** Tag: TDD. REQ-199, REQ-200. Evidence: KillRecordingTest, GuildKillLogSQLTest (SQLite + MariaDB), KillServiceLogTest.
 - [x] **STATS-MENU** Tag: TDD. REQ-201, REQ-202. Evidence: GuildStatisticsLayoutContractTest, GuildStatisticsSeason2ContractTest, BedrockGuildStatisticsTruthfulnessContractTest.
   - References: `docs/plans/2026-11-10-statistics-simplified.md`.
+
+## Approved guild emojis (REQ-216 to REQ-218)
+
+- [x] **EMOJI-APPROVED-LIST** Tag: TDD. REQ-216, REQ-217, REQ-218. Evidence: GuildEmojiRulesTest, GuildEmojiChoicesServiceTest.
+  - References: `docs/plans/2026-11-10-approved-guild-emojis.md`.
