@@ -285,7 +285,7 @@ class PrestigeRepositorySQL(
             return reject(PrestigeRejection.INVALID_SELECTION)
         }
 
-        if (!staff && hasBlockingWar(connection, request.guildId)) {
+        if (hasBlockingWar(connection, request.guildId)) {
             return reject(PrestigeRejection.ACTIVE_WAR)
         }
 
@@ -295,7 +295,7 @@ class PrestigeRepositorySQL(
             it.setString(1, request.guildId.toString())
             it.executeQuery().use { rows -> rows.next() && rows.getBoolean(1) }
         }
-        if (frozen && !staff) return reject(PrestigeRejection.FROZEN)
+        if (frozen) return reject(PrestigeRejection.FROZEN)
 
         val pendingGold = connection.prepareStatement(
             """SELECT transaction_id FROM guild_gold_operations

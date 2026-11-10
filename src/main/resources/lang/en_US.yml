@@ -7250,7 +7250,7 @@ admin:
       record: '<gray> • Prestige <white><tier></white> on <white><date></white>, kept <white><reward></white>, by <white><player>'
       adjustment: '<yellow> • Staff set <old> → <new> on <date> (<player>)'
     set:
-      preview: '<yellow><guild>: prestige <white><old></white> → <white><new></white>, removing the kept rewards of those tiers: <white><rewards></white>. Level, XP and gold stay. Run <white><confirm></white> to apply.'
+      preview: '<yellow><guild>: prestige <white><old></white> → <white><new></white>, removing the kept rewards of those tiers: <white><rewards></white>, and one home slot per tier. Level, XP and gold stay. Run <white><confirm></white> to apply.'
       done: '<green><guild>: prestige set <old> → <new>. Removed kept rewards: <rewards>.'
       raise: '<yellow>Each prestige keeps a reward, so raise <guild> one tier at a time with <white>/lumaguilds prestige grant</white>.'
       unchanged: '<gray><guild> already has that prestige count.'

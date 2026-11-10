@@ -49,7 +49,23 @@ class GuildServiceBukkit(
     // REQ-180/REQ-182. Null (tests, partial wiring): one allied home, no host rules.
     private val allyHomeAccess: net.lumalyte.lg.application.persistence.AllyHomeAccessRepository? = null,
     private val prestigePerks: net.lumalyte.lg.application.services.GuildPrestigePerks? = null,
+    // Whether a guild owns Allied Waypoints. Null: ask the progression service.
+    private val allyHomesUnlocked: ((UUID) -> Boolean)? = null,
 ) : GuildService, KoinComponent {
+    /**
+     * Allied homes need the Allied Waypoints reward. The menus always required it;
+     * commands did not (audit 2026-11-10). A failed lookup reads as locked.
+     */
+    private fun hasAlliedWaypoints(guildId: UUID): Boolean {
+        allyHomesUnlocked?.let { return it(guildId) }
+        // No DI context only happens in unit tests that predate this check.
+        val koin = org.koin.core.context.GlobalContext.getOrNull() ?: return true
+        return runCatching {
+            koin.get<net.lumalyte.lg.application.services.ProgressionService>()
+                .hasPerkUnlocked(guildId, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)
+        }.getOrDefault(false)
+    }
+
 
     // Lazy because BannermanListeners depends on GuildService, which would create a Koin
     // resolution cycle if injected eagerly through the constructor.
@@ -523,11 +539,7 @@ class GuildServiceBukkit(
             val guild = guildRepository.getById(guildId) ?: return emptyMap()
 
             // Check if requesting guild has the perk
-            val progressionService = org.koin.core.context.GlobalContext.get()
-                .get<net.lumalyte.lg.application.services.ProgressionService>()
-            if (!progressionService.hasPerkUnlocked(guildId, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)) {
-                return emptyMap()
-            }
+            if (!hasAlliedWaypoints(guildId)) return emptyMap()
 
             // Get active ally relations
             val allyRelations = relationRepository.getByGuildAndType(
@@ -539,9 +551,7 @@ class GuildServiceBukkit(
                 val allyGuildId = relation.getOtherGuild(guildId)
 
                 // Ally must also have the perk unlocked (mutual requirement)
-                if (!progressionService.hasPerkUnlocked(allyGuildId, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)) {
-                    continue
-                }
+                if (!hasAlliedWaypoints(allyGuildId)) continue
 
                 val allyGuild = guildRepository.getById(allyGuildId) ?: continue
                 val allyHome = allyGuild.allyHome ?: continue
@@ -561,6 +571,7 @@ class GuildServiceBukkit(
                 logger.warn("Player $actorId attempted to set ally home for guild $guildId without permission")
                 return false
             }
+            if (!hasAlliedWaypoints(guildId)) return false
             if (slot != 1) {
                 if (slot != 2 || allyHomeSlots(guildId) < 2) return false
                 return allyHomeAccess?.setSecondHome(guildId, home) ?: false
@@ -611,14 +622,28 @@ class GuildServiceBukkit(
     override fun allyHomeSlots(guildId: UUID): Int =
         if (allyHomeAccess == null) 1 else runCatching { prestigePerks?.allyHomeSlots(guildId) }.getOrNull() ?: 1
 
-    override fun getAllyHomeEntries(guildId: UUID): List<net.lumalyte.lg.application.services.AllyHomeEntry> =
-        getAllyHomes(guildId).entries.sortedBy { it.key.lowercase() }.flatMap { (name, home) ->
-            val ally = guildRepository.getByName(name)
-            val first = net.lumalyte.lg.application.services.AllyHomeEntry(ally?.id, name, 1, home)
-            val second = ally?.let { getAllyHome(it.id, 2) }
-                ?.let { net.lumalyte.lg.application.services.AllyHomeEntry(ally.id, name, 2, it) }
-            listOfNotNull(first, second)
+    // Each slot is listed on its own, so an ally with only a second allied home still shows.
+    override fun getAllyHomeEntries(guildId: UUID): List<net.lumalyte.lg.application.services.AllyHomeEntry> = try {
+        if (guildRepository.getById(guildId) == null || !hasAlliedWaypoints(guildId)) {
+            emptyList()
+        } else {
+            relationRepository.getByGuildAndType(guildId, net.lumalyte.lg.domain.entities.RelationType.ALLY)
+                .filter { it.isActive() }
+                .mapNotNull { guildRepository.getById(it.getOtherGuild(guildId)) }
+                .filter { hasAlliedWaypoints(it.id) }
+                .distinctBy { it.id }
+                .sortedBy { it.name.lowercase() }
+                .flatMap { ally ->
+                    (1..2).mapNotNull { slot ->
+                        getAllyHome(ally.id, slot)
+                            ?.let { net.lumalyte.lg.application.services.AllyHomeEntry(ally.id, ally.name, slot, it) }
+                    }
+                }
         }
+    } catch (e: Exception) {
+        logger.error("Error listing ally homes for guild $guildId", e)
+        emptyList()
+    }
 
     override fun allyHomeAccess(hostGuildId: UUID): net.lumalyte.lg.domain.values.AllyHomeAccess =
         allyHomeAccess?.access(hostGuildId) ?: net.lumalyte.lg.domain.values.AllyHomeAccess()
@@ -806,6 +831,7 @@ class GuildServiceBukkit(
     override fun canUseAllyHome(playerId: UUID, sourceGuildId: UUID, targetGuildId: UUID, slot: Int): Boolean {
         if (guildRepository.getById(sourceGuildId) == null) return false
         val targetGuild = guildRepository.getById(targetGuildId) ?: return false
+        if (!hasAlliedWaypoints(sourceGuildId) || !hasAlliedWaypoints(targetGuildId)) return false
         if (getAllyHome(targetGuildId, slot) == null) return false
         if (sourceGuildId !in targetGuild.allyHomeAllowedGuilds) return false
         // Guard against stale or manually-injected whitelist entries: the two guilds must
@@ -830,6 +856,7 @@ class GuildServiceBukkit(
 
     override fun canUseOwnAllyHome(playerId: UUID, guildId: UUID, slot: Int): Boolean {
         guildRepository.getById(guildId) ?: return false
+        if (!hasAlliedWaypoints(guildId)) return false
         if (getAllyHome(guildId, slot) == null) return false
         val member = memberRepository.getByPlayerAndGuild(playerId, guildId) ?: return false
         val rank = rankRepository.getById(member.rankId) ?: return false

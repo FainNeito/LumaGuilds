@@ -561,4 +561,18 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
         assertEquals(PrestigeAdjustmentResult.RaiseNeedsGrant, subject.repository.setPrestigeCount(guildId, 2, actorId, Instant.now()))
         assertEquals(PrestigeAdjustmentResult.NotFound, subject.repository.setPrestigeCount(UUID.randomUUID(), 1, actorId, Instant.now()))
     }
+
+    // Audit 2026-11-10: REQ-186 waives only the fee and the level; other guards stay.
+    @Test
+    fun `a staff grant is still refused while the guild's gold is frozen`() {
+        val subject = open()
+        subject.storage.connection.executeUpdate(
+            "INSERT INTO guild_gold_security (guild_id, frozen, reason, updated_by, updated_at) VALUES (?, ?, ?, ?, ?)",
+            guildId.toString(), true, "audit test", actorId.toString(), 1L,
+        )
+        assertEquals(
+            PrestigeRejection.FROZEN,
+            assertIs<PrestigeResult.Rejected>(subject.repository.grantWithCommitStatus(grant()).result).reason,
+        )
+    }
 }
