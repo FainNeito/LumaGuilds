@@ -644,6 +644,21 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-178
 **State-driven.** WHILE the weekend XP boost is enabled (default on) and the current time falls on one of its days in its time zone (default Saturday and Sunday, America/New_York) THE SYSTEM SHALL multiply XP from every guild activity by its multiplier (default 2), rounding down, for every guild, except weekly-quest and admin-granted XP; WHILE a dated XP boost is also active THE SYSTEM SHALL apply only the larger of the two, never both. The default prestige fees SHALL be 8,000, 16,000, 24,000, 24,000, 24,000 and 24,000 gold for prestiges I to VI.
 
+### REQ-179
+**State-driven.** WHILE a guild owns Quick Travel (best tier applies) THE SYSTEM SHALL shorten its members' guild-home and allied-home teleport countdown from 5 seconds to 5 x the Quick Travel multiplier rounded down (at least 1 second) and the cooldown between those teleports to the configured cooldown x the same multiplier, and SHALL apply that one cooldown to command and menu teleports on Java and Bedrock alike; IF the guild's Quick Travel cannot be read THEN THE SYSTEM SHALL use the standard countdown and cooldown.
+
+### REQ-180
+**State-driven.** WHILE a guild's current prestige tier is at least the second-ally-home tier (default II) THE SYSTEM SHALL let it keep a second allied home under the same access rules as the first, with set, move, remove and teleport on Java and Bedrock.
+
+### REQ-181
+**Ubiquitous.** THE SYSTEM SHALL tell EnthusiaMarket how many extra guild-owned stalls a guild may own (1 at or above the extra-stall tier, default III, otherwise 0), and EnthusiaMarket SHALL refuse a guild stall purchase that would take the guild above its configured guild stall limit (default 1) plus that bonus, without removing any stall a guild already owns.
+
+### REQ-182
+**Event-driven.** WHEN a player with Manage home in a host guild opens its allied-home access page on Java or Bedrock THE SYSTEM SHALL let them choose which allied guilds may use the host's allied homes, which ranks of each allowed guild may use them, and which individual players are blocked; WHEN anyone tries to use the host's allied homes THE SYSTEM SHALL allow only a member of an allowed, currently allied guild whose rank is allowed by the host and has Use ally homes in their own guild, and who is not blocked, checking again when the countdown ends.
+
+### REQ-183
+**Ubiquitous.** THE SYSTEM SHALL let a player with Manage home choose, for each allied guild separately on Java and Bedrock, which of their own guild's ranks may use that ally's allied homes; WHERE no choice is stored for an ally THE SYSTEM SHALL use each rank's Use ally homes permission, and the guild owner SHALL always keep access on their own side.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

@@ -611,6 +611,12 @@ progression:
     carry_over:
       enabled: false
       landing_level: 5
+    # REQ-180, REQ-181: practical perks a guild keeps from the prestige tier
+    # shown. second_ally_home: a second allied home. extra_stall: one more
+    # guild-owned market stall in EnthusiaMarket.
+    perks:
+      second_ally_home_tier: 2
+      extra_stall_tier: 3
 
   # Experience values for different activities
   bank_deposit_xp_per_100: 1         # XP per 100 coins deposited

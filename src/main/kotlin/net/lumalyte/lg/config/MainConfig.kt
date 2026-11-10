@@ -461,6 +461,7 @@ data class PrestigeConfig(
     var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
     var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
     var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
+    var perks: PrestigePerksConfig = PrestigePerksConfig(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }
@@ -474,6 +475,12 @@ data class PrestigeConfig(
         return fees[currentPrestigeCount]
     }
 }
+
+/** REQ-180, REQ-181: the prestige tier at which each practical perk unlocks. */
+data class PrestigePerksConfig(
+    val secondAllyHomeTier: Int = 2,
+    val extraStallTier: Int = 3,
+)
 
 /** REQ-175: XP earned past level 100 can start the next climb, up to the start of [landingLevel]. */
 data class PrestigeCarryOverConfig(
