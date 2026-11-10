@@ -627,9 +627,7 @@ fun socialModule() = module {
     single<net.lumalyte.lg.interaction.listeners.GuildChatListener> {
         net.lumalyte.lg.interaction.listeners.GuildChatListener()
     }
-    single<net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener> {
-        net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener(get(), get())
-    }
+    single { net.lumalyte.lg.application.services.PrivatePartyRetirement(get(), get()) }
     single<net.lumalyte.lg.infrastructure.listeners.GuildDisbandedListener> {
         net.lumalyte.lg.infrastructure.listeners.GuildDisbandedListener(get(), get(), get(), get())
     }

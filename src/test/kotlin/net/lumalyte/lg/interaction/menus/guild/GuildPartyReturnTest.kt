@@ -48,7 +48,13 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
     }
 
     @Test fun `successful creation keeps its draft values and returns through the original parent`() {
+        val invited = Guild(UUID.randomUUID(), "Vibe", createdAt = Instant.EPOCH)
+        every { guilds.getGuild(invited.id) } returns invited
+        every { members.getGuildMembers(invited.id) } returns emptySet()
         every { parties.createParty(any()) } answers { firstArg() }
+        every { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) } answers {
+            net.lumalyte.lg.domain.entities.PartyRequest.create(guild.id, invited.id, player.uniqueId).copy(partyId = firstArg())
+        }
         val navigator = MenuNavigator(player)
         val visits = mutableListOf<String>()
         val management = management(navigator, visits)
@@ -56,7 +62,7 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
         val role = UUID.randomUUID()
         setField(creation, "partyName", "RaidNight")
         setField(creation, "restrictedRoles", mutableSetOf(role))
-        setField(creation, "isPrivateParty", true)
+        setField(creation, "selectedGuilds", mutableSetOf(guild.id, invited.id))
         navigator.openMenu(dashboard(visits))
         navigator.openMenu(management)
         navigator.openMenu(creation)
@@ -66,10 +72,9 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
         assertEquals("dashboard", visits.last())
         verify(exactly = 1) {
             parties.createParty(match {
-                it.name == "RaidNight" && it.restrictedRoles == setOf(role) && it.guildIds == setOf(guild.id)
+                it.name == "RaidNight" && it.restrictedRoles == setOf(role) && it.guildIds == setOf(guild.id) && it.shared
             })
         }
-        verify(exactly = 0) { parties.inviteToParty(any(), any(), any(), any()) }
     }
 
     @Test fun `shared party creation leaves invitees out until they accept`() {
@@ -84,7 +89,6 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
         val visits = mutableListOf<String>()
         val management = management(navigator, visits)
         val creation = creation(navigator)
-        setField(creation, "isPrivateParty", false)
         setField(creation, "selectedGuilds", mutableSetOf(guild.id, invited.id))
         navigator.openMenu(dashboard(visits))
         navigator.openMenu(management)
@@ -107,8 +111,8 @@ internal class GuildPartyReturnTest : GuildParentReturnFixture() {
         val menu = net.lumalyte.lg.interaction.menus.bedrock.BedrockPartyCreationMenu(
             MenuNavigator(player), player, guild, java.util.logging.Logger.getLogger("party-test")
         )
-        menu.javaClass.getDeclaredMethod("handlePartyCreation", String::class.java, Boolean::class.javaPrimitiveType, Guild::class.java)
-            .also { it.isAccessible = true }.invoke(menu, "Expedition", false, invited)
+        menu.javaClass.getDeclaredMethod("handlePartyCreation", String::class.java, Guild::class.java)
+            .also { it.isAccessible = true }.invoke(menu, "Expedition", invited)
         verify(exactly = 1) { parties.createParty(match { it.guildIds == setOf(guild.id) && it.shared }) }
         verify(exactly = 1) { parties.inviteToParty(any(), guild.id, invited.id, player.uniqueId) }
     }

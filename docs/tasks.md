@@ -1349,8 +1349,16 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PARTY-MENU** Tag: TDD. REQ-205. Evidence: CenteredRowTest, PartyMenuContractTest.
 - [x] **PARTY-PAGE** Tag: TDD. REQ-206. Evidence: PartyMenuContractTest.
   - References: `docs/plans/2026-11-10-party-pages.md`.
+
 ## Diplomacy history (REQ-203, REQ-204)
 
 - [x] **DIPLOMACY-LOG** Tag: TDD. REQ-203. Evidence: DiplomacyLogTest, DiplomacyHistorySQLTest (SQLite + MariaDB), RelationServiceHistoryTest.
 - [x] **DIPLOMACY-PAGE** Tag: TDD. REQ-204. Evidence: MenuLocalizationTest, LocaleContractTest.
   - References: `docs/plans/2026-11-10-diplomacy-history.md`.
+
+## Parties are only for talking between guilds (REQ-207 to REQ-209)
+
+- [x] **NO-PRIVATE-PARTIES** Tag: TDD. REQ-207. Evidence: PrivatePartyRetirementTest, PartyServicePrivatePartyTest, GuildPartyReturnTest.
+- [x] **RETIRE-PRIVATE-PARTIES** Tag: TDD. REQ-208. Evidence: PrivatePartyRetirementTest.
+- [x] **ONE-CHAT-AT-A-TIME** Tag: TDD. REQ-209. Evidence: GuildChatListenerTest.
+  - References: `docs/plans/2026-11-10-party-chat-only-between-guilds.md`.

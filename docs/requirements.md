@@ -726,6 +726,15 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-204
 **Event-driven.** WHEN a player opens a guild's diplomacy history THE SYSTEM SHALL list that guild's history entries newest first, 45 per page on Java and 20 per page on Bedrock, each with its date and the player who made it when there is one.
 
+### REQ-207
+**Ubiquitous.** THE SYSTEM SHALL keep parties for talking between two or more guilds: WHEN a guild is created THE SYSTEM SHALL NOT create Guild_Chat, Officer_Chat or Leader_Chat parties for it, and IF anyone tries to create a party that only one guild can ever join THEN THE SYSTEM SHALL refuse it.
+
+### REQ-208
+**Event-driven.** WHEN the plugin starts THE SYSTEM SHALL end every active single-guild party by marking it dissolved, without deleting it, and SHALL move every player whose party chat pointed at one of those parties back to normal chat.
+
+### REQ-209
+**Event-driven.** WHEN a player turns on guild, ally or mod chat while party chat is on THE SYSTEM SHALL turn party chat off and tell them; WHEN a player switches to party chat while in guild, ally or mod chat THE SYSTEM SHALL move them out of that channel and tell them.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
