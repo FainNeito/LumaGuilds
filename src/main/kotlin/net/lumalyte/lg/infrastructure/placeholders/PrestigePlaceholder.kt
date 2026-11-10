@@ -2,6 +2,7 @@ package net.lumalyte.lg.infrastructure.placeholders
 
 import net.lumalyte.lg.domain.rewards.PrestigeStanding
 import net.lumalyte.lg.domain.values.PrestigeNumeral
+import net.lumalyte.lg.utils.ColorCodeUtils
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
@@ -21,6 +22,8 @@ object PrestigePlaceholder {
             "guild_prestige" -> standing.tier.toString()
             "guild_prestige_roman" -> roman(standing.tier)
             "guild_prestige_badge" -> badge(standing.tier, badges)
+            // REQ-219: Velocitab and other MiniMessage tab lists show "&f" literally.
+            "guild_prestige_badge_minimessage" -> badge(standing.tier, badges).let { if (it.isEmpty()) it else ColorCodeUtils.toMiniMessage(it) }
             "guild_prestige_first_tier" -> standing.firstTier.toString()
             "guild_prestige_last_date" -> standing.lastAppliedAt?.let(DATE::format) ?: ""
             else -> ""

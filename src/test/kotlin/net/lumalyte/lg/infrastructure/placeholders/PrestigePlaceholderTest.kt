@@ -53,4 +53,12 @@ class PrestigePlaceholderTest {
         assertEquals("", PrestigePlaceholder.value("guild_prestige_badge", crowned, listOf("", "b1"), 6))
         assertEquals("", v("guild_prestige_unknown", crowned))
     }
+
+    @org.junit.jupiter.api.Test
+    fun `badge for proxy tab lists is MiniMessage`() {
+        val badges = listOf("", "&f\uB025", "&6✦II")
+        val one = PrestigeStanding(1, null, 0)
+        assertEquals("<white>\uB025", PrestigePlaceholder.value("guild_prestige_badge_minimessage", one, badges, 6))
+        assertEquals("", PrestigePlaceholder.value("guild_prestige_badge_minimessage", PrestigeStanding(0, null, 0), badges, 6))
+    }
 }

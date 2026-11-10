@@ -1343,3 +1343,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **KILL-LOG** Tag: TDD. REQ-199, REQ-200. Evidence: KillRecordingTest, GuildKillLogSQLTest (SQLite + MariaDB), KillServiceLogTest.
 - [x] **STATS-MENU** Tag: TDD. REQ-201, REQ-202. Evidence: GuildStatisticsLayoutContractTest, GuildStatisticsSeason2ContractTest, BedrockGuildStatisticsTruthfulnessContractTest.
   - References: `docs/plans/2026-11-10-statistics-simplified.md`.
+
+## Prestige badge for proxy tab lists (REQ-219)
+
+- [x] **PRESTIGE-BADGE-MINIMESSAGE** Tag: TDD. REQ-219. Evidence: PrestigePlaceholderTest.

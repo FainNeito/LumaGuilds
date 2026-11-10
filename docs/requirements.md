@@ -715,6 +715,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-202
 **Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
 
+### REQ-219
+**Event-driven.** WHEN %lumaguilds_guild_prestige_badge_minimessage% is requested THE SYSTEM SHALL return the same badge as %lumaguilds_guild_prestige_badge% with its colour codes written as MiniMessage, so proxy tab lists such as Velocitab show the badge instead of the raw code.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
