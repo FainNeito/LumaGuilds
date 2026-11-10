@@ -40,21 +40,21 @@ internal class AllyHomeMenuAuthorizationTest {
         val fixture = Fixture()
         fixture.allowed = false
         fixture.click()
-        verify(exactly = 0) { fixture.teleports.startTeleport(any(), any(), any()) }
+        verify(exactly = 0) { fixture.teleports.startHomeTeleport(any(), any(), any()) }
     }
 
     @Test fun removedHomeDenied() {
         val fixture = Fixture()
         fixture.currentTarget = fixture.currentTarget?.copy(allyHome = null)
         fixture.click()
-        verify(exactly = 0) { fixture.teleports.startTeleport(any(), any(), any()) }
+        verify(exactly = 0) { fixture.teleports.startHomeTeleport(any(), any(), any()) }
     }
 
     @Test fun disbandedGuildDenied() {
         val fixture = Fixture()
         fixture.currentTarget = null
         fixture.click()
-        verify(exactly = 0) { fixture.teleports.startTeleport(any(), any(), any()) }
+        verify(exactly = 0) { fixture.teleports.startHomeTeleport(any(), any(), any()) }
     }
 
     @Test fun relocatedHomeUsesCurrent() {
@@ -65,7 +65,7 @@ internal class AllyHomeMenuAuthorizationTest {
             )
         fixture.click()
         verify(exactly = 1) {
-            fixture.teleports.startTeleport(
+            fixture.teleports.startHomeTeleport(
                 fixture.player,
                 match { it.x == NEW_X + CENTER && it.y == HOME_Y.toDouble() && it.z == NEW_Z + CENTER },
                 any(),
@@ -77,21 +77,21 @@ internal class AllyHomeMenuAuthorizationTest {
         val fixture = Fixture()
         fixture.currentTarget = fixture.currentTarget?.copy(name = "Renamed")
         fixture.click()
-        verify(exactly = 1) { fixture.teleports.startTeleport(fixture.player, any<Location>(), any()) }
+        verify(exactly = 1) { fixture.teleports.startHomeTeleport(fixture.player, any<Location>(), any()) }
     }
 
     @Test fun grantedAccessUsesCurrentState() {
         val fixture = Fixture(initialAllowed = false)
         fixture.allowed = true
         fixture.click()
-        verify(exactly = 1) { fixture.teleports.startTeleport(fixture.player, any<Location>(), any()) }
+        verify(exactly = 1) { fixture.teleports.startHomeTeleport(fixture.player, any<Location>(), any()) }
     }
 
     @Test fun unlistedHomeDenied() {
         val fixture = Fixture()
         fixture.eligible = false
         fixture.click()
-        verify(exactly = 0) { fixture.teleports.startTeleport(any(), any(), any()) }
+        verify(exactly = 0) { fixture.teleports.startHomeTeleport(any(), any(), any()) }
     }
 
     private class Fixture(initialAllowed: Boolean = true) {

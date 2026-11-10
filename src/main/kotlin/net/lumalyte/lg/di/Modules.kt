@@ -717,6 +717,12 @@ fun progressionModule() = module {
             as net.lumalyte.lg.application.persistence.PrestigeHistory
     }
     single { net.lumalyte.lg.application.services.GuildPrestigeStandings(get(), get()) }
+    single {
+        val configService = get<net.lumalyte.lg.application.services.ConfigService>()
+        net.lumalyte.lg.application.services.GuildPrestigePerks(get()) {
+            net.lumalyte.lg.domain.rewards.PrestigePerks(configService.loadConfig().progression.prestige.perks)
+        }
+    }
     single<net.lumalyte.lg.application.persistence.DisbandedPrestigeGuilds> {
         net.lumalyte.lg.infrastructure.persistence.guilds.PrestigeTombstonesSQL(get())
     }
@@ -1263,7 +1269,11 @@ fun utilitiesModule() = module {
 
     // Other utilities
     single<net.lumalyte.lg.infrastructure.services.TeleportationService> {
-        net.lumalyte.lg.infrastructure.services.TeleportationService(get(), get())
+        // REQ-179: Quick Travel shortens the home countdown and cooldown.
+        net.lumalyte.lg.infrastructure.services.TeleportationService(
+            get(), get(),
+            net.lumalyte.lg.application.services.HomeTravel(get(), get(), get()),
+        )
     }
 }
 
