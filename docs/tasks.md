@@ -1349,3 +1349,8 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PARTY-MENU** Tag: TDD. REQ-205. Evidence: CenteredRowTest, PartyMenuContractTest.
 - [x] **PARTY-PAGE** Tag: TDD. REQ-206. Evidence: PartyMenuContractTest.
   - References: `docs/plans/2026-11-10-party-pages.md`.
+## Diplomacy history (REQ-203, REQ-204)
+
+- [x] **DIPLOMACY-LOG** Tag: TDD. REQ-203. Evidence: DiplomacyLogTest, DiplomacyHistorySQLTest (SQLite + MariaDB), RelationServiceHistoryTest.
+- [x] **DIPLOMACY-PAGE** Tag: TDD. REQ-204. Evidence: MenuLocalizationTest, LocaleContractTest.
+  - References: `docs/plans/2026-11-10-diplomacy-history.md`.

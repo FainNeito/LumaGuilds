@@ -6205,7 +6205,6 @@ menu:
     feedback:
       no_manage_permission: '<red>You don''t have permission to manage relations.'
       no_enemy_permission: '<red>You don''t have permission to declare enemy status.'
-      history_placeholder: '<yellow>Diplomatic history coming soon!'
   guild_emoji:
     title: '<white>Guild Emoji - <guild>'
     current:
@@ -8158,3 +8157,23 @@ party_page:
     leave_failed: "<red>Couldn't leave the party. Try again."
     invited: '<green>Invited <guild>. They join when they accept.'
     invite_failed: "<red>Couldn't invite <guild>. They may already be invited or in a party with you."
+# REQ-203/REQ-204: diplomacy history.
+diplomacy_history:
+  title: '<white>Diplomacy history • <guild>'
+  button: 'Diplomacy History'
+  when: '<gray><date>'
+  when_by: '<gray><date> · by <white><player>'
+  empty:
+    name: '<gray>No history yet'
+    lore: '<gray>Alliances, enemies, truces, peace and war results are recorded from this update on.'
+  kind:
+    allied: '<green>Allied with <guild>'
+    alliance_ended: '<gray>Alliance with <guild> ended'
+    declared_enemies: '<red>Declared <guild> enemies'
+    declared_enemies_by: '<red><guild> declared you enemies'
+    truce_started: '<white>Truce with <guild> for <days> days'
+    truce_ended: '<gray>Truce with <guild> ended'
+    peace: '<green>Peace with <guild>'
+    war_won: '<gold>Won the war against <guild>'
+    war_lost: '<red>Lost the war against <guild>'
+    war_drawn: '<gray>War with <guild> ended in a draw'

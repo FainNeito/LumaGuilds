@@ -720,6 +720,11 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 ### REQ-206
 **Event-driven.** WHEN a player clicks a party THE SYSTEM SHALL open that party's page showing its leader, dates, rank limits and guilds; WHERE the player has Manage Parties THE SYSTEM SHALL offer inviting a guild that is not in the party and, after a second click, leaving the party; WHERE the player has Manage Relations THE SYSTEM SHALL offer moderating the party channel.
+### REQ-203
+**Event-driven.** WHEN two guilds become allies, end an alliance, become enemies, start or end a truce, make peace, or end a war THE SYSTEM SHALL save one history entry for each guild with the other guild, the change as seen by that guild, the player who made it when there is one, the time and, for a truce, its length in days; IF the entry cannot be saved THEN THE SYSTEM SHALL still complete the change.
+
+### REQ-204
+**Event-driven.** WHEN a player opens a guild's diplomacy history THE SYSTEM SHALL list that guild's history entries newest first, 45 per page on Java and 20 per page on Bedrock, each with its date and the player who made it when there is one.
 
 ## Guild Chronicle
 
