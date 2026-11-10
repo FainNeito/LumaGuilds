@@ -42,6 +42,7 @@ import org.koin.core.component.inject
 class GuildCommand : BaseCommand(), KoinComponent {
 
     private val lang: LangService by inject()
+    private val guildBanService: net.lumalyte.lg.application.services.GuildBanService by inject()
     private val guildService: GuildService by inject()
     private val lfgService: net.lumalyte.lg.application.services.LfgService by inject()
     private val guildRepository: net.lumalyte.lg.application.persistence.GuildRepository by inject()
@@ -1876,6 +1877,66 @@ class GuildCommand : BaseCommand(), KoinComponent {
             player.sendMessage(lang.msg("command.common.blank_line"))
         }
         player.playSound(player.location, org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f)
+    }
+
+    // REQ-194: /g ban <player> [confirm]. Without confirm it only says what will happen.
+    @Subcommand("ban")
+    @CommandPermission("lumaguilds.guild.ban")
+    @CommandCompletion("@guildmembers confirm")
+    fun onBan(player: Player, targetPlayerName: String, @co.aikar.commands.annotation.Optional confirm: String?) {
+        val guild = guildService.getPlayerGuilds(player.uniqueId).firstOrNull() ?: run {
+            player.sendMessage(lang.msg("command.migrated.guild.rename.you_are_not_in_a_guild"))
+            return
+        }
+        val (targetId, targetName) = resolveBanTarget(guild.id, targetPlayerName) ?: run {
+            player.sendMessage(lang.msg("guild_ban.command.unknown_player", "player" to targetPlayerName))
+            return
+        }
+        val bans = guildBanService
+        if (!confirm.equals("confirm", ignoreCase = true)) {
+            when (val check = bans.check(player.uniqueId, guild.id, targetId)) {
+                is net.lumalyte.lg.application.services.BanResult.Banned ->
+                    player.sendMessage(net.lumalyte.lg.interaction.menus.guild.GuildBanMessages.preview(lang, check.wasMember, targetName))
+                else -> sendBanResult(player, check, targetName, guild.name)
+            }
+            return
+        }
+        sendBanResult(player, bans.ban(player.uniqueId, guild.id, targetId), targetName, guild.name)
+    }
+
+    // REQ-194: /g unban <player>.
+    @Subcommand("unban")
+    @CommandPermission("lumaguilds.guild.ban")
+    @CommandCompletion("@guildbans")
+    fun onUnban(player: Player, targetPlayerName: String) {
+        val guild = guildService.getPlayerGuilds(player.uniqueId).firstOrNull() ?: run {
+            player.sendMessage(lang.msg("command.migrated.guild.rename.you_are_not_in_a_guild"))
+            return
+        }
+        val bans = guildBanService
+        val targetId = bans.bans(guild.id).map { it.playerId }
+            .firstOrNull { Bukkit.getOfflinePlayer(it).name.equals(targetPlayerName, ignoreCase = true) }
+            ?: resolveBanTarget(guild.id, targetPlayerName)?.first
+        if (targetId == null) {
+            player.sendMessage(lang.msg("guild_ban.command.not_banned", "player" to targetPlayerName))
+            return
+        }
+        player.sendMessage(net.lumalyte.lg.interaction.menus.guild.GuildBanMessages.unban(lang, bans.unban(player.uniqueId, guild.id, targetId), targetPlayerName))
+    }
+
+    /** A ban target by name: online, a member, then any player this server has seen. */
+    private fun resolveBanTarget(guildId: UUID, name: String): Pair<UUID, String>? {
+        findPlayerByName(name)?.let { return it.uniqueId to it.name }
+        findGuildMemberByName(guildId, name)?.let { return it.playerId to (Bukkit.getOfflinePlayer(it.playerId).name ?: name) }
+        val cached = Bukkit.getOfflinePlayerIfCached(name) ?: return null
+        return cached.uniqueId to (cached.name ?: name)
+    }
+
+    private fun sendBanResult(player: Player, result: net.lumalyte.lg.application.services.BanResult, target: String, guildName: String) {
+        player.sendMessage(net.lumalyte.lg.interaction.menus.guild.GuildBanMessages.ban(lang, result, target))
+        if (result is net.lumalyte.lg.application.services.BanResult.Banned) {
+            findPlayerByName(target)?.sendMessage(lang.msg("guild_ban.notify.target", "guild" to guildName))
+        }
     }
 
     @Subcommand("kick")

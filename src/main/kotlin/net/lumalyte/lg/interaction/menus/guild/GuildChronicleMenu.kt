@@ -88,7 +88,7 @@ internal class GuildChronicleMenu(
                 if (snapshot.goal.rewardId == id) lang.gui("chronicle.tracked") else lang.gui("chronicle.shared"))),
             referenceItem("lg_sources", listOf(
                 lang.gui("chapter_two_rewards.capacity_bank", "capacity" to benefits.bankCapacity),
-                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to benefits.memberCapacity),
+                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, benefits.memberCapacity)),
                 lang.gui("chapter_two_rewards.multipliers", "cooldown" to benefits.homeCooldownMultiplier, "fee" to benefits.withdrawalFeeMultiplier))),
             referenceItem("lg_prestige", earningDetails(offer)),
         )

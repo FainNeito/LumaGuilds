@@ -172,6 +172,10 @@ class LumaGuildsExpansion : PlaceholderExpansion(), KoinComponent {
 
         // Get guild information
         val guild = guildService.getGuild(guildId) ?: return ""
+        // REQ-190: the member cap comes from the member service, not the flat reward number.
+        if (ident == "guild_reward_member_capacity") {
+            return runCatching { memberService.getMemberLimit(guildId).toString() }.getOrDefault("")
+        }
         if (ident.startsWith("guild_reward_")) return RewardPlaceholder.value(ident, progressionService.getRewardState(guildId))
         if (ident.startsWith("source_")) return sourceUsagePlaceholder(guildId, ident)
         if (ident.startsWith("guild_prestige")) {

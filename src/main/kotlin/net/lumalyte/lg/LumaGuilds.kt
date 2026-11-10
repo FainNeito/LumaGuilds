@@ -192,6 +192,9 @@ class LumaGuilds : JavaPlugin() {
             get().get<net.lumalyte.lg.application.persistence.GuildInvitationRepository>(),
             get().get<net.lumalyte.lg.application.services.InviteBlockService>(),
         )
+        // REQ-194: no invites to players banned from the guild.
+        val guildBans = get().get<net.lumalyte.lg.application.services.GuildBanService>()
+        net.lumalyte.lg.infrastructure.services.GuildInvitationManager.guildBans = guildBans::isBanned
 
         // Initialize Gold Balance Button
         net.lumalyte.lg.application.utilities.GoldBalanceButton.initialize(this, get().get())
@@ -760,6 +763,16 @@ class LumaGuilds : JavaPlugin() {
                 .mapNotNull { Bukkit.getOfflinePlayer(it.playerId).name }
         }
 
+        // REQ-194: /g unban offers the guild's banned players.
+        commandManager.commandCompletions.registerAsyncCompletion("guildbans") { context ->
+            val player = context.player ?: return@registerAsyncCompletion emptyList()
+            val guild = get().get<net.lumalyte.lg.application.services.GuildService>()
+                .getPlayerGuilds(player.uniqueId).firstOrNull() ?: return@registerAsyncCompletion emptyList()
+            get().get<net.lumalyte.lg.application.services.GuildBanService>().bans(guild.id)
+                .mapNotNull { Bukkit.getOfflinePlayer(it.playerId).name }
+                .ifEmpty { listOf("<player>") }
+        }
+
         // REQ-189: /g sethome offers the guild's existing homes (to move one) and a hint for a new name.
         commandManager.commandCompletions.registerAsyncCompletion("sethomenames") { context ->
             val player = context.player ?: return@registerAsyncCompletion listOf("<name>")
@@ -1070,6 +1083,11 @@ class LumaGuilds : JavaPlugin() {
 
         // Register war kill tracking listener
         server.pluginManager.registerEvents(net.lumalyte.lg.infrastructure.listeners.WarKillTrackingListener(), this)
+        // REQ-199: every player kill goes to the kill log behind guild statistics.
+        server.pluginManager.registerEvents(
+            net.lumalyte.lg.infrastructure.listeners.GuildKillLogListener(this, get().get<net.lumalyte.lg.application.services.KillService>()),
+            this,
+        )
         server.pluginManager.registerEvents(net.lumalyte.lg.infrastructure.listeners.CombatAntiGriefListener(), this)
         val warService = get().get<net.lumalyte.lg.application.services.WarService>()
         val recoveredKillVictories = warService.reconcilePendingKillVictories()

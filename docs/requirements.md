@@ -659,6 +659,8 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-183
 **Ubiquitous.** THE SYSTEM SHALL let a player with Manage home choose, for each allied guild separately on Java and Bedrock, which of their own guild's ranks may use that ally's allied homes; WHERE no choice is stored for an ally THE SYSTEM SHALL use each rank's Use ally homes permission, and the guild owner SHALL always keep access on their own side.
 
+### REQ-190
+**Ubiquitous.** WHERE member capacity is enabled THE SYSTEM SHALL limit each guild to the smaller of the server maximum and `base + per_step x floor(level / step_levels)` capped at the configured maximum (defaults 10, 5, 5, 100), using level 100 for a guild that has prestiged and never less than the guild's protected floor; WHEN this requirement is first deployed THE SYSTEM SHALL record each existing guild's member count once as its protected floor; THE SYSTEM SHALL never remove a member because of the cap and SHALL only refuse new members while the guild is at or above it.
 ### REQ-184
 **Event-driven.** WHEN a sender with `lumaguilds.admin.prestige` runs `/lumaguilds prestige info <guild>` THE SYSTEM SHALL show that guild's prestige count, level, kept rewards, each applied prestige with its tier, date, kept reward and actor, and any staff adjustments.
 
@@ -676,6 +678,42 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 ### REQ-189
 **Ubiquitous.** THE SYSTEM SHALL tab-complete every argument of every `/g` and `/lumaguilds` subcommand the sender may use: known values (guilds, players, members, homes, ranks, rewards, tiers, slots, `confirm`) where the argument has them, and otherwise one `<hint>` naming what to type, which disappears once the sender starts typing.
+
+### REQ-191
+**Event-driven.** WHEN a player opens a guild's info page THE SYSTEM SHALL show one 6-row page with the description, level, guild card, prestige and relations items centred in the top row, the guild's members as heads in the next four rows (36 per page, sorted by rank from highest to lowest by default), and previous page, page, sort, back and next page items in the bottom row; WHEN the player clicks sort THE SYSTEM SHALL cycle the order through rank, online first and name.
+
+### REQ-192
+**Ubiquitous.** THE SYSTEM SHALL show every viewer each member's rank, online status or last seen time, and join date; THE SYSTEM SHALL show a member's bank contribution only to members of that guild; THE SYSTEM SHALL show the invite and banned players items only to viewers with the Manage Members permission in that guild.
+
+### REQ-193
+**Event-driven.** WHEN a player clicks a member's head THE SYSTEM SHALL open that member's page; WHERE the viewer has Manage Members in that guild THE SYSTEM SHALL show Promote, Demote, Kick and Ban on it, each usable only when the viewer outranks the member and, for Promote, only when the new rank stays below the viewer's, and SHALL otherwise show the button greyed with the reason; THE SYSTEM SHALL ask for confirmation before a kick or a ban.
+
+### REQ-194
+**Event-driven.** WHEN a player with Manage Members bans a player from their guild THE SYSTEM SHALL remove the target from the guild if they are a member, save the ban and delete that guild's pending invites to the target; IF the target is the owner or the actor does not outrank a member target THEN THE SYSTEM SHALL change nothing; WHILE a ban is saved THE SYSTEM SHALL refuse to add the player to that guild by any route and SHALL refuse new invites and applications to it; IF the ban list cannot be read THEN THE SYSTEM SHALL refuse the join; WHEN a player with Manage Members unbans the player THE SYSTEM SHALL delete the ban.
+
+### REQ-195
+**Ubiquitous.** THE SYSTEM SHALL show on the guild card Yes or No for whether the guild has a home set, a banner, a placed vault and, when a guild shop lookup is registered, a guild shop, without showing how many homes there are or where they are.
+
+### REQ-196
+**Event-driven.** WHEN a player clicks relations on a guild's info page THE SYSTEM SHALL open a page listing allies, enemies and active truces on separate rows, up to 8 guilds each with an item opening the full list when there are more, where clicking a guild opens its info page.
+
+### REQ-197
+**Unwanted behaviour.** IF a player who is not the target removes a member and the actor's rank does not outrank the target's rank THEN THE SYSTEM SHALL refuse the removal.
+
+### REQ-198
+**Ubiquitous.** THE SYSTEM SHALL show the Java guild menu as 3 rows with Information, Progression, the guild banner, Quests and Statistics centred on the top row; Ranks, Economy, Settings, Guild Stalls and Recruitment centred on the middle row; and Getting Started, Diplomacy, Warfare and Guild Actions on the bottom row with Guild Actions alone in the right corner; THE SYSTEM SHALL NOT show a separate Members button.
+
+### REQ-199
+**Event-driven.** WHEN a player kills another player THE SYSTEM SHALL save the killer, victim, each player's guild, the weapon and the time to the kill log, unless the killer is the victim, neither player is in a guild, both are in the same guild, or the same killer killed the same victim within the last 10 minutes.
+
+### REQ-200
+**Ubiquitous.** THE SYSTEM SHALL compute a guild's kills, deaths and kill/death ratio from the kill log, where the ratio is kills divided by deaths, or kills when there are no deaths, for all time and for any time range.
+
+### REQ-201
+**Ubiquitous.** THE SYSTEM SHALL show the Java guild statistics menu as 3 rows with Combat, Wars, Recent Activity, Rivalries and Achievements centred on the top row, Top Killers, Top Contributors and Top Inviters centred on the middle row, and Back in the bottom row, and SHALL NOT show Member Statistics, Performance, K/D Analysis, Period Statistics, Guild Comparison or Refresh.
+
+### REQ-202
+**Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
 
 ## Guild Chronicle
 

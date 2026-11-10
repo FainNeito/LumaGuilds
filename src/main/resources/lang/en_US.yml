@@ -555,22 +555,9 @@ bedrock:
     description: View authoritative guild membership, combat, war, invitation, progression, and economy statistics.
     header:
       format: '<gold><bold>━━━ <title> ━━━'
-      overview: Overview
-      economy: Economy
       invitations: Invitations
     date_format:
-      overview: MMM dd, yyyy
       activity: MMM dd, HH:mm
-    overview: |-
-      <aqua>Total Members<gray>: <white><total_members>
-      <green>Online Members<gray>: <white><online_members>
-      <yellow>Created<gray>: <white><created>
-      <light_purple>Level<gray>: <white><level>
-      <dark_aqua>Experience<gray>: <white><experience>
-    economy: |-
-      <gold>Guild Balance<gray>: <yellow><balance> <gray>coins
-      <aqua>Total Transactions<gray>: <white><transactions>
-      <dark_aqua>Average Transaction<gray>: <white><average> <gray>coins
     invitations:
       content: |-
         <gold>Total Invitations Sent<gray>: <white><total>
@@ -2980,14 +2967,9 @@ menu:
         name: '<white>⚔ <gray><display_name>'
       information:
         lore:
-          line_1: '<gray>Overview, members,'
-          line_2: '<gray>allies and wars at a glance'
+          line_1: '<gray>Members, overview,'
+          line_2: '<gray>allies and wars'
         name: '<blue>Information'
-      members:
-        lore:
-          line_1: '<gray>Member list, invites,'
-          line_2: '<gray>kicks and promotions'
-        name: '<aqua>Members'
       progression:
         lore:
           line_1: '<gray>Guild leveling, XP,'
@@ -4172,29 +4154,20 @@ menu:
   statistics:
     common:
       active_wars: '<gray>Active Wars: <white><count>'
-      activity_rate: '<gray>Activity Rate: <yellow><rate>%'
       activity_level:
         gold: '<gray>Activity Level: <gold><level>'
         green: '<gray>Activity Level: <green><level>'
         red: '<gray>Activity Level: <red><level>'
         yellow: '<gray>Activity Level: <yellow><level>'
-      average_deaths: '<gray>Avg Deaths/Member: <white><average>'
-      average_kills: '<gray>Avg Kills/Member: <white><average>'
       draws: '<gray>Draws: <yellow><count>'
-      efficiency: '<gray>Kill Efficiency: <yellow><percent>%'
-      efficiency_score: '<gray>Efficiency Score: <white><value>/100'
       kd_ratio: '<gray>K/D Ratio: <yellow><ratio>'
-      kill_death_ratio: '<gray>Kill/Death Ratio: <yellow><ratio>'
       losses: '<gray>Losses: <red><count>'
       net_kills:
         negative: '<gray>Net Kills: <red><count>'
         positive: '<gray>Net Kills: <green><count>'
-      offline: '<gray>Offline: <gray><count>'
       no_contribution_data: '<gray>No contribution data'
       no_kill_data: '<gray>No kill data available'
-      no_period_data: '<gray>No recorded data for this period'
       no_rivalry_data: '<gray>No finished wars yet'
-      balance_unavailable: '<red>Guild balance unavailable'
       unavailable: '<red>Data unavailable — check server logs'
       no_invitation_data: '<gray>No invitation data available'
       total_invitations: '<gray>Total Invitations Sent: <white><count>'
@@ -4203,17 +4176,6 @@ menu:
         second: '<gray><rank>. <player>: <white><count> invites'
         third: '<red><rank>. <player>: <white><count> invites'
         other: '<white><rank>. <player>: <white><count> invites'
-      online: '<gray>Online Now: <green><count>'
-      overall_rating:
-        gold: '<gray>Overall Rating: <gold><rating>'
-        green: '<gray>Overall Rating: <green><rating>'
-        red: '<gray>Overall Rating: <red><rating>'
-        yellow: '<gray>Overall Rating: <yellow><rating>'
-      performance_grade:
-        gold: '<gray>Performance Grade: <gold><rating>'
-        green: '<gray>Performance Grade: <green><rating>'
-        red: '<gray>Performance Grade: <red><rating>'
-        yellow: '<gray>Performance Grade: <yellow><rating>'
       ranked_contribution:
         first: '<gold><rank>. <player>: <white>$<amount>'
         other: '<white><rank>. <player>: <white>$<amount>'
@@ -4224,40 +4186,17 @@ menu:
         other: '<white><rank>. <player>: <white><kills> kills'
         second: '<gray><rank>. <player>: <white><kills> kills'
         third: '<red><rank>. <player>: <white><kills> kills'
-      total_deaths: '<gray>Total Deaths: <white><count>'
-      total_kills: '<gray>Total Kills: <white><count>'
-      total_members: '<gray>Total Members: <white><count>'
       total_wars: '<gray>Total Wars: <white><count>'
       win_rate: '<gray>Win Rate: <yellow><rate>%'
       wins: '<gray>Wins: <green><count>'
       attacker: Attacker
       defender: Defender
       more: '<gray>... and <count> more'
-      total_deaths_red: '<gray>Total Deaths: <red><count>'
-      total_kills_green: '<gray>Total Kills: <green><count>'
       unknown_guild: Unknown Guild
-      efficiency_white: '<gray>Kill Efficiency: <white><percent>%'
-      balance: '<gold>Balance: <white><amount>'
       kdr_against: '<gray>KDR: <yellow><ratio>'
       page_info: '<gray>Page <page>/<total>'
-      ranking: '<gray>Rank: <yellow>#<rank>'
       wars_fought: '<gray>Wars Fought: <yellow><count>'
-      war_record: '<gray>War Record: <green><wins>W</green> <red><losses>L</red>'
     detail:
-      kd:
-        name: '<light_purple>K/D ANALYSIS'
-      kills:
-        name: '<dark_red>⚔ KILL STATISTICS'
-      members:
-        more: '<yellow>... and <count> more members'
-        name: '<aqua>MEMBER SUMMARY'
-        player:
-          offline: '<gray>Online: <gray>No'
-          offline_name: '<gray><player>'
-          online: '<gray>Online: <green>Yes'
-          online_name: '<green><player>'
-      performance:
-        name: '<yellow>PERFORMANCE METRICS'
       recent:
         kill: '<green><killer> <gray>→ <red><victim>'
         kill_with_weapon: '<green><killer> <gray>→ <red><victim> <gray>with <white><weapon>'
@@ -4301,8 +4240,6 @@ menu:
           loss_streak: '<gray>Current Streak: <red>Loss <white>x<count>'
           name: '<yellow>WAR STATISTICS'
           win_streak: '<gray>Current Streak: <green>Win <white>x<count>'
-      period_item:
-        name: '<gold><period>'
       rivalry:
         enemy: '<red><guild>'
       achievements:
@@ -4333,11 +4270,15 @@ menu:
         well_rounded:
           locked: '<gray>? Well Rounded'
           unlocked: '<green>? Well Rounded'
-      comparison:
-        guild: '<yellow><guild>'
-    period:
-      '$key': '<green>$key'
     item:
+      combat:
+        name: '<red>Combat'
+        lore:
+          totals: '<gray>Kills: <white><kills></white> · Deaths: <white><deaths>'
+          week: '<gray>This week: <white><kills></white> kills · <white><deaths></white> deaths'
+          month: '<gray>Last 30 days: <white><kills></white> kills · <white><deaths></white> deaths'
+          all_time: '<gray>All time: <white><kills></white> kills · <white><deaths></white> deaths'
+          empty: '<dark_gray>Kills are counted from this update on.'
       back:
         lore: '<gray>Return to the previous menu'
       achievements:
@@ -4346,31 +4287,11 @@ menu:
           net_kills: '<gray>Net Kills: <white><milestone>'
           total_kills: '<gray>Total Kills: <white><milestone>'
         name: '<yellow>Guild Achievements'
-      kd:
-        name: '<light_purple>K/D Analysis'
-      kills:
-        lore:
-          action: '<yellow>Click for the full breakdown'
-        name: '<dark_red>Kill Statistics'
-      members:
-        name: '<aqua>Member Statistics'
-      performance:
-        name: '<yellow>Performance Metrics'
-      period:
-        lore:
-          description: '<gray>View stats by time period'
-          periods: '<gray>Daily, weekly or monthly'
-        name: '<dark_aqua>Period Statistics'
       recent:
         lore:
           kills: '<gray>Recent kills: <white><count>'
           latest: '<gray>Most recent kills, any date'
         name: '<white>Recent Activity'
-      refresh:
-        lore:
-          description: '<gray>Update all statistics'
-          details: '<yellow>Click to refresh'
-        name: '<green>Refresh Statistics'
       rivalry:
         lore:
           description: '<gray>Kills vs other guilds'
@@ -4392,10 +4313,6 @@ menu:
         lore:
           unavailable: '<red>War system not available'
         name: '<dark_red>War Statistics'
-      comparison:
-        name: '<gold>Guild Comparison'
-        lore:
-          description: '<gray>Compare stats across all guilds'
       next_page:
         name: '<white>Next Page ➡'
       previous_page:
@@ -4403,20 +4320,13 @@ menu:
     title: '<white>Statistics • <guild>'
     feedback:
       load_failed:
-        kd: '<red>❌ Failed to load K/D analysis. Please try again later.'
-        kills: '<red>❌ Failed to load kill statistics. Please try again later.'
-        members: '<red>❌ Failed to load member statistics. Please try again later.'
-        performance: '<red>❌ Failed to load performance statistics. Please try again later.'
         recent: '<red>❌ Failed to load recent activity. Please try again later.'
         top_contributors: '<red>❌ Failed to load top contributors. Please try again later.'
         top_killers: '<red>❌ Failed to load top killers. Please try again later.'
         top_inviters: '<red>❌ Failed to load invitation statistics. Please try again later.'
         wars: '<red>❌ Failed to load war statistics. Please try again later.'
         achievements: '<red>❌ Failed to load achievements.'
-        comparison: '<red>❌ Failed to load comparison data.'
-        period: '<red>❌ Failed to load period statistics.'
         rivalry: '<red>❌ Failed to load rivalry data.'
-      refreshing: '<green>Refreshing statistics...'
     rating:
       activity:
         active: Active
@@ -4425,14 +4335,6 @@ menu:
         lightly_active: Lightly Active
         moderately_active: Moderately Active
         very_active: Very Active
-      kd:
-        average: Average
-        below_average: Below Average
-        excellent: Excellent
-        godlike: Godlike
-        good: Good
-        needs_improvement: Needs Improvement
-        very_good: Very Good
       kill_milestone:
         bloodbath: Bloodbath (500+)
         butcher: Butcher (100+)
@@ -4447,13 +4349,6 @@ menu:
         dominator: Dominator (1k+)
         struggling: Struggling (-100)
         warrior: Warrior (100+)
-      performance:
-        elite: Elite
-        legendary: Legendary
-        novice: Novice
-        recruit: Recruit
-        skilled: Skilled
-        veteran: Veteran
   incoming_requests:
     title: "<white>Incoming Relation Requests"
     fallback:
@@ -5350,9 +5245,6 @@ menu:
       unknown_player: "Unknown Player"
       member: "Member"
     overview:
-      name: "<gold>Guild Overview"
-      guild: "<gray>Name: <white><guild>"
-      level: "<gray>Level: <yellow><level>"
       mode: "<gray>Mode: <white><mode>"
       emoji: "<gray>Emoji: <white><emoji>"
       tag: "<gray>Tag: <white><tag>"
@@ -5366,26 +5258,6 @@ menu:
       value: "<reset><description>"
       invite_hint: '<yellow>Click to get the Discord invite in chat'
       chat_prefix: "<gray>Guild description: <reset>"
-    members:
-      name: "<aqua>Members (<white><count><aqua>)"
-      description: '<yellow>Click to see every member'
-      player: "<white><player>"
-      rank: "<gray>Rank: <white><rank>"
-      more: "<gray>... and <count> more"
-      more_hint: '<gray>Open Members to see everyone'
-    relations:
-      entry: "<gray>• <white><guild>"
-      more: "<gray>... and <count> more"
-      view_all: "<yellow>Click to view the full list"
-      allies:
-        name: "<green>Allies (<white><count><green>)"
-        none: "<gray>No allies"
-      truces:
-        name: "<white>Truces (<count>)"
-        none: "<gray>No truces"
-      wars:
-        name: "<red>Wars (<white><count><red>)"
-        none: "<gray>No active wars"
     relation_browser:
       allies:
         title: "<green>Allies - <guild>"
@@ -5415,24 +5287,7 @@ menu:
         name: '<yellow>⬅ Back'
         description: '<gray>Return to the previous menu'
     statistics:
-      name: "<yellow>Statistics"
-      balance: "<gray>Bank Balance: <gold>$<balance>"
-      level: "<gray>Level: <yellow><level>"
       war_kills: "<red>War vs <opponent><gray>: <green><kills><gray>/<yellow><target> kills"
-      home:
-        present: "<gray>Has Guild Home: <green>Yes"
-        missing: "<gray>Has Guild Home: <red>No"
-      banner:
-        present: "<gray>Has Banner: <green>Yes"
-        missing: "<gray>Has Banner: <red>No"
-    progression:
-      name: "<light_purple>Progression"
-      level: "<gray>Level: <yellow><level>"
-      next: "<gray>Next Level: <yellow><level>"
-    back:
-      name: '<yellow>⬅ Back'
-      description: '<gray>Return to the previous menu'
-
   truce_request:
     title: "<white>Request Truce"
     feedback:
@@ -8186,3 +8041,122 @@ discord:
     kept: 'Reward kept: {reward}'
     first: 'First guild to reach Prestige {tier}!'
     footer: 'Enthusia SMP'
+# REQ-191 to REQ-196: the combined guild page.
+guild_page:
+  member_title: '<white>Member • <player>'
+  relations_title: '<white>Relations • <guild>'
+  bans_title: '<white>Banned • <guild>'
+  description:
+    none: '<gray>No description yet.'
+  level:
+    name: '<green>Level <level>'
+    members: '<gray>Member cap: <white><limit>'
+  card:
+    name: '<gold><guild>'
+    leader: '<gray>Leader: <white><leader>'
+    members: '<gray>Members: <white><count>/<limit> <dark_gray>·</dark_gray> <green><online> online'
+    balance: '<gray>Bank balance: <gold>$<balance>'
+    facts_header: 'Guild facts'
+    fact:
+      home: '<gray>Has guild home: <value>'
+      banner: '<gray>Has banner: <value>'
+      vault: '<gray>Has vault: <value>'
+      shop: '<gray>Has guild shop: <value>'
+    'yes': '<green>Yes'
+    'no': '<red>No'
+  relations:
+    name: '<white>Relations'
+    allies: '<green><count> allies'
+    enemies: '<red><count> enemies'
+    truces: '<gray><count> truces'
+    hint: '<yellow>Click to open'
+  roster:
+    name: '<white><player>'
+    rank: '<gray>Rank: <rank>'
+    online: '<green>Online'
+    last_seen:
+      minutes: '<gray>Last seen: <white><amount>m ago'
+      hours: '<gray>Last seen: <white><amount>h ago'
+      days: '<gray>Last seen: <white><amount>d ago'
+      unknown: '<gray>Last seen: <white>unknown'
+    joined: '<gray>Joined: <white><date>'
+    contribution: '<gray>Bank contribution: <gold>$<amount>'
+    open: '<yellow>Click to open their page'
+  nav:
+    previous: '<white>Previous page'
+    next: '<white>Next page'
+    page: '<white>Page <page> of <pages>'
+    page_count: '<gray><count> members'
+    sort: '<white>Sort: <order>'
+    sort_hint: '<yellow>Click to change'
+    order:
+      rank: 'rank (highest first)'
+      online: 'online first'
+      name: 'name'
+    back: '<white>Back'
+    invite: '<green>Invite a player'
+    bans: '<red>Banned players'
+    bans_count: '<gray><count> banned'
+  member:
+    promote: '<green>Promote to <rank>'
+    promote_plain: '<green>Promote'
+    demote: '<yellow>Demote to <rank>'
+    demote_plain: '<yellow>Demote'
+    kick: '<red>Kick'
+    kick_lore: '<gray>Removes them from the guild. They can be invited back.'
+    ban: '<red>Ban'
+    ban_lore: '<gray>Kicks them and blocks invites and join requests until unbanned.'
+    click: '<yellow>Click to confirm'
+    click_rank: '<yellow>Click to change their rank'
+    denied:
+      no_permission: '<red>You need the Manage Members permission.'
+      self: "<red>You can't do this to yourself."
+      not_outranked: "<red>You can't change someone of your rank or higher."
+      top_rank_for_viewer: "<red>Your rank can't give that rank."
+      lowest_rank: '<red>Already the lowest rank.'
+    feedback:
+      promoted: '<green><player> is now <rank>.'
+      demoted: '<yellow><player> is now <rank>.'
+      failed: "<red>That didn't work. Refresh the page and try again."
+      gone: '<red>That player is no longer in the guild.'
+  relation_rows:
+    allies: '<green>Allies'
+    enemies: '<red>Enemies'
+    truces: '<gray>Truces'
+    none: '<gray>None'
+    guild: '<white><guild>'
+    view: '<yellow>Click to view their guild'
+    more: '<white>and <count> more'
+    more_hint: '<yellow>Click to see all'
+  bans:
+    entry: '<white><player>'
+    by: '<gray>Banned by: <white><by>'
+    date: '<gray>Banned on: <white><date>'
+    unban: '<yellow>Click to unban'
+    empty: '<gray>Nobody is banned.'
+    unbanned: '<green><player> is unbanned.'
+    failed: "<red>Couldn't unban <player>. Try again."
+# REQ-194: guild bans.
+guild_ban:
+  confirm:
+    title: '<white>Ban <player>?'
+    confirm: '<red>Ban <player>'
+    member_lore: '<gray>Removes them from the guild and blocks them from rejoining.'
+    outsider_lore: '<gray>Blocks invites and join requests from them.'
+    undo_lore: '<gray>Unban them any time from Banned players.'
+    cancel: '<green>Cancel'
+  command:
+    banned: '<green><player> is banned from your guild.'
+    preview_member: '<yellow>This removes <player> from the guild and blocks them from rejoining. Add confirm to the end of the command to do it.'
+    preview_outsider: '<yellow>This blocks <player> from joining your guild. Add confirm to the end of the command to do it.'
+    unknown_player: '<red>No player named <player> has played here.'
+    no_permission: '<red>You need the Manage Members permission to do that.'
+    self: "<red>You can't ban yourself."
+    owner: "<red>The guild leader can't be banned."
+    not_outranked: '<red>You can only ban members below your rank.'
+    already_banned: '<yellow><player> is already banned.'
+    failed: "<red>Couldn't save that. Try again."
+    unbanned: '<green><player> is unbanned.'
+    not_banned: "<yellow><player> isn't banned from your guild."
+  notify:
+    target: '<red>You were banned from <guild>.'
