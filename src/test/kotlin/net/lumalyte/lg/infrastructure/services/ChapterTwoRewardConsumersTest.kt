@@ -40,7 +40,7 @@ class ChapterTwoRewardConsumersTest {
         assertEquals(48_500L, gold.effectiveCapacity)
         assertEquals(gold.effectiveCapacity, progression.getMaxBankBalance(guild).toLong())
         assertEquals(2, progression.getMaxHomes(guild))
-        assertEquals(50, members.getMemberLimit(guild))
+        assertEquals(main.guild.maxMembersPerGuild, members.getMemberLimit(guild))
         assertEquals(members.getMemberLimit(guild), progression.getMaxMembers(guild))
         assertEquals(0.9, progression.getWithdrawalFeeMultiplier(guild))
         assertEquals(main.bank.withdrawalFeePercent * 0.9, gold.policy.withdrawalFeePercent)

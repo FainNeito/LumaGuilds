@@ -460,7 +460,7 @@ class GuildProgressionMenu(
             meta.displayName(lang.gui("chapter_two_rewards.title"))
             meta.lore(listOf(
                 lang.gui("chapter_two_rewards.capacity_bank", "capacity" to benefits.bankCapacity),
-                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to benefits.memberCapacity),
+                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, benefits.memberCapacity)),
                 lang.gui("chapter_two_rewards.multipliers", "cooldown" to benefits.homeCooldownMultiplier, "fee" to benefits.withdrawalFeeMultiplier)))
         } }
         pane.addItem(GuiItem(summary) { it.isCancelled = true }, 4, 5)

@@ -470,7 +470,19 @@ fun guildsModule() = module {
                     .getOrNull<net.lumalyte.lg.application.services.GuildRolePermissionResolver>()
                     ?.invalidatePlayerCache(playerId)
             },
+            // REQ-190: level-based member capacity.
+            memberCapacity = { get<ConfigService>().loadConfig() },
+            prestigeCount = { guildId ->
+                org.koin.core.context.GlobalContext.get()
+                    .getOrNull<net.lumalyte.lg.application.services.GuildPrestigeStandings>()
+                    ?.standing(guildId)?.tier
+            },
+            capacityFloors = get(),
         )
+    }
+    single<net.lumalyte.lg.application.persistence.MemberCapacityFloors> {
+        // The first start with REQ-190 records every existing guild's member count.
+        net.lumalyte.lg.infrastructure.persistence.guilds.MemberCapacityFloorsSQL(get()).also { it.snapshotOnce() }
     }
     single<RelationService> { RelationServiceBukkit(get(), get(), get()) }
     single<LfgService> { LfgServiceBukkit(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

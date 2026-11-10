@@ -166,7 +166,9 @@ data class GuildConfig(
     // Ranks and Members
     var maxCustomRanks: Int = 10,
     var maxRankNameLength: Int = 16,
-    var maxMembersPerGuild: Int = 50,
+    var maxMembersPerGuild: Int = 100,
+    /** REQ-190: member cap by level. */
+    var memberCapacity: MemberCapacityConfig = MemberCapacityConfig(),
     
     // Home System
     var homeTeleportCooldownSeconds: Int = 5,
@@ -805,3 +807,16 @@ data class NameFilterNormalization(
     // Collapse repeated characters: "heeelllooo" → "hello"
     var collapseRepeats: Boolean = true
 )
+
+/** REQ-190: `base + per_step x floor(level / step_levels)`, at most [max]. */
+data class MemberCapacityConfig(
+    val enabled: Boolean = true,
+    val base: Int = 10,
+    val perStep: Int = 5,
+    val stepLevels: Int = 5,
+    val max: Int = 100,
+) {
+    init {
+        require(base >= 1 && perStep >= 0 && stepLevels >= 1 && max >= base) { "Invalid member capacity settings" }
+    }
+}

@@ -659,6 +659,8 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-183
 **Ubiquitous.** THE SYSTEM SHALL let a player with Manage home choose, for each allied guild separately on Java and Bedrock, which of their own guild's ranks may use that ally's allied homes; WHERE no choice is stored for an ally THE SYSTEM SHALL use each rank's Use ally homes permission, and the guild owner SHALL always keep access on their own side.
 
+### REQ-190
+**Ubiquitous.** WHERE member capacity is enabled THE SYSTEM SHALL limit each guild to the smaller of the server maximum and `base + per_step x floor(level / step_levels)` capped at the configured maximum (defaults 10, 5, 5, 100), using level 100 for a guild that has prestiged and never less than the guild's protected floor; WHEN this requirement is first deployed THE SYSTEM SHALL record each existing guild's member count once as its protected floor; THE SYSTEM SHALL never remove a member because of the cap and SHALL only refuse new members while the guild is at or above it.
 ### REQ-184
 **Event-driven.** WHEN a sender with `lumaguilds.admin.prestige` runs `/lumaguilds prestige info <guild>` THE SYSTEM SHALL show that guild's prestige count, level, kept rewards, each applied prestige with its tier, date, kept reward and actor, and any staff adjustments.
 

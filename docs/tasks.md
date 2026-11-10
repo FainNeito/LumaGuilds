@@ -1306,6 +1306,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **ALLY-HOME-OUTBOUND** Tag: TDD. REQ-183. Evidence: AllyHomeAccessTest, GuildServiceAllyHomeAccessTest, AllyHomeVisitorMenuTest, AllyHomeAccessSQLTest (SQLite + MariaDB).
   - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.
 
+## Member capacity by level (REQ-190)
+
+- [x] **MEMBER-CAPACITY** Tag: TDD. REQ-190. Evidence: GuildMemberCapacityTest, MemberCapacityServiceTest, MemberCapacityFloorSQLTest (SQLite + MariaDB).
+  - References: `docs/plans/2026-11-10-member-capacity.md`.
 ## Prestige staff tools and Discord post (REQ-184 to REQ-188)
 
 - [x] **PRESTIGE-STAFF-INFO** Tag: TDD. REQ-184. Evidence: PrestigeStaffCommandTest.

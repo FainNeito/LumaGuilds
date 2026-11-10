@@ -152,7 +152,18 @@ guild:
   # Ranks and Members
   max_custom_ranks: 10
   max_rank_name_length: 16
-  max_members_per_guild: 50
+  # Absolute ceiling for any guild, including grandfathered ones.
+  max_members_per_guild: 100
+  # REQ-190: member cap grows with level: base + per_step for every step_levels
+  # levels, up to max. Guilds that have prestiged keep the level 100 cap. Guilds
+  # that existed when this shipped keep at least the member count they had then.
+  # enabled: false goes back to the old flat max_members_per_guild cap.
+  member_capacity:
+    enabled: true
+    base: 10
+    per_step: 5
+    step_levels: 5
+    max: 100
   
   # Home System
   home_teleport_cooldown_seconds: 5
