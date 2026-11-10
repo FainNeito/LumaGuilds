@@ -68,10 +68,11 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
         addHomeAccessButtons(pane)
 
         // Ally home teleport buttons (if perk unlocked)
-        if (progressionService.hasPerkUnlocked(guild.id, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)) {
-            addAllyHomeButtons(pane, 0, 5)
-            addAllyHomeAccessButton(pane)
-        }
+        val alliedWaypoints =
+            progressionService.hasPerkUnlocked(guild.id, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)
+        if (alliedWaypoints) addAllyHomeButtons(pane, 0, 5)
+        // The door always shows to managers, so the feature can be found before it is unlocked.
+        addAllyHomeAccessButton(pane, alliedWaypoints)
 
         // Back button: bottom centre, same as every guild menu (ally homes skip this slot)
         addBackButton(pane, BACK_SLOT, BOTTOM_ROW)
@@ -264,15 +265,23 @@ class GuildHomeMenu(private val menuNavigator: MenuNavigator, private val player
         }
     }
 
-    private fun addAllyHomeAccessButton(pane: StaticPane) {
+    private fun addAllyHomeAccessButton(pane: StaticPane, unlocked: Boolean = true) {
         if (!rankService.hasPermission(player.uniqueId, guild.id, net.lumalyte.lg.domain.entities.RankPermission.MANAGE_HOME)) return
+        if (!unlocked) {
+            val locked = ItemStack.of(Material.IRON_DOOR)
+                .name(lang.gui("menu.allied_homes.locked.name"))
+                .lore(lang.gui("menu.allied_homes.locked.description"))
+            pane.addItem(GuiItem(locked) { player.sendMessage(lang.msg("menu.allied_homes.locked.feedback")) },
+                ALLY_ACCESS_SLOT, BOTTOM_ROW)
+            return
+        }
         val allyAccessItem =
             NexoItemProvider.getItemStackOrFallback("lg_ally_access") { ItemStack.of(Material.IRON_DOOR) }
-                .name(lang.gui("menu.guild_home.ally_access.name"))
-                .lore(lang.gui("menu.guild_home.ally_access.description"))
+                .name(lang.gui("menu.allied_homes.button.name"))
+                .lore(lang.gui("menu.allied_homes.button.description"))
                 .lore(lang.gui("menu.guild_home.access.click"))
         val allyAccessGuiItem = GuiItem(allyAccessItem) {
-            menuNavigator.openMenu(menuFactory.createAllyHomeAccessMenu(menuNavigator, player, guild))
+            menuNavigator.openMenu(AlliedHomesMenu(menuNavigator, player, guild))
         }
         pane.addItem(allyAccessGuiItem, ALLY_ACCESS_SLOT, BOTTOM_ROW)
     }

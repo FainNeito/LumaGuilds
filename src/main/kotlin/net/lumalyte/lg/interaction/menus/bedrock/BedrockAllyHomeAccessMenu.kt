@@ -36,10 +36,15 @@ class BedrockAllyHomeAccessMenu(
     private val lang: LangService by inject()
     private val plugin: Plugin by inject()
     private val memberService: net.lumalyte.lg.application.services.MemberService by inject()
+    private val progressionService: net.lumalyte.lg.application.services.ProgressionService by inject()
 
     override fun getForm(): Form {
         if (!rankService.hasPermission(player.uniqueId, guild.id, RankPermission.MANAGE_HOME)) {
             return statusForm(lang.bedrock("menu.ally_home_access.permission_denied"))
+        }
+        // Allied homes need the Allied Waypoints reward; say so instead of an empty page.
+        if (!progressionService.hasPerkUnlocked(guild.id, net.lumalyte.lg.domain.values.PerkType.ALLY_HOME_ACCESS)) {
+            return statusForm(lang.bedrock("menu.allied_homes.locked.feedback"))
         }
         val current = guildService.getGuild(guild.id)
             ?: return statusForm(lang.bedrock("bedrock.ally_home_access.missing_guild"))
@@ -55,6 +60,20 @@ class BedrockAllyHomeAccessMenu(
                         lang.bedrock("menu.ally_home_access.info.instructions")
                 }
             )
+
+        // REQ-180: set, move or remove our own allied homes from here too.
+        for (slot in 1..guildService.allyHomeSlots(guild.id)) {
+            val home = guildService.getAllyHome(guild.id, slot)
+            builder = builder.button(
+                if (home == null) lang.bedrock("bedrock.allied_homes.set", "slot" to slot)
+                else lang.bedrock("bedrock.allied_homes.move", "slot" to slot),
+            )
+            actions += { setAlliedHome(slot) }
+            if (home != null) {
+                builder = builder.button(lang.bedrock("bedrock.allied_homes.remove", "slot" to slot))
+                actions += { removeAlliedHome(slot) }
+            }
+        }
 
         allies.forEach { (allyId, allyName) ->
             val allowed = allyId in current.allyHomeAllowedGuilds
@@ -98,6 +117,26 @@ class BedrockAllyHomeAccessMenu(
                 guildService.getGuild(otherId)?.let { otherId to it.name }
             }
             .sortedBy { it.second.lowercase() }
+
+    private fun setAlliedHome(slot: Int) {
+        val here = net.lumalyte.lg.domain.entities.GuildHome(
+            player.location.world.uid,
+            net.lumalyte.lg.domain.values.Position3D(player.location.blockX, player.location.blockY, player.location.blockZ),
+        )
+        player.sendMessage(
+            if (guildService.setAllyHome(guild.id, here, player.uniqueId, slot)) lang.msg("menu.allied_homes.feedback.set")
+            else lang.msg("menu.allied_homes.feedback.failed"),
+        )
+        open()
+    }
+
+    private fun removeAlliedHome(slot: Int) {
+        player.sendMessage(
+            if (guildService.removeAllyHome(guild.id, player.uniqueId, slot)) lang.msg("menu.allied_homes.feedback.removed")
+            else lang.msg("menu.allied_homes.feedback.failed"),
+        )
+        open()
+    }
 
     /** One form per ally: allowed, which ranks, which players are blocked. */
     private fun showAllyForm(allyId: UUID, allyName: String) {

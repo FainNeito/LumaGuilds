@@ -738,7 +738,7 @@ bedrock:
       set_new: Set New Home
       remove: Remove Home
       access: Home Rank Access
-      ally_access: Ally Home Access
+      ally_access: Allied Homes
     access:
       title: 'Home Access - <guild>'
       description: '<gray>Select a home to configure its rank whitelist.'
@@ -766,6 +766,10 @@ bedrock:
       remove_failed: '<red>❌ Failed to remove the guild home.'
   home_access:
     description: '<gray>Toggle which guild ranks may use this home. The owner rank is always allowed.'
+  allied_homes:
+    set: 'Set allied home <slot> here'
+    move: 'Move allied home <slot> here'
+    remove: 'Remove allied home <slot>'
   ally_home_access:
     missing_guild: '<red>The guild could not be reloaded.'
     no_allies: '<gray>Your guild has no active allies to configure.'
@@ -4533,6 +4537,36 @@ menu:
       grant: "<yellow>Click to grant"
     back: "<gray>← Back to Homes"
 
+  allied_homes:
+    title: "<white>Allied Homes"
+    button:
+      name: "<gold>Allied Homes"
+      description: "<gray>Set your allied homes and choose who may use them"
+    locked:
+      name: "<gray>Allied Homes <red>(locked)"
+      description: "<gray>Unlocks with the <white>Allied Waypoints</white> reward (guild level 50)."
+      feedback: "<red>Allied homes unlock with the Allied Waypoints reward at guild level 50."
+    slot:
+      name: "<gold>Allied Home <slot>"
+      unset: "<gray>Not set yet."
+      at: "<gray><world> <white><x>, <y>, <z>"
+      set_here: "<yellow>Click to set it where you stand"
+      move_here: "<yellow>Left-click: move it to where you stand"
+      remove: "<yellow>Right-click: remove it"
+      locked:
+        name: "<gray>Allied Home 2 <red>(locked)"
+        description: "<gray>Unlocks at <white>Prestige II</white>."
+    access:
+      description: "<gray>Choose which allies, their ranks and players may visit"
+    info:
+      name: "<yellow>How allied homes work"
+      line_1: "<gray>Allies you allow use <white>/g allyhome <guild></white> or their Homes menu."
+      line_2: "<gray>Your own members reach allied homes the same way."
+    back: "<gray>← Back to Homes"
+    feedback:
+      set: "<green>Allied home set to your current location."
+      removed: "<green>Allied home removed."
+      failed: "<red>Couldn't change that allied home. You may lack permission."
   ally_home_access:
     title: "<white>Allied-home Access"
     permission_denied: "<red>❌ You need MANAGE_HOME to configure ally-home access."
@@ -6508,7 +6542,6 @@ menu:
       click: '<yellow>Click to manage'
     ally_access:
       name: '<gold>Ally Home Access'
-      description: '<gray>Choose which allies can use your ally home'
     ally:
       none:
         name: '<gray>No Ally Homes Available'

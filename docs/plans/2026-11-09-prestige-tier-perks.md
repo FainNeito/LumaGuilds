@@ -107,3 +107,12 @@ countdown-end checks use the current rules (REQ-141 behaviour).
 On each ally's page the guild also picks which of its OWN ranks may use that
 ally's homes. No pick: the rank's Use ally homes permission decides (as
 before). The owner always keeps access. Stored in `ally_home_outbound_ranks`.
+
+## Allied Homes page (Fain, 2026-11-09: "I can't see ally homes in the menu at all")
+
+Allied homes could only be set by command, and the Homes menu hid the whole
+feature unless the guild owned Allied Waypoints (Lv50). Now managers always see
+the door: locked (with how to unlock) without the reward, otherwise it opens
+**Allied Homes**: Allied Home 1 and 2 (left-click set/move here, right-click
+remove; 2 locked below Prestige II), the access page, and a how-it-works note.
+Bedrock's access form gets the same set/move/remove buttons and a locked message.
