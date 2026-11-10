@@ -1117,10 +1117,13 @@ class LumaGuilds : JavaPlugin() {
         // Register emoji grant listener and reconcile all plugin-managed permissions.
         val emojiGrantListener = get().get<net.lumalyte.lg.infrastructure.listeners.GuildEmojiGrantListener>()
         server.pluginManager.registerEvents(emojiGrantListener, this)
-        val emojiResult = get().get<net.lumalyte.lg.infrastructure.services.GuildEmojiGrantService>().reconcileAll()
-        if (!emojiResult.successful) {
-            logger.warning("Emoji permission reconciliation completed with ${emojiResult.failed} failure(s)")
-        }
+        // LuckPerms console commands fail while worlds are still loading, so wait for the first tick.
+        server.scheduler.runTask(this, Runnable {
+            val emojiResult = get().get<net.lumalyte.lg.infrastructure.services.GuildEmojiGrantService>().reconcileAll()
+            if (!emojiResult.successful) {
+                logger.warning("Emoji permission reconciliation completed with ${emojiResult.failed} failure(s)")
+            }
+        })
 
         // Optional DiscordSRV guild-role integration. The listener is always registered;
         // the service is a no-op unless discord.guild_roles.enabled is explicitly enabled.
