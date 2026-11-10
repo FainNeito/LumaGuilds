@@ -622,6 +622,14 @@ progression:
     carry_over:
       enabled: false
       landing_level: 5
+    # REQ-188: post each prestige to Discord as an embed through a webhook
+    # (Server Settings > Integrations > Webhooks > New Webhook > Copy URL).
+    # Keep the URL private: anyone with it can post to that channel.
+    discord:
+      enabled: false
+      webhook_url: ""
+      username: "Enthusia"
+      avatar_url: ""
     # REQ-180, REQ-181: practical perks a guild keeps from the prestige tier
     # shown. second_ally_home: a second allied home. extra_stall: one more
     # guild-owned market stall in EnthusiaMarket.

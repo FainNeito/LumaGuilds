@@ -661,6 +661,23 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 ### REQ-190
 **Ubiquitous.** WHERE member capacity is enabled THE SYSTEM SHALL limit each guild to the smaller of the server maximum and `base + per_step x floor(level / step_levels)` capped at the configured maximum (defaults 10, 5, 5, 100), using level 100 for a guild that has prestiged and never less than the guild's protected floor; WHEN this requirement is first deployed THE SYSTEM SHALL record each existing guild's member count once as its protected floor; THE SYSTEM SHALL never remove a member because of the cap and SHALL only refuse new members while the guild is at or above it.
+### REQ-184
+**Event-driven.** WHEN a sender with `lumaguilds.admin.prestige` runs `/lumaguilds prestige info <guild>` THE SYSTEM SHALL show that guild's prestige count, level, kept rewards, each applied prestige with its tier, date, kept reward and actor, and any staff adjustments.
+
+### REQ-185
+**Event-driven.** WHEN a sender with `lumaguilds.admin.prestige` runs `/lumaguilds prestige set <guild> <count> confirm` with a count below the guild's current prestige count THE SYSTEM SHALL lower the count to it, remove the kept rewards of the removed tiers (newest first), leave level, experience, gold and prestige history unchanged, and record the old count, new count, actor and time as an adjustment; WHEN `confirm` is missing THE SYSTEM SHALL only show what would change; IF the count is higher than the current one THEN THE SYSTEM SHALL change nothing and point to the grant command.
+
+### REQ-186
+**Event-driven.** WHEN a sender with `lumaguilds.admin.prestige` runs `/lumaguilds prestige grant <guild> <reward> confirm` THE SYSTEM SHALL apply a prestige to that guild with no fee and no level requirement, keeping the named reward if it is one of the guild's prestige choices, and SHALL run every prestige announcement and listener exactly as for a guild's own prestige; IF the reward is missing or not a choice THEN THE SYSTEM SHALL list the valid choices and change nothing.
+
+### REQ-187
+**Event-driven.** WHEN a sender with `lumaguilds.admin.prestige` runs `/lumaguilds prestige rerun <guild> [tier] confirm` THE SYSTEM SHALL forget which members were credited for that guild's applied prestiges (all, or only the given tier) and SHALL credit its online members again, leaving offline members to be credited on their next join.
+
+### REQ-188
+**Event-driven.** WHEN a prestige is newly committed AND the Discord webhook is enabled with a URL THE SYSTEM SHALL post one embed naming the guild, the tier in Roman numerals, the actor, the kept reward and whether it is the first guild to reach that tier, off the main thread; IF the request fails or takes longer than 10 seconds THEN THE SYSTEM SHALL log it and the prestige SHALL stay applied.
+
+### REQ-189
+**Ubiquitous.** THE SYSTEM SHALL tab-complete every argument of every `/g` and `/lumaguilds` subcommand the sender may use: known values (guilds, players, members, homes, ranks, rewards, tiers, slots, `confirm`) where the argument has them, and otherwise one `<hint>` naming what to type, which disappears once the sender starts typing.
 
 ## Guild Chronicle
 

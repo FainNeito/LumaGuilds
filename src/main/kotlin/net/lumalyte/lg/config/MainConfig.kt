@@ -464,6 +464,8 @@ data class PrestigeConfig(
     var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
     var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
     var perks: PrestigePerksConfig = PrestigePerksConfig(),
+    var discord: net.lumalyte.lg.application.services.PrestigeDiscordSettings =
+        net.lumalyte.lg.application.services.PrestigeDiscordSettings(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }

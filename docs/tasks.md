@@ -1310,3 +1310,15 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 
 - [x] **MEMBER-CAPACITY** Tag: TDD. REQ-190. Evidence: GuildMemberCapacityTest, MemberCapacityServiceTest, MemberCapacityFloorSQLTest (SQLite + MariaDB).
   - References: `docs/plans/2026-11-10-member-capacity.md`.
+## Prestige staff tools and Discord post (REQ-184 to REQ-188)
+
+- [x] **PRESTIGE-STAFF-INFO** Tag: TDD. REQ-184. Evidence: PrestigeStaffCommandTest.
+- [x] **PRESTIGE-STAFF-SET** Tag: TDD. REQ-185. Evidence: PrestigeRepositorySQLTest (SQLite + MariaDB), PrestigeStaffCommandTest, PrestigeStaffServiceTest.
+- [x] **PRESTIGE-STAFF-GRANT** Tag: TDD. REQ-186. Evidence: PrestigeRepositorySQLTest (SQLite + MariaDB), PrestigeStaffCommandTest.
+- [x] **PRESTIGE-STAFF-RERUN** Tag: TDD. REQ-187. Evidence: PrestigeCreditLedgerSQLTest, PrestigeStaffServiceTest, PrestigeStaffCommandTest.
+- [x] **PRESTIGE-DISCORD-WEBHOOK** Tag: TDD. REQ-188. Evidence: PrestigeDiscordPostTest.
+  - References: `docs/plans/2026-11-09-prestige-staff-and-discord.md`.
+
+## Command completions (REQ-189)
+
+- [x] **COMMAND-COMPLETIONS** Tag: TDD. REQ-189. Evidence: LumaGuildsCompletionsTest, GuildCommandCompletionContractTest, LumaGuildsCommandTest. Every `/g` and `/lumaguilds` argument suggests values or a `<hint>`.

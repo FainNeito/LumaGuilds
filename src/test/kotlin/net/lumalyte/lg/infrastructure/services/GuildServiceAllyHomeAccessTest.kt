@@ -36,6 +36,7 @@ class GuildServiceAllyHomeAccessTest {
         secondHome: GuildHome? = null,
         targetPrestige: Int = 0,
         outbound: Map<UUID, Set<UUID>> = emptyMap(),
+        waypoints: Set<UUID> = setOf(sourceGuildId, targetGuildId),
     ): GuildServiceBukkit {
         val ownerRank = Rank(ownerRankId, sourceGuildId, "Owner", 0, RankPermission.values().toSet())
         val memberRank = Rank(memberRankId, sourceGuildId, "Member", 10, memberRankPerms)
@@ -81,6 +82,7 @@ class GuildServiceAllyHomeAccessTest {
             historyRepository = mockk<MembershipHistoryRepository>(relaxed = true),
             adminOverrideService = mockk(relaxed = true),
             homeActivationService = mockk(relaxed = true),
+            allyHomesUnlocked = { it in waypoints },
             allyHomeAccess = accessRepository.also {
                 every { it.access(targetGuildId) } returns access
                 every { it.secondHome(targetGuildId) } returns secondHome
@@ -275,5 +277,32 @@ class GuildServiceAllyHomeAccessTest {
         every { accessRepository.setSecondHome(any(), any()) } returns true
         val svc = makeService(ah, setOf(sourceGuildId), setOf(RankPermission.MANAGE_MEMBERS), targetPrestige = 2)
         assertFalse(svc.setAllyHome(sourceGuildId, ah, memberPlayerId, slot = 2))
+    }
+
+    // Audit 2026-11-10: commands skipped the Allied Waypoints reward the menu requires.
+    @Test
+    fun `allied homes need Allied Waypoints on both guilds`() {
+        assertFalse(makeService(ah, setOf(sourceGuildId), usable, waypoints = setOf(targetGuildId))
+            .canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
+        assertFalse(makeService(ah, setOf(sourceGuildId), usable, waypoints = setOf(sourceGuildId))
+            .canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
+        assertTrue(makeService(ah, setOf(sourceGuildId), usable).canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
+    }
+
+    @Test
+    fun `setting an allied home needs Allied Waypoints`() {
+        every { accessRepository.setSecondHome(any(), any()) } returns true
+        val locked = makeService(ah, setOf(sourceGuildId), setOf(RankPermission.MANAGE_HOME), targetPrestige = 2, waypoints = emptySet())
+        assertFalse(locked.setAllyHome(sourceGuildId, ah, memberPlayerId, slot = 2))
+    }
+
+    // Audit 2026-11-10: a guild with only its second allied home set was not listed.
+    @Test
+    fun `an ally with only a second allied home is still listed`() {
+        val second = GuildHome(UUID.randomUUID(), Position3D(5, 70, 5))
+        val svc = makeService(targetAllyHome = null, targetAllowedGuilds = setOf(sourceGuildId), usable,
+            secondHome = second, targetPrestige = 2)
+        val entries = svc.getAllyHomeEntries(sourceGuildId)
+        assertEquals(listOf(2 to second), entries.map { it.slot to it.home })
     }
 }
