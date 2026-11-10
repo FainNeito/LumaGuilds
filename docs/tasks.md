@@ -1303,4 +1303,5 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180. Evidence: GuildServiceAllyHomeAccessTest, AllyHomeAccessSQLTest (SQLite + MariaDB), PrestigeClarityTest.
 - [ ] **PRESTIGE-EXTRA-STALL** Tag: TDD. REQ-181 (with EnthusiaMarket).
 - [x] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182. Evidence: AllyHomeAccessTest, AllyHomeRankPicksTest, AllyHomeVisitorMenuTest, GuildServiceAllyHomeAccessTest.
+- [x] **ALLY-HOME-OUTBOUND** Tag: TDD. REQ-183. Evidence: AllyHomeAccessTest, GuildServiceAllyHomeAccessTest, AllyHomeVisitorMenuTest, AllyHomeAccessSQLTest (SQLite + MariaDB).
   - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.

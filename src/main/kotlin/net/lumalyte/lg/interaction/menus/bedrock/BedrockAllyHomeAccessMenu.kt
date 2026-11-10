@@ -119,6 +119,16 @@ class BedrockAllyHomeAccessMenu(
             form = form.toggle(lang.bedrock("bedrock.ally_home_access.visitor.rank", "rank" to rank.name),
                 net.lumalyte.lg.application.services.AllyHomeRankPicks.isAllowed(picks, rank.id))
         }
+        // REQ-183: our own ranks for visiting this ally (owner always can, so not listed).
+        val outboundPick = guildService.allyHomeOutboundRanks(guild.id)[allyId]
+        val ownerRank = rankService.getHighestRank(guild.id)?.id
+        val ours = rankService.listRanks(guild.id).filter { it.id != ownerRank }.sortedBy { it.priority }
+        val outboundDefaults = ours.filter { RankPermission.USE_ALLY_HOMES in it.permissions }.map { it.id }.toSet()
+        form = form.label(lang.bedrock("bedrock.ally_home_access.visitor.ours_header", "guild" to allyName))
+        ours.forEach { rank ->
+            form = form.toggle(lang.bedrock("bedrock.ally_home_access.visitor.ours_rank", "rank" to rank.name),
+                outboundPick?.contains(rank.id) ?: (rank.id in outboundDefaults))
+        }
         form = form.label(lang.bedrock("bedrock.ally_home_access.visitor.members_header"))
         members.forEach { target ->
             form = form.toggle(
@@ -126,9 +136,10 @@ class BedrockAllyHomeAccessMenu(
                 target.uniqueId in access.blockedPlayers,
             )
         }
-        // Component order: 0 label, 1 allowed, 2 label, ranks, label, members.
+        // Component order: 0 label, 1 allowed, 2 label, their ranks, label, our ranks, label, members.
         val firstRank = 3
-        val firstMember = firstRank + ranks.size + 1
+        val firstOurs = firstRank + ranks.size + 1
+        val firstMember = firstOurs + ours.size + 1
         org.geysermc.floodgate.api.FloodgateApi.getInstance().sendForm(player.uniqueId, form
             .validResultHandler { response ->
                 runOnServerThread {
@@ -145,6 +156,12 @@ class BedrockAllyHomeAccessMenu(
                     val all = ranks.map { it.id }.toSet()
                     val pick = if (chosen.containsAll(all)) null else chosen
                     if (pick != picks) ok = guildService.setAllyHomeVisitorRanks(guild.id, allyId, pick, player.uniqueId) && ok
+                    val ourChosen = ours.filterIndexed { i, _ -> response.asToggle(firstOurs + i) }.map { it.id }.toSet()
+                    // Leaving every toggle at its default keeps rank permissions in charge.
+                    val ourPick = if (outboundPick == null && ourChosen == outboundDefaults) null else ourChosen
+                    if (ourPick != outboundPick) {
+                        ok = guildService.setAllyHomeOutboundRanks(guild.id, allyId, ourPick, player.uniqueId) && ok
+                    }
                     members.forEachIndexed { i, target ->
                         val block = response.asToggle(firstMember + i)
                         if (block != (target.uniqueId in access.blockedPlayers)) {

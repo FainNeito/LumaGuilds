@@ -19,6 +19,7 @@ internal class AllyHomeAccessRepositorySQL(private val storage: Storage<Database
     private val ranks = ConcurrentHashMap<UUID, Map<UUID, Set<UUID>>>()
     private val blocked = ConcurrentHashMap<UUID, Set<UUID>>()
     private val homes = ConcurrentHashMap<UUID, GuildHome>()
+    private val outbound = ConcurrentHashMap<UUID, Map<UUID, Set<UUID>>>()
 
     init {
         try {
@@ -43,6 +44,14 @@ internal class AllyHomeAccessRepositorySQL(private val storage: Storage<Database
                 while (rs.next()) {
                     val host = UUID.fromString(rs.getString(1))
                     blocked[host] = (blocked[host] ?: emptySet()) + UUID.fromString(rs.getString(2))
+                }
+            }
+        }
+        c.prepareStatement("SELECT guild_id, ally_guild_id, rank_ids FROM ${AllyHomeAccessSchema.OUTBOUND_RANKS}").use { st ->
+            st.executeQuery().use { rs ->
+                while (rs.next()) {
+                    val guild = UUID.fromString(rs.getString(1))
+                    outbound[guild] = (outbound[guild] ?: emptyMap()) + (UUID.fromString(rs.getString(2)) to parseIds(rs.getString(3)))
                 }
             }
         }
@@ -96,6 +105,28 @@ internal class AllyHomeAccessRepositorySQL(private val storage: Storage<Database
         }
     }
 
+    override fun outboundRanks(guildId: UUID): Map<UUID, Set<UUID>> = outbound[guildId] ?: emptyMap()
+
+    @Synchronized
+    override fun setOutboundRanks(guildId: UUID, allyGuildId: UUID, rankIds: Set<UUID>?): Boolean = write {
+        delete(it, AllyHomeAccessSchema.OUTBOUND_RANKS, "guild_id = ? AND ally_guild_id = ?", guildId, allyGuildId)
+        if (rankIds != null) {
+            it.prepareStatement(
+                "INSERT INTO ${AllyHomeAccessSchema.OUTBOUND_RANKS} (guild_id, ally_guild_id, rank_ids) VALUES (?, ?, ?)",
+            ).use { st ->
+                st.setString(1, guildId.toString())
+                st.setString(2, allyGuildId.toString())
+                st.setString(3, rankIds.joinToString(",") { id -> id.toString() })
+                st.executeUpdate()
+            }
+        }
+    }.also { ok ->
+        if (ok) {
+            val current = (outbound[guildId] ?: emptyMap()) - allyGuildId
+            outbound[guildId] = if (rankIds == null) current else current + (allyGuildId to rankIds.toSet())
+        }
+    }
+
     override fun secondHome(guildId: UUID): GuildHome? = homes[guildId]
 
     @Synchronized
@@ -125,8 +156,10 @@ internal class AllyHomeAccessRepositorySQL(private val storage: Storage<Database
             delete(it, AllyHomeAccessSchema.VISITOR_RANKS, "host_guild_id = ?", guildId)
             delete(it, AllyHomeAccessSchema.BLOCKED, "host_guild_id = ?", guildId)
             delete(it, AllyHomeAccessSchema.SECOND_HOMES, "guild_id = ?", guildId)
+            delete(it, AllyHomeAccessSchema.OUTBOUND_RANKS, "guild_id = ?", guildId)
         }
         if (ok) {
+            outbound.remove(guildId)
             ranks.remove(guildId)
             blocked.remove(guildId)
             homes.remove(guildId)

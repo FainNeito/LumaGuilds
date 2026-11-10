@@ -44,6 +44,9 @@ class AllyHomeVisitorMenuTest {
     private val allyId = UUID.randomUUID()
     private val officer = Rank(UUID.randomUUID(), allyId, "Officer", 1, emptySet())
     private val recruit = Rank(UUID.randomUUID(), allyId, "Recruit", 5, emptySet())
+    private val hostOwner = Rank(UUID.randomUUID(), host.id, "Leader", 0, emptySet())
+    private val hostOfficer = Rank(UUID.randomUUID(), host.id, "HostOfficer", 1, setOf(RankPermission.USE_ALLY_HOMES))
+    private val hostRecruit = Rank(UUID.randomUUID(), host.id, "HostRecruit", 5, emptySet())
     private val guilds = mockk<GuildService>(relaxed = true)
     private var access = AllyHomeAccess()
 
@@ -59,11 +62,15 @@ class AllyHomeVisitorMenuTest {
         val ranks = mockk<RankService>()
         every { ranks.hasPermission(player.uniqueId, host.id, RankPermission.MANAGE_HOME) } returns true
         every { ranks.listRanks(allyId) } returns setOf(recruit, officer)
+        every { ranks.listRanks(host.id) } returns setOf(hostOwner, hostOfficer, hostRecruit)
+        every { ranks.getHighestRank(host.id) } returns hostOwner
         val members = mockk<MemberService>()
         every { members.getGuildMembers(allyId) } returns setOf(Member(visitor.uniqueId, allyId, recruit.id, Instant.now()))
         every { guilds.allyHomeAccess(host.id) } answers { access }
         every { guilds.setAllyHomeVisitorRanks(any(), any(), any(), any()) } returns true
         every { guilds.setAllyHomeBlocked(any(), any(), any(), any()) } returns true
+        every { guilds.setAllyHomeOutboundRanks(any(), any(), any(), any()) } returns true
+        every { guilds.allyHomeOutboundRanks(host.id) } returns emptyMap()
         startKoin { modules(module { single { guilds }; single { ranks }; single { members }; single { lang } }) }
         rebuild()
     }
@@ -95,11 +102,26 @@ class AllyHomeVisitorMenuTest {
     @Test
     fun `clicking a member's head blocks them, and again unblocks`() {
         open()
-        click(18)
+        click(36)
         verify { guilds.setAllyHomeBlocked(host.id, visitor.uniqueId, true, player.uniqueId) }
         access = AllyHomeAccess(blockedPlayers = setOf(visitor.uniqueId))
         rebuild()
-        click(18)
+        click(36)
         verify { guilds.setAllyHomeBlocked(host.id, visitor.uniqueId, false, player.uniqueId) }
+    }
+
+    // REQ-183: row 3 holds the host's own ranks for visiting this ally.
+    @Test
+    fun `turning one of our ranks off stores the ranks that keep access`() {
+        open()
+        click(27) // our first rank by priority: HostOfficer (has Use ally homes)
+        verify { guilds.setAllyHomeOutboundRanks(host.id, allyId, emptySet(), player.uniqueId) }
+    }
+
+    @Test
+    fun `use rank permissions clears our pick`() {
+        open()
+        click(26)
+        verify { guilds.setAllyHomeOutboundRanks(host.id, allyId, null, player.uniqueId) }
     }
 }

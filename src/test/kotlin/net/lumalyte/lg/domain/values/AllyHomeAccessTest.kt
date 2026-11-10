@@ -39,4 +39,22 @@ class AllyHomeAccessTest {
         val other = UUID.randomUUID()
         assertTrue(AllyHomeAccess(visitorRanks = mapOf(ally to setOf(officer))).admits(other, recruit, player))
     }
+
+    // REQ-183: the visitor's own guild picks its ranks per ally.
+    @Test
+    fun `with no outbound pick the rank permission decides`() {
+        assertTrue(AllyHomeOutbound.allows(null, recruit, isOwner = false, hasUsePermission = true))
+        assertFalse(AllyHomeOutbound.allows(null, recruit, isOwner = false, hasUsePermission = false))
+    }
+
+    @Test
+    fun `an outbound pick overrides the rank permission both ways`() {
+        assertTrue(AllyHomeOutbound.allows(setOf(recruit), recruit, isOwner = false, hasUsePermission = false))
+        assertFalse(AllyHomeOutbound.allows(setOf(officer), recruit, isOwner = false, hasUsePermission = true))
+    }
+
+    @Test
+    fun `the owner always keeps access on their own side`() {
+        assertTrue(AllyHomeOutbound.allows(emptySet(), officer, isOwner = true, hasUsePermission = false))
+    }
 }

@@ -1478,6 +1478,7 @@ class SQLiteMigrations(private val plugin: JavaPlugin, private val connection: C
             InviteBlockSchema.TABLE, BankDepositXpSchema.DELIVERIES, BankDepositXpSchema.SEQUENCES,
             PrestigeTombstoneSchema.TABLE,
             AllyHomeAccessSchema.VISITOR_RANKS, AllyHomeAccessSchema.BLOCKED, AllyHomeAccessSchema.SECOND_HOMES,
+            AllyHomeAccessSchema.OUTBOUND_RANKS,
             BankContributionSchema.ACCOUNTS,
             BankContributionSchema.RECEIPTS,
             BankContributionSchema.QUESTS,

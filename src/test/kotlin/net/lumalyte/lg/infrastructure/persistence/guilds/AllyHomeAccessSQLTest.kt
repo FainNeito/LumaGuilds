@@ -25,19 +25,23 @@ class AllyHomeAccessSQLTest : RewardSqlTestFixture() {
         assertTrue(repo.setVisitorRanks(host, ally, setOf(rank)))
         assertTrue(repo.setBlocked(host, player, true))
         assertTrue(repo.setSecondHome(host, home))
+        assertTrue(repo.setOutboundRanks(host, ally, setOf(rank)))
 
         val reloaded = AllyHomeAccessRepositorySQL(storage)
         assertEquals(mapOf(ally to setOf(rank)), reloaded.access(host).visitorRanks)
         assertEquals(setOf(player), reloaded.access(host).blockedPlayers)
         assertEquals(home, reloaded.secondHome(host))
+        assertEquals(mapOf(ally to setOf(rank)), reloaded.outboundRanks(host))
 
         assertTrue(reloaded.setVisitorRanks(host, ally, null))
         assertTrue(reloaded.setBlocked(host, player, false))
         assertTrue(reloaded.setSecondHome(host, null))
+        assertTrue(reloaded.setOutboundRanks(host, ally, null))
         val cleared = AllyHomeAccessRepositorySQL(storage)
         assertEquals(emptyMap(), cleared.access(host).visitorRanks)
         assertEquals(emptySet(), cleared.access(host).blockedPlayers)
         assertNull(cleared.secondHome(host))
+        assertEquals(emptyMap(), cleared.outboundRanks(host))
     }
 
     @Test
@@ -48,6 +52,7 @@ class AllyHomeAccessSQLTest : RewardSqlTestFixture() {
         repo.setVisitorRanks(host, ally, emptySet())
         repo.setBlocked(host, player, true)
         repo.setSecondHome(host, GuildHome(UUID.randomUUID(), Position3D(0, 64, 0)))
+        repo.setOutboundRanks(host, ally, setOf(rank))
 
         repo.deleteGuild(host)
 
@@ -55,5 +60,6 @@ class AllyHomeAccessSQLTest : RewardSqlTestFixture() {
         assertEquals(emptyMap(), reloaded.access(host).visitorRanks)
         assertEquals(emptySet(), reloaded.access(host).blockedPlayers)
         assertNull(reloaded.secondHome(host))
+        assertEquals(emptyMap(), reloaded.outboundRanks(host))
     }
 }

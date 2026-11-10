@@ -778,6 +778,8 @@ bedrock:
       allowed: 'Allow <guild> to use your allied homes'
       rank: 'Rank: <rank>'
       members_header: 'Block players (ticked = blocked)'
+      ours_header: 'Our ranks that may visit <guild> (the owner always can)'
+      ours_rank: 'Our rank: <rank>'
       block: '<player>'
   member_rank_confirmation:
     title: '⚡ Confirm Rank Change'
@@ -4551,7 +4553,15 @@ menu:
     visitor:
       title: "<white>Visitors from <guild>"
       ranks_header: "<yellow>Which of their ranks may visit"
-      ranks_hint: "<gray>Click a rank to allow or deny it. Heads below: click to block a player."
+      ranks_hint: "<gray>Their ranks that may use YOUR allied homes. Click to allow or deny."
+      ours_header: "<yellow>Our ranks that may visit <guild>"
+      ours_default: "<gray>Now: ranks with <white>Use ally homes</white> (default)."
+      ours_custom: "<gray>Now: your picks for this ally only."
+      ours_owner: "<gray>The guild owner can always visit."
+      ours_toggle: "<yellow>Click to allow or deny visiting <guild>"
+      ours_reset:
+        name: "<green>Use rank permissions"
+        description: "<gray>Clears your picks for this ally; Use ally homes decides again."
       rank:
         allowed: "<green>✓ <rank>"
         denied: "<red>✗ <rank>"

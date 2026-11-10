@@ -17,10 +17,16 @@ interface AllyHomeAccessRepository {
 
     fun setBlocked(hostGuildId: UUID, playerId: UUID, blocked: Boolean): Boolean
 
+    /** REQ-183: per ally, the guild's own ranks that may visit it. */
+    fun outboundRanks(guildId: UUID): Map<UUID, Set<UUID>>
+
+    /** `null` clears the pick, so rank permissions decide again. */
+    fun setOutboundRanks(guildId: UUID, allyGuildId: UUID, rankIds: Set<UUID>?): Boolean
+
     fun secondHome(guildId: UUID): GuildHome?
 
     fun setSecondHome(guildId: UUID, home: GuildHome?): Boolean
 
-    /** Removes everything the guild hosts (disband). */
+    /** Removes everything the guild hosts or picked (disband). */
     fun deleteGuild(guildId: UUID)
 }

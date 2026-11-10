@@ -201,6 +201,12 @@ interface GuildService {
     /** REQ-182: `null` admits every rank of [visitorGuildId] again. Needs Manage home. */
     fun setAllyHomeVisitorRanks(hostGuildId: UUID, visitorGuildId: UUID, rankIds: Set<UUID>?, actorId: UUID): Boolean = false
 
+    /** REQ-183: per ally, this guild's own ranks that may visit it (no entry: rank permissions decide). */
+    fun allyHomeOutboundRanks(guildId: UUID): Map<UUID, Set<UUID>> = emptyMap()
+
+    /** REQ-183: `null` returns that ally to rank permissions. Needs Manage home. */
+    fun setAllyHomeOutboundRanks(guildId: UUID, allyGuildId: UUID, rankIds: Set<UUID>?, actorId: UUID): Boolean = false
+
     /** REQ-182: blocks or unblocks one player from the host's allied homes. Needs Manage home. */
     fun setAllyHomeBlocked(hostGuildId: UUID, playerId: UUID, blocked: Boolean, actorId: UUID): Boolean = false
 

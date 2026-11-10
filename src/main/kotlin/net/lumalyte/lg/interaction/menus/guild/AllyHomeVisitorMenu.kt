@@ -30,9 +30,10 @@ import org.koin.core.component.inject
 import java.util.UUID
 
 /**
- * REQ-182: the host's rules for one ally. Row 1 picks which of the ally's ranks may
- * use the host's allied homes; rows 2-4 list the ally's members, and clicking one
- * blocks or unblocks them.
+ * One ally's page. Row 1 (REQ-182): which of the ally's ranks may use our allied
+ * homes. Row 3 (REQ-183): which of OUR ranks may use the ally's allied homes; the
+ * owner always can, so the owner rank is not listed. Row 4: the ally's members;
+ * clicking one blocks or unblocks them from our allied homes.
  */
 class AllyHomeVisitorMenu(
     private val menuNavigator: MenuNavigator,
@@ -102,6 +103,8 @@ class AllyHomeVisitorMenu(
             }, idx, 1)
         }
 
+        addOutboundRow(pane)
+
         members.drop(current * PER_PAGE).take(PER_PAGE).forEachIndexed { idx, target ->
             val blocked = target.uniqueId in access.blockedPlayers
             val name = target.name ?: target.uniqueId.toString()
@@ -113,7 +116,7 @@ class AllyHomeVisitorMenu(
                 .lore(lang.gui("menu.ally_home_access.visitor.member.toggle"))
             pane.addItem(GuiItem(head) {
                 save(guildService.setAllyHomeBlocked(host.id, target.uniqueId, !blocked, player.uniqueId))
-            }, idx % 9, 2 + idx / 9)
+            }, idx % 9, MEMBER_ROW + idx / 9)
         }
 
         if (current > 0) {
@@ -132,6 +135,44 @@ class AllyHomeVisitorMenu(
         return pane
     }
 
+    /** REQ-183: our own ranks for visiting this ally; no pick means rank permissions decide. */
+    private fun addOutboundRow(pane: StaticPane) {
+        val pick = guildService.allyHomeOutboundRanks(host.id)[allyId]
+        val owner = rankService.getHighestRank(host.id)?.id
+        val ours = rankService.listRanks(host.id).filter { it.id != owner }.sortedBy { it.priority }
+        val header = ItemStack.of(Material.COMPASS)
+            .name(lang.gui("menu.ally_home_access.visitor.ours_header", "guild" to allyName))
+            .lore(
+                if (pick == null) lang.gui("menu.ally_home_access.visitor.ours_default")
+                else lang.gui("menu.ally_home_access.visitor.ours_custom")
+            )
+            .lore(lang.gui("menu.ally_home_access.visitor.ours_owner"))
+        pane.addItem(GuiItem(header), 0, OURS_HEADER_ROW)
+        val reset = ItemStack.of(Material.LIME_STAINED_GLASS_PANE)
+            .name(lang.gui("menu.ally_home_access.visitor.ours_reset.name"))
+            .lore(lang.gui("menu.ally_home_access.visitor.ours_reset.description"))
+        pane.addItem(GuiItem(reset) {
+            save(guildService.setAllyHomeOutboundRanks(host.id, allyId, null, player.uniqueId))
+        }, 8, OURS_HEADER_ROW)
+        val defaults = ours.filter { RankPermission.USE_ALLY_HOMES in it.permissions }.map { it.id }.toSet()
+        ours.take(9).forEachIndexed { idx, rank ->
+            val on = pick?.contains(rank.id) ?: (rank.id in defaults)
+            val item = NexoItemProvider.getItemStackOrFallback(if (on) "lg_toggle_on" else "lg_toggle_off") {
+                ItemStack.of(if (on) Material.LIME_DYE else Material.GRAY_DYE)
+            }
+                .name(
+                    if (on) lang.gui("menu.ally_home_access.visitor.rank.allowed", "rank" to rank.name)
+                    else lang.gui("menu.ally_home_access.visitor.rank.denied", "rank" to rank.name)
+                )
+                .lore(lang.gui("menu.ally_home_access.visitor.ours_toggle", "guild" to allyName))
+            pane.addItem(GuiItem(item) {
+                val base = pick ?: defaults
+                val next = if (rank.id in base) base - rank.id else base + rank.id
+                save(guildService.setAllyHomeOutboundRanks(host.id, allyId, next, player.uniqueId))
+            }, idx, OURS_ROW)
+        }
+    }
+
     private fun save(ok: Boolean) {
         if (!ok) player.sendMessage(lang.msg("menu.ally_home_access.save_failed"))
         open()
@@ -139,6 +180,9 @@ class AllyHomeVisitorMenu(
 
     private companion object {
         const val ROWS = 6
-        const val PER_PAGE = 27
+        const val OURS_HEADER_ROW = 2
+        const val OURS_ROW = 3
+        const val MEMBER_ROW = 4
+        const val PER_PAGE = 9
     }
 }

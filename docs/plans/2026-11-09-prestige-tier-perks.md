@@ -100,3 +100,10 @@ countdown-end checks use the current rules (REQ-141 behaviour).
 - Rank picks and blocks apply to every visitor, the ally's owner included; the
   visitor still needs Use ally homes in their own guild. The check runs again
   when the countdown ends.
+
+## Outbound picks per ally (REQ-183, Fain 2026-11-09)
+
+"I might want members to have access to a certain ally home but not another."
+On each ally's page the guild also picks which of its OWN ranks may use that
+ally's homes. No pick: the rank's Use ally homes permission decides (as
+before). The owner always keeps access. Stored in `ally_home_outbound_ranks`.

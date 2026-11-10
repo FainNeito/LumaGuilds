@@ -7,6 +7,7 @@ internal object AllyHomeAccessSchema {
     const val VISITOR_RANKS = "ally_home_visitor_ranks"
     const val BLOCKED = "ally_home_blocked_players"
     const val SECOND_HOMES = "ally_home_second_homes"
+    const val OUTBOUND_RANKS = "ally_home_outbound_ranks"
     const val VERSION = 51
 
     fun create(connection: Connection, mariaDb: Boolean) {
@@ -28,6 +29,11 @@ internal object AllyHomeAccessSchema {
                 "CREATE TABLE IF NOT EXISTS $SECOND_HOMES (" +
                     "guild_id $id NOT NULL PRIMARY KEY, world_id $id NOT NULL, " +
                     "x INT NOT NULL, y INT NOT NULL, z INT NOT NULL)$engine",
+            )
+            it.executeUpdate(
+                "CREATE TABLE IF NOT EXISTS $OUTBOUND_RANKS (" +
+                    "guild_id $id NOT NULL, ally_guild_id $id NOT NULL, rank_ids $text NOT NULL, " +
+                    "PRIMARY KEY (guild_id, ally_guild_id))$engine",
             )
         }
     }

@@ -35,6 +35,7 @@ class GuildServiceAllyHomeAccessTest {
         access: net.lumalyte.lg.domain.values.AllyHomeAccess = net.lumalyte.lg.domain.values.AllyHomeAccess(),
         secondHome: GuildHome? = null,
         targetPrestige: Int = 0,
+        outbound: Map<UUID, Set<UUID>> = emptyMap(),
     ): GuildServiceBukkit {
         val ownerRank = Rank(ownerRankId, sourceGuildId, "Owner", 0, RankPermission.values().toSet())
         val memberRank = Rank(memberRankId, sourceGuildId, "Member", 10, memberRankPerms)
@@ -83,6 +84,7 @@ class GuildServiceAllyHomeAccessTest {
             allyHomeAccess = accessRepository.also {
                 every { it.access(targetGuildId) } returns access
                 every { it.secondHome(targetGuildId) } returns secondHome
+                every { it.outboundRanks(sourceGuildId) } returns outbound
             },
             prestigePerks = net.lumalyte.lg.application.services.GuildPrestigePerks(
                 mockk<net.lumalyte.lg.application.services.GuildPrestigeStandings>().also {
@@ -236,5 +238,25 @@ class GuildServiceAllyHomeAccessTest {
         val access = net.lumalyte.lg.domain.values.AllyHomeAccess(blockedPlayers = setOf(memberPlayerId))
         val svc = makeService(ah, setOf(sourceGuildId), usable, access = access, secondHome = second, targetPrestige = 2)
         assertFalse(svc.canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId, slot = 2))
+    }
+
+    // REQ-183: the visitor's own guild picks its ranks per ally.
+    @Test
+    fun `an outbound pick lets a rank without Use ally homes visit that ally`() {
+        val svc = makeService(ah, setOf(sourceGuildId), emptySet(), outbound = mapOf(targetGuildId to setOf(memberRankId)))
+        assertTrue(svc.canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
+    }
+
+    @Test
+    fun `an outbound pick can keep a rank with Use ally homes away from one ally`() {
+        val svc = makeService(ah, setOf(sourceGuildId), usable, outbound = mapOf(targetGuildId to emptySet()))
+        assertFalse(svc.canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
+        assertTrue(svc.canUseAllyHome(ownerPlayerId, sourceGuildId, targetGuildId))
+    }
+
+    @Test
+    fun `a pick for another ally does not apply`() {
+        val svc = makeService(ah, setOf(sourceGuildId), usable, outbound = mapOf(UUID.randomUUID() to emptySet()))
+        assertTrue(svc.canUseAllyHome(memberPlayerId, sourceGuildId, targetGuildId))
     }
 }

@@ -628,6 +628,14 @@ class GuildServiceBukkit(
         return allyHomeAccess?.setVisitorRanks(hostGuildId, visitorGuildId, rankIds) ?: false
     }
 
+    override fun allyHomeOutboundRanks(guildId: UUID): Map<UUID, Set<UUID>> =
+        allyHomeAccess?.outboundRanks(guildId) ?: emptyMap()
+
+    override fun setAllyHomeOutboundRanks(guildId: UUID, allyGuildId: UUID, rankIds: Set<UUID>?, actorId: UUID): Boolean {
+        if (!hasPermission(actorId, guildId, RankPermission.MANAGE_HOME)) return false
+        return allyHomeAccess?.setOutboundRanks(guildId, allyGuildId, rankIds) ?: false
+    }
+
     override fun setAllyHomeBlocked(hostGuildId: UUID, playerId: UUID, blocked: Boolean, actorId: UUID): Boolean {
         if (!hasPermission(actorId, hostGuildId, RankPermission.MANAGE_HOME)) return false
         return allyHomeAccess?.setBlocked(hostGuildId, playerId, blocked) ?: false
@@ -811,8 +819,13 @@ class GuildServiceBukkit(
         // REQ-182: the host's own rank picks and blocks apply to every visitor, owners included.
         if (!allyHomeAccess(targetGuildId).admits(sourceGuildId, rank.id, playerId)) return false
         val ownerRank = rankRepository.getHighestRank(sourceGuildId)
-        if (ownerRank != null && rank.id == ownerRank.id) return true
-        return RankPermission.USE_ALLY_HOMES in rank.permissions
+        // REQ-183: the visitor's own guild may pick its ranks for this ally.
+        return net.lumalyte.lg.domain.values.AllyHomeOutbound.allows(
+            pick = allyHomeOutboundRanks(sourceGuildId)[targetGuildId],
+            rankId = rank.id,
+            isOwner = ownerRank != null && rank.id == ownerRank.id,
+            hasUsePermission = RankPermission.USE_ALLY_HOMES in rank.permissions,
+        )
     }
 
     override fun canUseOwnAllyHome(playerId: UUID, guildId: UUID, slot: Int): Boolean {
