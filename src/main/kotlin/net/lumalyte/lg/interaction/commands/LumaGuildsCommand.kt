@@ -755,8 +755,23 @@ class LumaGuildsCommand(
         prestige = { name -> prestigeFacts(name) },
     )
 
+    // Tab completion runs on every keypress; keep each guild's facts for a few seconds
+    // so it does not read the database each time.
+    private val prestigeFactsCache =
+        java.util.concurrent.ConcurrentHashMap<UUID, Pair<Long, LumaGuildsCompletions.PrestigeFacts>>()
+
     private fun prestigeFacts(name: String): LumaGuildsCompletions.PrestigeFacts? {
         val guild = net.lumalyte.lg.utils.GuildResolver.resolveGuildByName(name, guildService) ?: return null
+        val now = System.currentTimeMillis()
+        prestigeFactsCache[guild.id]?.takeIf { it.first > now }?.let { return it.second }
+        return readPrestigeFacts(guild.id)?.also {
+            if (prestigeFactsCache.size > FACTS_CACHE_LIMIT) prestigeFactsCache.clear()
+            prestigeFactsCache[guild.id] = (now + FACTS_CACHE_MILLIS) to it
+        }
+    }
+
+    private fun readPrestigeFacts(guildId: UUID): LumaGuildsCompletions.PrestigeFacts? {
+        val guild = guildService.getGuild(guildId) ?: return null
         val staff = getKoin().getOrNull<net.lumalyte.lg.application.services.PrestigeStaffService>() ?: return null
         val info = runCatching { staff.info(guild.id) }.getOrNull() ?: return null
         return LumaGuildsCompletions.PrestigeFacts(
@@ -766,4 +781,8 @@ class LumaGuildsCommand(
         )
     }
 
+    private companion object {
+        const val FACTS_CACHE_MILLIS = 5_000L
+        const val FACTS_CACHE_LIMIT = 200
+    }
 }
