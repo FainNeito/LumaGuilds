@@ -763,6 +763,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-219
 **Event-driven.** WHEN %lumaguilds_guild_prestige_badge_minimessage% is requested THE SYSTEM SHALL return the same badge as %lumaguilds_guild_prestige_badge% with its colour codes written as MiniMessage, so proxy tab lists such as Velocitab show the badge instead of the raw code.
 
+### REQ-220
+**Unwanted.** IF a party request has expired THEN THE SYSTEM SHALL leave it out of every request list, menu and /party command, so players are never offered an invite that can no longer be accepted, and SHALL say how long invites last when a guild has no request to act on.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
