@@ -715,6 +715,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-202
 **Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
 
+### REQ-205
+**Ubiquitous.** THE SYSTEM SHALL show the Java Parties menu as 3 rows with every active party the guild is in centred on the top row, Create New Party, Incoming Requests, Outgoing Requests and How Parties Work on the middle row, and Back on the bottom row, and SHALL NOT show Send Party Request, Party Access Settings or a placeholder message for any button.
+
+### REQ-206
+**Event-driven.** WHEN a player clicks a party THE SYSTEM SHALL open that party's page showing its leader, dates, rank limits and guilds; WHERE the player has Manage Parties THE SYSTEM SHALL offer inviting a guild that is not in the party and, after a second click, leaving the party; WHERE the player has Manage Relations THE SYSTEM SHALL offer moderating the party channel.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

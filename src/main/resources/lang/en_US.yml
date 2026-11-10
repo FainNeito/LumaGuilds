@@ -2687,7 +2687,6 @@ menu:
       title: '<white>Parties • <guild>'
       unnamed: Unnamed
       never: Never
-      this_channel: this channel
       no_message: No message
       permission:
         required: '<red>Requires Admin+ permission'
@@ -2700,14 +2699,10 @@ menu:
         members: '<gray>Members: <white><count> guilds'
         created: '<gray>Created: <white><date>'
         expires: '<gray>Expires: <white><date>'
-      more:
-        name: '<yellow>+<count> More Parties'
-        lore: '<yellow>Click to view all parties'
+        open: '<yellow>Click to open'
       moderate:
         name: '<gold>Moderate Channel'
         lore: '<gray>Manage mutes, bans, and kicks'
-        channel: '<gray>for <channel>'
-        click: '<yellow>Click to moderate'
       incoming:
         name: '<green>Incoming Requests'
         lore: '<gray>Party invitations to join'
@@ -2715,37 +2710,19 @@ menu:
         name: '<yellow>Outgoing Requests'
         lore: '<gray>Your party''s sent invitations'
       request_count: '<gray>Count: <white><count>'
-      send:
-        name: '<green>Send Party Request'
-        locked_name: '<red>❌ Send Party Request'
-        lore: '<gray>Invite another guild to a party'
-        hint: '<yellow>Click to choose a guild'
-        locked_lore: '<gray>Only administrators can send party requests'
       create:
         name: '<gold>Create New Party'
         locked_name: '<red>❌ Create New Party'
         lore: '<gray>Start a fresh party'
         hint: '<yellow>Click to create a party'
         locked_lore: '<gray>Only administrators can create parties'
-      access:
-        name: '<aqua>Party Access Settings'
-        locked_name: '<red>❌ Party Access Settings'
-        lore: '<gray>Configure who can join parties'
-        default: '<gray>Default: All guild members'
-        action: '<yellow>Click to set rank restrictions'
       permissions:
-        name: '<yellow>Party Permissions'
         view: '<gray>View invites: <white>Everyone'
-        accept: '<gray>Accept invites: <white>Admin and up'
-        send: '<gray>Send invites: <white>Admin and up'
         manage: '<gray>Change settings: <white>Admin and up'
         join: '<gray>Join parties: <white>Everyone (or chosen ranks)'
       info:
         name: '<gold>How Parties Work'
         invite_only: '<gray>All parties are invite-only'
-        no_browser: '<gray>No public party browser'
-        events: '<gray>Parties coordinate guild events'
-        restrictions: '<gray>Rank restrictions available'
       back:
         name: '<yellow>⬅ Back'
         lore: '<gray>Return to the previous menu'
@@ -2762,20 +2739,7 @@ menu:
         lore: '<gray>Return to the previous menu'
       feedback:
         disabled: '<red>❌ Parties are disabled on this server!'
-        send_permission: '<red>❌ You need Admin+ permission to send party requests!'
         create_permission: '<red>❌ You need Admin+ permission to create parties!'
-        access_permission: '<red>❌ You need Admin+ permission to manage party access!'
-        details_coming_soon: '<yellow>Party details use the current party status and moderation data.'
-        details_description: '<gray>Use the available party and moderation controls for member status and restrictions.'
-        list_coming_soon: '<yellow>The active-party list is shown in the party management view.'
-        list_description: '<gray>Current active parties are loaded from the persisted party service.'
-        send_coming_soon: '<yellow>Party invitations are handled through the existing request and creation flows.'
-        send_description: '<gray>Use the party request or creation controls to invite another guild.'
-        create_coming_soon: '<yellow>Party creation is available through the dedicated creation menu.'
-        create_description: '<gray>Create a private party or invite guilds using the current party service.'
-        access_coming_soon: '<yellow>Party access is controlled by guild rank permissions and per-party role restrictions.'
-        access_description: '<gray>There is no separate mutable party-permission table.'
-        access_example: '<gray>Adjust guild rank permissions or party role restrictions instead.'
         no_incoming: '<yellow>No incoming party requests!'
         no_incoming_description: '<gray>Your guild hasn''t received any party invitations.'
         accepted: '<green>✅ Party invitation accepted!'
@@ -8160,3 +8124,37 @@ guild_ban:
     not_banned: "<yellow><player> isn't banned from your guild."
   notify:
     target: '<red>You were banned from <guild>.'
+# REQ-206: a party's page.
+party_page:
+  title: '<white>Party • <party>'
+  card:
+    name: '<aqua><party>'
+    leader: '<gray>Leader: <white><leader>'
+    created: '<gray>Created: <white><date>'
+    expires: '<gray>Expires: <white><date>'
+    never: '<gray>Expires: <white>Never'
+    open_to_all: '<gray>Open to: <white>Every member'
+    open_to: '<gray>Open to: <ranks>'
+    chat: '<yellow>Chat with /pc'
+  guild:
+    name: '<white><guild>'
+    started: '<gold>Started this party'
+    member: '<gray>In this party'
+    view: '<yellow>Click to view their guild'
+  invite:
+    name: '<green>Invite a Guild'
+    lore: '<gray>They join when they accept.'
+    title: '<white>Invite a guild'
+    click: '<yellow>Click to invite'
+    already: '<gray>Already invited'
+  leave:
+    name: '<red>Leave Party'
+    lore: '<gray>Your guild leaves <party>.'
+    hint: '<yellow>Click to leave'
+    confirm: '<red>Click again to confirm'
+  feedback:
+    gone: '<red>That party has ended.'
+    left: '<yellow>Your guild left <party>.'
+    leave_failed: "<red>Couldn't leave the party. Try again."
+    invited: '<green>Invited <guild>. They join when they accept.'
+    invite_failed: "<red>Couldn't invite <guild>. They may already be invited or in a party with you."

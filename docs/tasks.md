@@ -1343,3 +1343,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **KILL-LOG** Tag: TDD. REQ-199, REQ-200. Evidence: KillRecordingTest, GuildKillLogSQLTest (SQLite + MariaDB), KillServiceLogTest.
 - [x] **STATS-MENU** Tag: TDD. REQ-201, REQ-202. Evidence: GuildStatisticsLayoutContractTest, GuildStatisticsSeason2ContractTest, BedrockGuildStatisticsTruthfulnessContractTest.
   - References: `docs/plans/2026-11-10-statistics-simplified.md`.
+
+## Party menu and party pages (REQ-205, REQ-206)
+
+- [x] **PARTY-MENU** Tag: TDD. REQ-205. Evidence: CenteredRowTest, PartyMenuContractTest.
+- [x] **PARTY-PAGE** Tag: TDD. REQ-206. Evidence: PartyMenuContractTest.
+  - References: `docs/plans/2026-11-10-party-pages.md`.
