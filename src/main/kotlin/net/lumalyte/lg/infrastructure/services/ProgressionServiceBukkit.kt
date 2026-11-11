@@ -599,7 +599,11 @@ class ProgressionServiceBukkit(
         } catch (error: Exception) {
             logger.warn("Failed to refresh guild progression after XP award for $guildId", error)
         }
-        if (newLevel != null) publishLevelChanged(guildId, newLevel)
+        if (newLevel != null) {
+            publishLevelChanged(guildId, newLevel)
+            runCatching { processLevelUp(guildId, newLevel) }
+                .onFailure { logger.warn("Failed to process guild level up for $guildId at level $newLevel", it) }
+        }
     }
 
     private fun publishLevelChanged(guildId: UUID, newLevel: Int) {
