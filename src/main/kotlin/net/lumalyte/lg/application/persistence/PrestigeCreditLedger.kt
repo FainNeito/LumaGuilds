@@ -10,4 +10,7 @@ interface PrestigeCreditLedger {
 
     /** Records one delivery; returns false when the pair was already recorded. */
     fun record(playerId: UUID, transactionId: UUID, at: Instant): Boolean
+
+    /** REQ-187: forgets every member's delivery of these prestiges; returns rows removed. */
+    fun forget(transactionIds: Set<UUID>): Int = 0
 }

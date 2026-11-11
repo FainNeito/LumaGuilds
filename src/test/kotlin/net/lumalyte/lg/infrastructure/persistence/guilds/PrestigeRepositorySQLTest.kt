@@ -220,6 +220,36 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
     }
 
     @Test
+    fun `carry-over starts the next climb with XP earned past level 100`() {
+        val curve = net.lumalyte.lg.domain.values.ProgressionCurve.from(settings.progression)
+        val landing = curve.totalExperienceForLevel(3)
+        val original = settings.progression
+        settings.progression = original.copy(prestige = original.prestige.copy(
+            carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(enabled = true, landingLevel = 3),
+        ))
+        val subject = open()
+        subject.storage.connection.executeUpdate(
+            "UPDATE guild_progression SET total_experience = ? WHERE guild_id = ?",
+            curve.totalExperienceForLevel(100) + landing + 500, guildId.toString(),
+        )
+        val result = assertIs<PrestigeResult.Applied>(subject.repository.confirm(quote()) { null })
+
+        assertEquals(landing, result.carriedExperience)
+        assertEquals(3, result.postLevel)
+        val progression = subject.storage.connection.getFirstRow(
+            "SELECT * FROM guild_progression WHERE guild_id = ?", guildId.toString()
+        )!!
+        assertEquals(landing, progression.getInt("total_experience"))
+        assertEquals(3, progression.getInt("current_level"))
+        assertEquals(curve.experienceForNextLevel(3), progression.getInt("experience_for_next_level"))
+        assertEquals(
+            3,
+            subject.storage.connection.getFirstRow("SELECT level FROM guilds WHERE id = ?", guildId.toString())!!.getInt("level"),
+        )
+        settings.progression = original
+    }
+
+    @Test
     fun `identical confirmation replays receipt without double charge or second prestige`() {
         val subject = open()
         val request = quote()
@@ -449,5 +479,100 @@ class PrestigeRepositorySQLTest : RewardSqlTestFixture() {
         subject.repository.firstToReach(1)
         assertEquals(receipts, count("guild_prestige_transactions"))
         assertEquals(journal, count("guild_gold_operations"))
+    }
+
+    // REQ-186: a staff grant is a real prestige with no fee and no level 100 requirement.
+    private fun grant(reward: String = "bank-1", id: UUID = UUID.randomUUID()) = PrestigeQuote(
+        transactionId = id, guildId = guildId, actorId = actorId, retainedRewardId = reward,
+        quotedFee = 0, expectedOwnershipVersion = 1, expectedPrestigeCount = 0,
+    )
+
+    @Test
+    fun `a staff grant prestiges below level 100 without charging and shows in history`() {
+        val subject = open()
+        subject.storage.connection.executeUpdate(
+            "UPDATE guild_progression SET current_level = 40 WHERE guild_id = ?", guildId.toString(),
+        )
+        val granted = subject.repository.grantWithCommitStatus(grant())
+        val applied = assertIs<PrestigeResult.Applied>(granted.result)
+        assertTrue(granted.newlyCommitted)
+        assertEquals(1, applied.prestigeCount)
+        assertEquals(0L, applied.fee)
+        assertEquals(19_000L, subject.gold.getBalance(guildId))
+        assertTrue("bank-1" in subject.snapshot().ownership.permanent)
+        assertEquals(listOf(1), subject.repository.history(guildId).map { it.tier })
+    }
+
+    @Test
+    fun `a staff grant still refuses an unknown reward and the maximum`() {
+        val subject = open()
+        assertEquals(
+            PrestigeRejection.INVALID_SELECTION,
+            assertIs<PrestigeResult.Rejected>(subject.repository.grantWithCommitStatus(grant("nope")).result).reason,
+        )
+        assertIs<PrestigeResult.Applied>(subject.repository.grantWithCommitStatus(grant()).result)
+        settings.progression = settings.progression.copy(prestige = settings.progression.prestige.copy(maxCount = 1))
+        val snap = subject.snapshot()
+        val maxed = grant().copy(expectedOwnershipVersion = snap.version, expectedPrestigeCount = 1)
+        assertEquals(
+            PrestigeRejection.MAX_PRESTIGE,
+            assertIs<PrestigeResult.Rejected>(subject.repository.grantWithCommitStatus(maxed).result).reason,
+        )
+    }
+
+    @Test
+    fun `a grant cannot be passed off as a paid prestige`() {
+        val subject = open()
+        val paid = quote()
+        assertIs<PrestigeResult.Applied>(subject.repository.confirm(paid) { null })
+        assertEquals(
+            PrestigeRejection.ID_CONFLICT,
+            assertIs<PrestigeResult.Rejected>(subject.repository.grantWithCommitStatus(paid.copy(quotedFee = 0)).result).reason,
+        )
+    }
+
+    // REQ-185: lowering drops the newest kept rewards with their tiers and is recorded.
+    @Test
+    fun `lowering the count drops the newest kept reward and keeps everything else`() {
+        val subject = open()
+        assertIs<PrestigeResult.Applied>(subject.repository.grantWithCommitStatus(grant()).result)
+        val staff = UUID.randomUUID()
+        assertEquals(listOf("bank-1"), subject.repository.rewardsDroppedBy(guildId, 0))
+        val result = subject.repository.setPrestigeCount(guildId, 0, staff, Instant.ofEpochMilli(5_000))
+        assertEquals(PrestigeAdjustmentResult.Applied(oldCount = 1, newCount = 0, removedRewards = listOf("bank-1")), result)
+        assertEquals(0, subject.snapshot().ownership.prestigeCount)
+        assertTrue("bank-1" !in subject.snapshot().ownership.permanent)
+        assertEquals(19_000L, subject.gold.getBalance(guildId))
+        assertEquals(1, subject.repository.history(guildId).size, "history stays as it was")
+        closeStorage(subject.storage)
+        val reopened = open(seed = false)
+        assertEquals(
+            listOf(PrestigeAdjustment(guildId, staff, 1, 0, Instant.ofEpochMilli(5_000))),
+            reopened.repository.adjustments(guildId),
+        )
+    }
+
+    @Test
+    fun `the count must stay between 0 and the maximum`() {
+        val subject = open()
+        assertEquals(PrestigeAdjustmentResult.OutOfRange, subject.repository.setPrestigeCount(guildId, 4, actorId, Instant.now()))
+        assertEquals(PrestigeAdjustmentResult.OutOfRange, subject.repository.setPrestigeCount(guildId, -1, actorId, Instant.now()))
+        assertEquals(PrestigeAdjustmentResult.Unchanged, subject.repository.setPrestigeCount(guildId, 0, actorId, Instant.now()))
+        assertEquals(PrestigeAdjustmentResult.RaiseNeedsGrant, subject.repository.setPrestigeCount(guildId, 2, actorId, Instant.now()))
+        assertEquals(PrestigeAdjustmentResult.NotFound, subject.repository.setPrestigeCount(UUID.randomUUID(), 1, actorId, Instant.now()))
+    }
+
+    // Audit 2026-11-10: REQ-186 waives only the fee and the level; other guards stay.
+    @Test
+    fun `a staff grant is still refused while the guild's gold is frozen`() {
+        val subject = open()
+        subject.storage.connection.executeUpdate(
+            "INSERT INTO guild_gold_security (guild_id, frozen, reason, updated_by, updated_at) VALUES (?, ?, ?, ?, ?)",
+            guildId.toString(), true, "audit test", actorId.toString(), 1L,
+        )
+        assertEquals(
+            PrestigeRejection.FROZEN,
+            assertIs<PrestigeResult.Rejected>(subject.repository.grantWithCommitStatus(grant()).result).reason,
+        )
     }
 }

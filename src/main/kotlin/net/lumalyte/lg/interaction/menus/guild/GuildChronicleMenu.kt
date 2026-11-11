@@ -88,7 +88,7 @@ internal class GuildChronicleMenu(
                 if (snapshot.goal.rewardId == id) lang.gui("chronicle.tracked") else lang.gui("chronicle.shared"))),
             referenceItem("lg_sources", listOf(
                 lang.gui("chapter_two_rewards.capacity_bank", "capacity" to benefits.bankCapacity),
-                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to benefits.memberCapacity),
+                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, benefits.memberCapacity)),
                 lang.gui("chapter_two_rewards.multipliers", "cooldown" to benefits.homeCooldownMultiplier, "fee" to benefits.withdrawalFeeMultiplier))),
             referenceItem("lg_prestige", earningDetails(offer)),
         )
@@ -251,7 +251,8 @@ internal class GuildChronicleMenu(
     private fun effect(value: RewardEffect): Component = when (value) {
         is RewardEffect.BankCapacity -> lang.gui("chronicle.bank_effect", "amount" to value.amount)
         is RewardEffect.HomeCapacity -> lang.gui("chronicle.home_effect", "amount" to value.amount)
-        is RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt())
+        is RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt(),
+        "seconds" to net.lumalyte.lg.domain.values.HomeTravelTimes.countdownSeconds(value.multiplier))
         is RewardEffect.WithdrawalFee -> lang.gui("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
         RewardEffect.AllyHomes -> lang.gui("chronicle.ally_effect")
     }

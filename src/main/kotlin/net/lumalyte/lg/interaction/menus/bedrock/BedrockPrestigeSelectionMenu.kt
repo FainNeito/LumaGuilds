@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.interaction.menus.guild.bedrockRewardEffect
 import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.badgersmc.nexus.i18n.LangService
 import net.lumalyte.lg.application.services.GuildPrestigeService
@@ -42,6 +43,7 @@ class BedrockPrestigeSelectionMenu(
                         "menu.guild_progression.prestige.selection.reward.name",
                         "reward" to reward.name,
                     ),
+                    bedrockRewardEffect(lang, reward.effect),
                     lang.bedrock(
                         "menu.guild_progression.prestige.selection.reward.level",
                         "level" to reward.level,

@@ -162,7 +162,17 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             peacefulGuildPvpOptIn = config.getBoolean("guild.peaceful_guild_pvp_opt_in", false),
             maxCustomRanks = config.getInt("guild.max_custom_ranks", 10),
             maxRankNameLength = config.getInt("guild.max_rank_name_length", 16),
-            maxMembersPerGuild = config.getInt("guild.max_members_per_guild", 50),
+            maxMembersPerGuild = config.getInt("guild.max_members_per_guild", 100),
+            // REQ-190: invalid values fall back to the defaults rather than failing startup.
+            memberCapacity = runCatching {
+                net.lumalyte.lg.config.MemberCapacityConfig(
+                    enabled = config.getBoolean("guild.member_capacity.enabled", true),
+                    base = config.getInt("guild.member_capacity.base", 10),
+                    perStep = config.getInt("guild.member_capacity.per_step", 5),
+                    stepLevels = config.getInt("guild.member_capacity.step_levels", 5),
+                    max = config.getInt("guild.member_capacity.max", 100),
+                )
+            }.getOrElse { net.lumalyte.lg.config.MemberCapacityConfig() },
             homeTeleportCooldownSeconds = config.getInt("guild.home_teleport_cooldown_seconds", 5),
             homeSetCooldownMinutes = config.getInt("guild.home_set_cooldown_minutes", 10),
             homeTeleportWarmupSeconds = config.getInt("guild.home_teleport_warmup_seconds", 3),
@@ -185,7 +195,8 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             dailyWarMoneyCost = config.getInt("guild.daily_war_money_cost", 100),
             warFarmingCooldownHours = config.getInt("guild.war_farming_cooldown_hours", 24),
             nameFilter = loadNameFilterConfig(),
-            emojiGrants = loadEmojiGrantsConfig()
+            emojiGrants = loadEmojiGrantsConfig(),
+            emojiChoices = loadEmojiChoicesConfig()
         )
     }
 
@@ -220,7 +231,30 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
         return result
     }
 
+    /** REQ-216/217: guild.emoji_choices.allowed and guild.emoji_choices.guild_only. */
+    private fun loadEmojiChoicesConfig(): net.lumalyte.lg.domain.values.GuildEmojiRules {
+        val defaults = net.lumalyte.lg.domain.values.GuildEmojiRules()
+        val allowed = if (config.isList("guild.emoji_choices.allowed")) {
+            config.getStringList("guild.emoji_choices.allowed").map { it.trim().removePrefix(":").removeSuffix(":") }
+                .filter { EMOJI_ID.matches(it) }.distinct()
+        } else {
+            defaults.allowed
+        }
+        val section = config.getConfigurationSection("guild.emoji_choices.guild_only")
+        val guildOnly = section?.getKeys(false).orEmpty().mapNotNull { guild ->
+            val emoji = section?.getString(guild)?.trim()?.removePrefix(":")?.removeSuffix(":")
+            if (guild.isBlank() || emoji == null || !EMOJI_ID.matches(emoji)) {
+                logger.warn("Ignoring invalid guild-only emoji for '$guild'")
+                null
+            } else {
+                net.lumalyte.lg.domain.values.GuildEmojiRules.key(guild) to emoji
+            }
+        }.toMap()
+        return net.lumalyte.lg.domain.values.GuildEmojiRules(allowed, guildOnly)
+    }
+
     companion object {
+        private val EMOJI_ID = Regex("^[a-z0-9_-]{1,64}$")
         private val PERMISSION_NODE = Regex("^[a-z0-9][a-z0-9_.-]*$")
     }
     
@@ -369,6 +403,25 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
         )
     }
     
+    /** REQ-178: bad day names or time zones fall back to the defaults instead of failing startup. */
+    private fun loadWeekendBoost(): net.lumalyte.lg.config.WeekendBoostConfig {
+        val defaults = net.lumalyte.lg.config.WeekendBoostConfig()
+        val prefix = "progression.weekend_boost"
+        val days = config.getStringList("$prefix.days")
+            .mapNotNull { runCatching { java.time.DayOfWeek.valueOf(it.trim().uppercase(Locale.ROOT)) }.getOrNull() }
+            .toSet().ifEmpty { defaults.days }
+        val zone = config.getString("$prefix.timezone")?.let { runCatching { java.time.ZoneId.of(it) }.getOrNull() }
+            ?: defaults.zone
+        val multiplier = config.getDouble("$prefix.multiplier", defaults.multiplier).takeIf { it.isFinite() && it >= 1.0 }
+            ?: defaults.multiplier
+        return net.lumalyte.lg.config.WeekendBoostConfig(
+            enabled = config.getBoolean("$prefix.enabled", defaults.enabled),
+            multiplier = multiplier,
+            days = days,
+            zone = zone,
+        )
+    }
+
     private fun loadExperienceBoost(): net.lumalyte.lg.domain.values.ExperienceBoost? {
         if (!config.getBoolean("progression.xp_boost.enabled", false)) return null
         val prefix = "progression.xp_boost"
@@ -384,7 +437,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
     private fun loadProgressionConfig(): ProgressionConfig {
         val prestigeMax = config.getInt("progression.prestige.max_count", 6).coerceIn(1, 6)
         val prestigeFees = config.getLongList("progression.prestige.fees").ifEmpty {
-            listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L)
+            listOf(8_000L, 16_000L, 24_000L, 24_000L, 24_000L, 24_000L)
         }
         return ProgressionConfig(
             maxLevel = config.getInt("progression.max_level", 100).coerceIn(1, 100),
@@ -400,6 +453,23 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
                     firstReachCommands = config.getStringList("progression.prestige.member_credits.first_reach_commands"),
                 ),
                 // REQ-155: seven entries (index 0 = none); & colour codes become section signs.
+                // REQ-175: off unless the operator turns it on; landing level clamped to 1-99.
+                carryOver = net.lumalyte.lg.config.PrestigeCarryOverConfig(
+                    enabled = config.getBoolean("progression.prestige.carry_over.enabled", false),
+                    landingLevel = config.getInt("progression.prestige.carry_over.landing_level", 5).coerceIn(1, 99),
+                ),
+                // REQ-180, REQ-181: a tier of 0 or less gives the perk to every guild.
+                perks = net.lumalyte.lg.config.PrestigePerksConfig(
+                    secondAllyHomeTier = config.getInt("progression.prestige.perks.second_ally_home_tier", 2),
+                    extraStallTier = config.getInt("progression.prestige.perks.extra_stall_tier", 3),
+                ),
+                // REQ-188: Discord webhook post; off unless enabled with a URL.
+                discord = net.lumalyte.lg.application.services.PrestigeDiscordSettings(
+                    enabled = config.getBoolean("progression.prestige.discord.enabled", false),
+                    webhookUrl = config.getString("progression.prestige.discord.webhook_url", "") ?: "",
+                    username = config.getString("progression.prestige.discord.username", "Enthusia") ?: "Enthusia",
+                    avatarUrl = config.getString("progression.prestige.discord.avatar_url", "") ?: "",
+                ),
                 fanfare = net.lumalyte.lg.config.PrestigeFanfareConfig(
                     enabled = config.getBoolean("progression.prestige.fanfare.enabled", true),
                     serverWide = config.getBoolean("progression.prestige.fanfare.server_wide", true),
@@ -444,6 +514,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             ),
             sourcePolicies = loadExperiencePolicies(),
             xpBoost = loadExperienceBoost(),
+            weekendBoost = loadWeekendBoost(),
             materialPools = loadMaterialPools(),
             entityPools = loadEntityPools(),
 
@@ -580,15 +651,8 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             minPartyNameLength = config.getInt("party.min_party_name_length", 1),
             defaultPartyDurationHours = config.getInt("party.default_party_duration_hours", 24),
             maxSimultaneousPartiesPerGuild = config.getInt("party.max_simultaneous_parties_per_guild", 3),
-            allowPrivateParties = config.getBoolean("party.allow_private_parties", true),
             partyChatEnabled = config.getBoolean("party.party_chat_enabled", true),
             partyChatPriority = config.getInt("party.party_chat_priority", 100),
-            useMiniMessage = config.getBoolean("party.use_minimessage", true),
-            partyChatFormat = config.getString("party.party_chat_format") ?: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}",
-            useSimplifiedGuildPartyFormat = config.getBoolean("party.use_simplified_guild_party_format", true),
-            guildPartyChatFormat = config.getString("party.guild_party_chat_format") ?: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}",
-            partyChatPrefix = config.getString("party.party_chat_prefix") ?: "[PARTY]",
-            partyChatSuffix = config.getString("party.party_chat_suffix") ?: "",
             chatInputListenerPriority = config.getString("party.chat_input_listener_priority") ?: "HIGHEST",
             partyChatListenerPriority = config.getString("party.party_chat_listener_priority") ?: "LOWEST",
             allowRoleRestrictions = config.getBoolean("party.allow_role_restrictions", true),

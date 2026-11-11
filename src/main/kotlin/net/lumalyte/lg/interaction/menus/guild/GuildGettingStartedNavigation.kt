@@ -1,5 +1,8 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import java.math.BigDecimal
+import net.lumalyte.lg.application.services.ConfigService
+import net.kyori.adventure.text.Component
 import net.badgersmc.nexus.i18n.LangService
 import net.lumalyte.lg.application.services.GuildGettingStartedService
 import net.lumalyte.lg.application.services.GuildStartTopic
@@ -24,6 +27,7 @@ internal class GuildGettingStartedNavigation(private val navigator: MenuNavigato
     private val factory: MenuFactory by inject()
     private val prompts: GuildOnboardingRepository by inject()
     private val lang: LangService by inject()
+    private val config: ConfigService by inject()
     fun snapshot() = runCatching { service.snapshot(player.uniqueId, guildId) }.getOrNull()
     fun title(topic: GuildStartTopic) = when (topic) {
         GuildStartTopic.MEMBERSHIP -> lang.gui("onboarding.topics.membership")
@@ -40,13 +44,36 @@ internal class GuildGettingStartedNavigation(private val navigator: MenuNavigato
         GuildStartTopic.MEMBERSHIP -> lang.gui("onboarding.details.membership")
         GuildStartTopic.INVITES -> lang.gui("onboarding.details.invites")
         GuildStartTopic.RANKS -> lang.gui("onboarding.details.ranks")
-        GuildStartTopic.CHAT -> lang.gui("onboarding.details.chat")
+        GuildStartTopic.CHAT -> withExtras(lang.gui("onboarding.details.chat"), chatExtras())
         GuildStartTopic.HOME -> lang.gui("onboarding.details.home")
         GuildStartTopic.QUESTS -> lang.gui("onboarding.details.quests")
         GuildStartTopic.PROGRESSION -> lang.gui("onboarding.details.progression")
-        GuildStartTopic.BANK -> lang.gui("onboarding.details.bank")
+        GuildStartTopic.BANK -> withExtras(lang.gui("onboarding.details.bank"), bankExtras())
         GuildStartTopic.STALLS -> lang.gui("onboarding.details.stalls")
     }
+    /** REQ-174: features players miss, explained in the step they belong to and only while switched on. */
+    private fun chatExtras(): List<Component> {
+        val settings = runCatching { config.loadConfig() }.getOrNull() ?: return emptyList()
+        return listOfNotNull(lang.gui("onboarding.details.parties").takeIf { settings.partiesEnabled })
+    }
+
+    private fun bankExtras(): List<Component> {
+        val settings = runCatching { config.loadConfig() }.getOrNull() ?: return emptyList()
+        val interest = settings.bank.interestRatePercent.takeIf { it > 0 && settings.bank.interestCompoundPeriodHours > 0 }?.let { rate ->
+            lang.gui(
+                "onboarding.details.bank_interest",
+                "rate" to BigDecimal.valueOf(rate * 100).stripTrailingZeros().toPlainString(),
+                "hours" to settings.bank.interestCompoundPeriodHours,
+            )
+        }
+        val vault = lang.gui("onboarding.details.vault")
+            .takeIf { settings.vault.bankMode.uppercase() in setOf("PHYSICAL", "BOTH") }
+        return listOfNotNull(interest, vault)
+    }
+
+    private fun withExtras(base: Component, extras: List<Component>): Component =
+        extras.fold(base) { text, extra -> text.append(Component.space()).append(extra) }
+
     fun reason(step: GuildStartStep) = when (step.reason) {
         "onboarding.home_unlock" -> lang.gui("onboarding.home_unlock")
         "onboarding.home_costs" -> lang.gui("onboarding.home_costs")

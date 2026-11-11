@@ -1030,7 +1030,9 @@ Menu audit follow-up (REQ-063):
 - [x] Refine PR #232 persistence, filtered lookup/counts, routing and viewer filtering; run focused/full checks and publish source fixes.
 - [x] Address all three manual CodeRabbit findings; prove native MariaDB repair and verify the installed TEST Friends connector against the current Guilds API. Cross-server caches remain startup snapshots; real-client acceptance is deferred.
 - [ ] Complete exact-head hosted quality/review gates and maintainer review; merge and real-client acceptance remain separate. Current main inspected at283d75f1; existing fork head db53a274. Project EARS/state helpers absent; manual evidence in docs/plans/2026-10-13-invite-block-review.md. No merge or production authorization.
+
 ## Local quest discovery - no PR requested
+
 - [x] **QUEST-STALL-REFINEMENT** Verify all short/menu quest routes, add progression quest navigation and semantic stall icons (REQ-QUEST-DISCOVERY-4, REQ-STALL-ICONS-1). Local Java 25 full test/shadowJar passed 1,789 cases with zero failures/errors and 16 optional environment skips. Real ACF routing and Java/Bedrock permission checks execute without skips. Private artwork and local preview remain outside the public repository; no deployment or PR. Evidence: docs/plans/2026-10-13-quest-stall-refinement.md.
 - [x] **QUEST-DISCOVERY** Member command, availability reminders and spawn leaderboard placeholders.
   - Tag: `TDD`
@@ -1264,3 +1266,131 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
   - References: REQ-165; Fain's TEST screenshot ("has reached Guild Prestige 4", "Prestige count: 4").
   - Evidence: the announcement only mapped I to III and printed 4 and up as numbers; menus and the applied message passed raw counts.
   - Result: `PrestigeNumeralTest` and the announcement tests failed (3 of 5), then passed. `PrestigeNumeral.of` now feeds the broadcast, the applied message (reworded to "Your guild is now Prestige IV."), the Java and Bedrock progression, selection and confirmation menus, the Chronicle milestones and progress, and the `guild_prestige_roman` placeholder. The home-slot bonus stays a number. Full suite 2462 tests, 0 failures.
+
+## Prestige history in /g info (REQ-172)
+
+- [x] **GUILD-INFO-PRESTIGE** Tag: TDD.
+  - References: REQ-172; prestige history (REQ-152) and server-first (REQ-153) data from #26.
+  - Result: `GuildInfoPrestige` turns `PrestigeHistory` into the view (none, unavailable, or each prestige oldest first with date and server-first mark); a failing history read or server-first lookup never blocks the menu. Java `/g info` gets a Prestige item (nether star, top right); the Bedrock form gets a Prestige section after the overview. `GuildInfoPrestigeTest` failed against a scaffold (3 of 4), then passed; `GuildInfoPrestigeMenuTest` renders both real views. Full suite 2479 tests, 0 failures.
+
+## Prestige and feature clarity (REQ-173, REQ-174)
+
+- [x] **PRESTIGE-CLARITY** Tag: TDD.
+  - References: REQ-173, REQ-174; the Discord "Prestige Suggestions" thread summary (players unsure what prestige and perks do; parties, the vault and bank interest not discovered).
+  - Evidence: a full prestige guide already existed in the Chronicle, in legal-sounding copy; reward choices showed no effect; the confirmation said nothing about the home slot, the badge or rebuying perks.
+  - Result: Java and Bedrock reward choices and confirmations show what the kept reward does, the extra home slot and the next badge; the confirmation spells out what resets and stays. The Chronicle guide, progression prestige entry and reward effect lines are rewritten in plain language (same keys and placeholders). Getting Started adds parties to the chat step and the configured interest and `/g vault` to the bank step, each only while switched on. `PrestigeClarityTest` and `GettingStartedFeaturesTest` failed (5 of 5), then passed. Full suite 2484 tests, 0 failures.
+
+## Prestige XP carry-over (REQ-175)
+
+- [x] **PRESTIGE-CARRYOVER** Tag: TDD.
+  - References: REQ-175; Discord "Prestige Suggestions" (carry excess XP forward). Evidence: `ExperienceAwardTransaction` keeps adding XP at level 100; `PrestigeRepositorySQL` sets `total_experience = 0`.
+  - Result: `progression.prestige.carry_over` (`enabled: false`, `landing_level: 5`). `PrestigeCarryOver` keeps the XP earned after level 100, capped at the start of the landing level; the prestige transaction sets XP, level, level progress, `guilds.level` and post-prestige capacity from it. The Java and Bedrock confirmation say whether XP carries over or resets, and the confirming player is told how much carried and the starting level. `PrestigeCarryOverTest` and the repository carry test failed against a scaffold (3), then passed. Full suite 2490 tests and the MariaDB profile (134) pass.
+
+## Reasonable quest targets (REQ-176, REQ-177)
+
+- [x] **QUEST-TARGETS** Tag: TDD.
+  - References: REQ-176, REQ-177; Discord "Prestige Suggestions" (kelp, cactus, phantoms, oddly specific block placement). Evidence: `BukkitQuestTargetProvider` offers every spawnable living entity and every placeable block; `QuestProgressListener` counts a harvest only at `age == maximumAge`, which kelp, cactus, sugar cane and bamboo almost never show.
+  - Result: `QuestTargetPool` allowlists kill targets (hostiles, bosses, six farm animals; phantom, breeze, creaking, evoker and piglin brute rare), harvest crops (thirteen) and full building blocks for place quests. `GrownPlantHarvest` counts sugar cane, cactus, kelp and bamboo at any growth stage with the column above, minus player-placed blocks. Quest descriptions add "(blocks placed by players don't count)" to natural mining and "(fully grown only)" to age-based crops. `QuestTargetPoolTest` and `GrownPlantHarvestTest` failed (6 of 7), then passed. Full suite 2498 tests, 0 failures. Quests already generated this week keep their targets until the next reset.
+  - Production check (2026-11-09, 39 quests over 7 weeks): 19 were never completed by any guild. Impossible ones included mining candle cake, crimson wall hanging signs, dead fire coral wall fans and warped roots; crafting 2,000 waxed oxidized copper bulbs, 1,100 yellow banners and 210 diamond hoes; smelting 1,100 white glazed terracotta. Kelp reached 62 of 5,000 and cactus 2 of 6,500 (the growth-age bug). The pools now also cover mining (world-generated blocks only), smelting (common goods) and crafting (no waxed or weathered copper; 64 to 800 stackables, 8 to 64 tools and armor). Full suite 2503 tests, 0 failures.
+
+## Weekend XP boost and prestige fees (REQ-178)
+
+- [x] **WEEKEND-XP-BOOST** Tag: TDD.
+  - References: REQ-178; production copy 2026-11-09: the busiest guild (Everlights) earns about 27,750 XP a day, so a 5,446,893 XP climb takes about 6.5 months; daily caps were hit on under 1% of guild-days; only 3 of 171 guilds hold 10,000 gold and none of the three level-100 guilds can pay the first fee. Fain first chose a 2x boost for prestiged guilds, then replaced it with 2x XP on weekends (Saturday and Sunday, New York time) for every guild; fees were first lowered to 2.5k rising to 15k, then set to 20% below the original (8k, 16k, then 24k).
+  - Result: `progression.weekend_boost` (enabled, multiplier 2.0, days SATURDAY and SUNDAY, timezone America/New_York). `ActiveExperienceBoost` turns the current weekend day into a one-day boost window for every source but WEEKLY_ACTIVITY and ADMIN_BONUS, and picks the larger of it and any dated `xp_boost`; awards and bank deposit quotes both use it. Bad day names, time zones or multipliers fall back to the defaults. Default fees are 8,000, 16,000, then 24,000. `ActiveExperienceBoostTest` failed (2 of 4), then passed. Full suite 2494 tests, 0 failures.
+
+## Prestige tier perks and allied-home access (REQ-179 to REQ-182)
+
+- [x] **QUICK-TRAVEL-COUNTDOWN** Tag: TDD. REQ-179. Evidence: HomeTravelTimesTest, HomeTravelTest, HomeTeleportCooldownsTest.
+- [x] **PRESTIGE-SECOND-ALLY-HOME** Tag: TDD. REQ-180. Evidence: GuildServiceAllyHomeAccessTest, AllyHomeAccessSQLTest (SQLite + MariaDB), PrestigeClarityTest.
+- [ ] **PRESTIGE-EXTRA-STALL** Tag: TDD. REQ-181 (with EnthusiaMarket).
+- [x] **ALLY-HOME-ACCESS** Tag: TDD. REQ-182. Evidence: AllyHomeAccessTest, AllyHomeRankPicksTest, AllyHomeVisitorMenuTest, GuildServiceAllyHomeAccessTest.
+- [x] **ALLY-HOME-OUTBOUND** Tag: TDD. REQ-183. Evidence: AllyHomeAccessTest, GuildServiceAllyHomeAccessTest, AllyHomeVisitorMenuTest, AllyHomeAccessSQLTest (SQLite + MariaDB).
+  - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.
+
+## Member capacity by level (REQ-190)
+
+- [x] **MEMBER-CAPACITY** Tag: TDD. REQ-190. Evidence: GuildMemberCapacityTest, MemberCapacityServiceTest, MemberCapacityFloorSQLTest (SQLite + MariaDB).
+  - References: `docs/plans/2026-11-10-member-capacity.md`.
+
+## Prestige staff tools and Discord post (REQ-184 to REQ-188)
+
+- [x] **PRESTIGE-STAFF-INFO** Tag: TDD. REQ-184. Evidence: PrestigeStaffCommandTest.
+- [x] **PRESTIGE-STAFF-SET** Tag: TDD. REQ-185. Evidence: PrestigeRepositorySQLTest (SQLite + MariaDB), PrestigeStaffCommandTest, PrestigeStaffServiceTest.
+- [x] **PRESTIGE-STAFF-GRANT** Tag: TDD. REQ-186. Evidence: PrestigeRepositorySQLTest (SQLite + MariaDB), PrestigeStaffCommandTest.
+- [x] **PRESTIGE-STAFF-RERUN** Tag: TDD. REQ-187. Evidence: PrestigeCreditLedgerSQLTest, PrestigeStaffServiceTest, PrestigeStaffCommandTest.
+- [x] **PRESTIGE-DISCORD-WEBHOOK** Tag: TDD. REQ-188. Evidence: PrestigeDiscordPostTest.
+  - References: `docs/plans/2026-11-09-prestige-staff-and-discord.md`.
+
+## Command completions (REQ-189)
+
+- [x] **COMMAND-COMPLETIONS** Tag: TDD. REQ-189. Evidence: LumaGuildsCompletionsTest, GuildCommandCompletionContractTest, LumaGuildsCommandTest. Every `/g` and `/lumaguilds` argument suggests values or a `<hint>`.
+
+## Combined guild page and guild bans (REQ-191 to REQ-197)
+
+- [x] **GUILD-INFO-LAYOUT** Tag: TDD. REQ-191. Evidence: GuildRosterTest, GuildInfoPrestigeMenuTest, GuildMemberRankTooltipTest.
+- [x] **GUILD-INFO-VIEWERS** Tag: TDD. REQ-192. Evidence: LastSeenTest, GuildInfoSeason2ContractTest.
+- [x] **GUILD-MEMBER-PAGE** Tag: TDD. REQ-193. Evidence: MemberActionsTest.
+- [x] **GUILD-BAN** Tag: TDD. REQ-194. Evidence: GuildBanServiceTest, GuildBanRepositorySQLTest (SQLite + MariaDB), GuildBanMembershipTest, GuildInvitationManagerBanTest, GuildRecruitmentBanEligibilityTest.
+- [x] **GUILD-CARD-YES-NO** Tag: TDD. REQ-195. Evidence: GuildCardFactsTest. The shop line waits for EnthusiaMarket to register `GuildShopLookup`.
+- [x] **GUILD-RELATIONS-PAGE** Tag: TDD. REQ-196. Evidence: GuildCardFactsTest (rows), GuildInfoExpandableRelationsWiringTest.
+- [x] **KICK-HIERARCHY** Tag: TDD. REQ-197. Evidence: GuildBanMembershipTest.
+- [x] **GUILD-MENU-SIMPLIFIED** Tag: TDD. REQ-198. Evidence: GuildDashboardLayoutContractTest, GuildDashboardFillerItemTest.
+  - References: `docs/plans/2026-11-10-guild-info-redesign.md`.
+
+## Simplified guild statistics (REQ-199 to REQ-202)
+
+- [x] **KILL-LOG** Tag: TDD. REQ-199, REQ-200. Evidence: KillRecordingTest, GuildKillLogSQLTest (SQLite + MariaDB), KillServiceLogTest.
+- [x] **STATS-MENU** Tag: TDD. REQ-201, REQ-202. Evidence: GuildStatisticsLayoutContractTest, GuildStatisticsSeason2ContractTest, BedrockGuildStatisticsTruthfulnessContractTest.
+  - References: `docs/plans/2026-11-10-statistics-simplified.md`.
+
+## Prestige badge for proxy tab lists (REQ-219)
+
+- [x] **PRESTIGE-BADGE-MINIMESSAGE** Tag: TDD. REQ-219. Evidence: PrestigePlaceholderTest.
+
+## Approved guild emojis (REQ-216 to REQ-218)
+
+- [x] **EMOJI-APPROVED-LIST** Tag: TDD. REQ-216, REQ-217, REQ-218. Evidence: GuildEmojiRulesTest, GuildEmojiChoicesServiceTest.
+  - References: `docs/plans/2026-11-10-approved-guild-emojis.md`.
+
+## Diplomacy history (REQ-203, REQ-204)
+
+- [x] **DIPLOMACY-LOG** Tag: TDD. REQ-203. Evidence: DiplomacyLogTest, DiplomacyHistorySQLTest (SQLite + MariaDB), RelationServiceHistoryTest.
+- [x] **DIPLOMACY-PAGE** Tag: TDD. REQ-204. Evidence: MenuLocalizationTest, LocaleContractTest.
+  - References: `docs/plans/2026-11-10-diplomacy-history.md`.
+
+## Party menu and party pages (REQ-205, REQ-206)
+
+- [x] **PARTY-MENU** Tag: TDD. REQ-205. Evidence: CenteredRowTest, PartyMenuContractTest.
+- [x] **PARTY-PAGE** Tag: TDD. REQ-206. Evidence: PartyMenuContractTest.
+  - References: `docs/plans/2026-11-10-party-pages.md`.
+
+## Parties are only for talking between guilds (REQ-207 to REQ-209)
+
+- [x] **NO-PRIVATE-PARTIES** Tag: TDD. REQ-207. Evidence: PrivatePartyRetirementTest, PartyServicePrivatePartyTest, GuildPartyReturnTest.
+- [x] **RETIRE-PRIVATE-PARTIES** Tag: TDD. REQ-208. Evidence: PrivatePartyRetirementTest.
+- [x] **ONE-CHAT-AT-A-TIME** Tag: TDD. REQ-209. Evidence: GuildChatListenerTest.
+  - References: `docs/plans/2026-11-10-party-chat-only-between-guilds.md`.
+
+## /party commands (REQ-210 to REQ-215)
+
+- [x] **PARTY-COMMAND-MENUS** Tag: TDD. REQ-210. Evidence: PartyCommandContractTest.
+- [x] **PARTY-ACTIONS** Tag: TDD. REQ-211, REQ-212, REQ-214, REQ-215. Evidence: PartyActionsTest, ConfirmWindowTest.
+- [x] **PARTY-INFO** Tag: TDD. REQ-213. Evidence: PartyActionsTest.
+  - References: `docs/plans/2026-11-10-party-commands.md`.
+
+## Expired party invites (REQ-220)
+
+- [x] **EXPIRED-PARTY-REQUESTS** Tag: TDD. REQ-220. Evidence: PartyServiceExpiredRequestTest.
+
+## Simpler party chat command (REQ-221)
+
+- [x] **SIMPLE-PC** Tag: TDD. REQ-221. Evidence: PartyChatIntentTest, PartyChatCommandContractTest.
+
+## Party chat stays out of normal chat (REQ-222)
+
+- [x] **PARTY-CHAT-NO-LEAK** Tag: TDD. REQ-222. Evidence: PartyRecipientsTest, PartyChatLegacyEventContractTest.
+
+## Party chat line (REQ-223)
+
+- [x] **PARTY-CHAT-LINE** Tag: TDD. REQ-223. Evidence: PartyChatLineContractTest.

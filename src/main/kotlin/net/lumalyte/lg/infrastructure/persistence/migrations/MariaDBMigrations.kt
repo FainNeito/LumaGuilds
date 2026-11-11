@@ -207,6 +207,11 @@ class MariaDBMigrations(private val plugin: JavaPlugin, private val connection: 
                 updateDatabaseVersion(PrestigeTombstoneSchema.VERSION)
                 currentDbVersion = PrestigeTombstoneSchema.VERSION
             }
+            AllyHomeAccessSchema.create(connection, mariaDb = true)
+            if (currentDbVersion < AllyHomeAccessSchema.VERSION) {
+                updateDatabaseVersion(AllyHomeAccessSchema.VERSION)
+                currentDbVersion = AllyHomeAccessSchema.VERSION
+            }
             GuildDescriptionSchema.ensure(connection)
             connection.commit()
             val finalVersion = getCurrentDatabaseVersion()
