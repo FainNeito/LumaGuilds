@@ -713,6 +713,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-202
 **Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
 
+### REQ-219
+**Event-driven.** WHEN %lumaguilds_guild_prestige_badge_minimessage% is requested THE SYSTEM SHALL return the same badge as %lumaguilds_guild_prestige_badge% with its colour codes written as MiniMessage, so proxy tab lists such as Velocitab show the badge instead of the raw code.
+
 ### REQ-216
 **Ubiquitous.** THE SYSTEM SHALL offer in the guild emoji picker only the emojis on the configured approved list, to every guild without an emoji permission, and SHALL never offer an emoji that is not on that list, such as donor heads.
 

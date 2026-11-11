@@ -61,6 +61,7 @@ Empty for players without a guild, or if the prestige data can't be read.
 | `%lumaguilds_guild_prestige%` | Prestige tier, `0` to `6` |
 | `%lumaguilds_guild_prestige_roman%` | `I` to `VI`; empty at tier 0 |
 | `%lumaguilds_guild_prestige_badge%` | Badge text from `progression.prestige.badges`; empty at tier 0 |
+| `%lumaguilds_guild_prestige_badge_minimessage%` | The same badge as MiniMessage, for Velocitab and other MiniMessage tab lists |
 | `%lumaguilds_guild_prestige_max%` | Configured lifetime maximum |
 | `%lumaguilds_guild_prestige_first_tier%` | Highest tier this guild reached first on the server; `0` if none |
 | `%lumaguilds_guild_prestige_last_date%` | UTC date of the latest prestige (`2026-10-24`); empty if none |
