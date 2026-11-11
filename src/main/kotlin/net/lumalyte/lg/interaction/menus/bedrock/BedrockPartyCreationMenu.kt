@@ -146,7 +146,8 @@ class BedrockPartyCreationMenu(
         val party = Party(
             id = UUID.randomUUID(),
             name = partyName.ifBlank { null },
-            guildIds = guildIds,
+            guildIds = setOf(guild.id),
+            shared = !isPrivate,
             leaderId = player.uniqueId,
             status = PartyStatus.ACTIVE,
             createdAt = java.time.Instant.now(),
@@ -164,7 +165,12 @@ class BedrockPartyCreationMenu(
             if (isPrivate) {
                 player.sendMessage(lang.msg("bedrock.party.creation.feedback.private_created"))
             } else if (invitedGuild != null) {
-                player.sendMessage(lang.msg("bedrock.party.creation.feedback.invited", "guild" to invitedGuild.name))
+                val request = partyService.inviteToParty(createdParty.id, guild.id, invitedGuild.id, player.uniqueId)
+                if (request != null) {
+                    player.sendMessage(lang.msg("bedrock.party.creation.feedback.invited", "guild" to invitedGuild.name))
+                } else {
+                    player.sendMessage(lang.msg("menu.party.creation.feedback.invite_failed", "guild" to invitedGuild.name))
+                }
             }
             bedrockNavigator.goBack()
         } else {

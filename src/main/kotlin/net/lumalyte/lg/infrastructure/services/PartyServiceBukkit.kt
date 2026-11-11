@@ -24,6 +24,31 @@ class PartyServiceBukkit(
     
     private val logger = LoggerFactory.getLogger(PartyServiceBukkit::class.java)
 
+    init {
+        reconcileAppliedAcceptances()
+    }
+
+    private fun hasAppliedAcceptance(request: PartyRequest): Boolean {
+        val destination = request.partyId?.let(partyRepository::getById) ?: return false
+        return !destination.isPrivateParty() && destination.includesGuild(request.fromGuildId) &&
+            destination.includesGuild(request.toGuildId)
+    }
+
+    /** A party update may have committed just before its request status write failed. */
+    private fun reconcileAppliedAcceptances() {
+        try {
+            partyRequestRepository.getRequestsByStatus(PartyRequestStatus.PENDING).forEach { request ->
+                if (hasAppliedAcceptance(request)) {
+                    if (!partyRequestRepository.update(request.copy(status = PartyRequestStatus.ACCEPTED))) {
+                        logger.warn("Could not reconcile applied party request ${request.id}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Could not reconcile applied party acceptances", e)
+        }
+    }
+
     override fun createParty(party: Party, suppressBroadcast: Boolean): Party? {
         try {
             // Validate party name (no spaces allowed - prevents command conflicts)
@@ -39,7 +64,7 @@ class PartyServiceBukkit(
             }
 
             // For private parties, only 1 guild is required
-            val isPrivateParty = party.guildIds.size == 1
+            val isPrivateParty = party.isPrivateParty()
 
             // Validate that the leader has permission to manage parties for their guild
             val leaderGuildId = memberService.getPlayerGuilds(party.leaderId).firstOrNull()
@@ -100,7 +125,10 @@ class PartyServiceBukkit(
         }
     }
 
-    override fun sendPartyRequest(fromGuildId: UUID, toGuildId: UUID, requesterId: UUID, message: String?): PartyRequest? {
+    override fun sendPartyRequest(fromGuildId: UUID, toGuildId: UUID, requesterId: UUID, message: String?): PartyRequest? =
+        sendPartyRequestInternal(fromGuildId, toGuildId, requesterId, message, null)
+
+    private fun sendPartyRequestInternal(fromGuildId: UUID, toGuildId: UUID, requesterId: UUID, message: String?, partyId: UUID?): PartyRequest? {
         try {
             // Validate requester has permission
             if (!canManageParties(requesterId, fromGuildId)) {
@@ -123,7 +151,7 @@ class PartyServiceBukkit(
             }
             
             // Create party request
-            val request = PartyRequest.create(fromGuildId, toGuildId, requesterId, message)
+            val request = PartyRequest.create(fromGuildId, toGuildId, requesterId, message).copy(partyId = partyId)
             
             return if (partyRequestRepository.add(request)) {
                 logger.info("Party request sent from guild $fromGuildId to guild $toGuildId by player $requesterId")
@@ -154,6 +182,7 @@ class PartyServiceBukkit(
         }
     }
     
+    @Synchronized
     override fun acceptPartyRequest(requestId: UUID, acceptingGuildId: UUID, accepterId: UUID): Party? {
         try {
             // Validate accepter has permission
@@ -181,7 +210,19 @@ class PartyServiceBukkit(
             
             // Check if there's an existing party involving the requesting guild
             val existingParties = partyRepository.getActivePartiesByGuild(request.fromGuildId)
-            val existingParty = existingParties.firstOrNull()
+            val existingParty = if (request.partyId != null) {
+                val intended = partyRepository.getById(request.partyId)
+                if (intended == null || !intended.isActive() || intended.isPrivateParty() || !intended.includesGuild(request.fromGuildId)) {
+                    logger.warn("Party request $requestId no longer has its original active party")
+                    return null
+                }
+                intended
+            } else existingParties.firstOrNull { !it.isPrivateParty() }
+            if (existingParty != null && !existingParty.includesGuild(acceptingGuildId) && existingParty.guildIds.size >= 10) return null
+            if (existingParties.any { !it.isPrivateParty() && it.id != existingParty?.id }) return null
+            if (partyRepository.getActivePartiesByGuild(acceptingGuildId).any {
+                    !it.isPrivateParty() && it.id != existingParty?.id
+                }) return null
             
             val party = if (existingParty != null) {
                 // Add accepting guild to existing party
@@ -197,18 +238,14 @@ class PartyServiceBukkit(
                 )
             }
             
-            // Update request status
-            val acceptedRequest = request.copy(status = PartyRequestStatus.ACCEPTED)
-            partyRequestRepository.update(acceptedRequest)
-            
-            // Save or update party
+            // Persist membership before marking accepted; a retry repairs an interrupted status update.
             val success = if (existingParty != null) {
                 partyRepository.update(party)
             } else {
                 partyRepository.add(party)
             }
             
-            return if (success) {
+            return if (success && partyRequestRepository.update(request.copy(status = PartyRequestStatus.ACCEPTED))) {
                 logger.info("Party request $requestId accepted by guild $acceptingGuildId")
                 party
             } else {
@@ -222,6 +259,7 @@ class PartyServiceBukkit(
         }
     }
     
+    @Synchronized
     override fun rejectPartyRequest(requestId: UUID, rejectingGuildId: UUID, rejecterId: UUID): Boolean {
         try {
             // Validate rejecter has permission
@@ -241,6 +279,8 @@ class PartyServiceBukkit(
                 logger.warn("Guild $rejectingGuildId cannot reject request $requestId (not addressed to them)")
                 return false
             }
+
+            if (!request.isValid() || hasAppliedAcceptance(request)) return false
             
             // Update request status
             val rejectedRequest = request.copy(status = PartyRequestStatus.REJECTED)
@@ -258,6 +298,7 @@ class PartyServiceBukkit(
         }
     }
     
+    @Synchronized
     override fun cancelPartyRequest(requestId: UUID, cancellingGuildId: UUID, cancellerId: UUID): Boolean {
         try {
             // Validate canceller has permission
@@ -277,6 +318,8 @@ class PartyServiceBukkit(
                 logger.warn("Guild $cancellingGuildId cannot cancel request $requestId (not their request)")
                 return false
             }
+
+            if (!request.isValid() || hasAppliedAcceptance(request)) return false
             
             // Remove the request
             val success = partyRequestRepository.remove(requestId)
@@ -306,6 +349,10 @@ class PartyServiceBukkit(
                 logger.warn("Party $partyId not found or not active")
                 return null
             }
+            if (party.isPrivateParty()) {
+                logger.warn("Cannot invite another guild to a private party or internal channel")
+                return null
+            }
             
             // Validate inviter's guild is in the party
             if (!party.includesGuild(inviterGuildId)) {
@@ -320,7 +367,7 @@ class PartyServiceBukkit(
             }
             
             // Send party request
-            return sendPartyRequest(inviterGuildId, targetGuildId, inviterId, "Invitation to join party")
+            return sendPartyRequestInternal(inviterGuildId, targetGuildId, inviterId, "Invitation to join party", partyId)
         } catch (e: Exception) {
             // In-memory operation - catching runtime exceptions from state validation
             logger.error("Error inviting guild to party", e)
@@ -507,13 +554,16 @@ class PartyServiceBukkit(
         return memberService.hasPermission(playerId, guildId, RankPermission.MANAGE_RELATIONS)
     }
     
+    @Synchronized
     override fun processExpiredItems(): Int {
         var processedCount = 0
         
         try {
+            reconcileAppliedAcceptances()
             // Process expired party requests
             val expiredRequests = partyRequestRepository.getExpiredRequests()
             for (request in expiredRequests) {
+                if (hasAppliedAcceptance(request)) continue
                 val expiredRequest = request.copy(status = PartyRequestStatus.EXPIRED)
                 if (partyRequestRepository.update(expiredRequest)) {
                     processedCount++

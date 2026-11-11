@@ -415,7 +415,8 @@ class PartyCreationMenu(
             val party = Party(
                 id = partyId,
                 name = partyName.ifBlank { null },
-                guildIds = selectedGuilds,
+                guildIds = setOf(guild.id),
+                shared = !isPrivateParty,
                 leaderId = player.uniqueId,
                 status = PartyStatus.ACTIVE,
                 createdAt = java.time.Instant.now(),
@@ -429,7 +430,7 @@ class PartyCreationMenu(
             if (createdParty != null) {
                 player.sendMessage(lang.msg("menu.party.creation.feedback.created"))
                 player.sendMessage(lang.msg("menu.party.creation.feedback.created_name", "party" to (party.name ?: lang.raw("menu.party.creation.unnamed"))))
-                player.sendMessage(lang.msg("menu.party.creation.feedback.created_guilds", "count" to selectedGuilds.size))
+                player.sendMessage(lang.msg("menu.party.creation.feedback.created_guilds", "count" to createdParty.guildIds.size))
                 if (restrictedRoles.isNotEmpty()) {
                     player.sendMessage(lang.msg("menu.party.creation.feedback.created_roles", "count" to restrictedRoles.size))
                 }
