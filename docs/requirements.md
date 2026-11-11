@@ -757,6 +757,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-222
 **State-driven.** WHILE a player has party chat on THE SYSTEM SHALL cancel their chat message before other chat plugins handle it, so it never also appears in normal chat, and SHALL always show the sender their own party message; WHEN a player turns party chat on THE SYSTEM SHALL show party messages again IF they had hidden them.
 
+### REQ-223
+**Ubiquitous.** THE SYSTEM SHALL format a party chat message like guild chat, starting with [Party] and the sender's guild name in brackets, then the sender's name (no rank), and SHALL build it without PlaceholderAPI or guild emojis, so no raw placeholder text ever appears.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

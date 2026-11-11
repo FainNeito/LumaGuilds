@@ -1375,3 +1375,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Party chat stays out of normal chat (REQ-222)
 
 - [x] **PARTY-CHAT-NO-LEAK** Tag: TDD. REQ-222. Evidence: PartyRecipientsTest, PartyChatLegacyEventContractTest.
+
+## Party chat line (REQ-223)
+
+- [x] **PARTY-CHAT-LINE** Tag: TDD. REQ-223. Evidence: PartyChatLineContractTest.

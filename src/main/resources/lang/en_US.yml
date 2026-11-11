@@ -7360,8 +7360,7 @@ notification:
       without_tag: '<gray><player>:</gray> <message>'
     party:
       default_name: Party
-      with_tag: '<light_purple>[P] <tag> <player>:</light_purple> <message>'
-      without_tag: '<light_purple>[P] <player>:</light_purple> <message>'
+      line: '<dark_gray>[<aqua>Party</aqua>] [<yellow><guild></yellow>]</dark_gray> <white><player></white> <aqua>»</aqua> <white><message>'
   vault:
     inventory:
       access_denied: '<red>You no longer have access to this guild vault.'
