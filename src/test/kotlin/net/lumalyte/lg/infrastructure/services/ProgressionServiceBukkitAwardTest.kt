@@ -22,6 +22,7 @@ import net.lumalyte.lg.domain.values.ExperiencePolicy
 import net.lumalyte.lg.domain.values.ExperienceSource
 import net.lumalyte.lg.domain.values.PeriodWindow
 import net.lumalyte.lg.api.events.GuildLevelChangedEvent
+import net.lumalyte.lg.api.events.GuildLevelUpEvent
 import org.bukkit.Bukkit
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.PluginManager
@@ -125,7 +126,30 @@ class ProgressionServiceBukkitAwardTest {
         withCapturedLevelEvents { pluginManager ->
             assertEquals(DISCORD_ROLE_LEVEL, service.awardExperience(guildId, AWARD_XP, ExperienceSource.MOB_KILL))
             verifyLevelChange(pluginManager, guildId)
+            verify(exactly = 1) {
+                pluginManager.callEvent(match { it is GuildLevelUpEvent && it.guildId == guildId && it.newLevel == DISCORD_ROLE_LEVEL })
+            }
             verify(exactly = 1) { progressionRepository.refreshGuildProgression(guildId) }
+        }
+    }
+
+    @Test
+    fun questLevelUpPublishesNotificationEventOnce() {
+        val awards = RecordingRepository().apply { leveledUpTo = DISCORD_ROLE_LEVEL }
+        val service = serviceWith(awards)
+        val guildId = UUID.randomUUID()
+        withCapturedLevelEvents { pluginManager ->
+            assertTrue(service.awardUncappedSystemExperienceOnce(
+                guildId, QUEST_REWARD_XP, ExperienceSource.WEEKLY_ACTIVITY, UUID.randomUUID(),
+            ))
+            awards.duplicate = true
+            assertTrue(service.awardUncappedSystemExperienceOnce(
+                guildId, QUEST_REWARD_XP, ExperienceSource.WEEKLY_ACTIVITY, UUID.randomUUID(),
+            ))
+            verifyLevelChange(pluginManager, guildId)
+            verify(exactly = 1) {
+                pluginManager.callEvent(match { it is GuildLevelUpEvent && it.guildId == guildId && it.newLevel == DISCORD_ROLE_LEVEL })
+            }
         }
     }
 
@@ -255,6 +279,7 @@ class ProgressionServiceBukkitAwardTest {
         var policy: ExperiencePolicy? = null
         var requestedXp: Int? = null
         var leveledUpTo: Int? = null
+        var duplicate = false
 
         override fun awardAtomically(
             request: ExperienceAwardRequest,
@@ -265,6 +290,7 @@ class ProgressionServiceBukkitAwardTest {
             this.request = request
             this.policy = policy
             this.requestedXp = requestedXp
+            if (duplicate) return ExperienceAwardResult.Duplicate
             return ExperienceAwardResult.Awarded(requestedXp, requestedXp, policy.isCapped, leveledUpTo)
         }
     }
