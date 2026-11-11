@@ -166,7 +166,9 @@ data class GuildConfig(
     // Ranks and Members
     var maxCustomRanks: Int = 10,
     var maxRankNameLength: Int = 16,
-    var maxMembersPerGuild: Int = 50,
+    var maxMembersPerGuild: Int = 100,
+    /** REQ-190: member cap by level. */
+    var memberCapacity: MemberCapacityConfig = MemberCapacityConfig(),
     
     // Home System
     var homeTeleportCooldownSeconds: Int = 5,
@@ -199,6 +201,8 @@ data class GuildConfig(
 
     // Emoji Grants — map guild names to emoji permission nodes
     var emojiGrants: Map<String, String> = emptyMap(),
+    // REQ-216/217: the emojis a guild may pick, and guild-only logos
+    var emojiChoices: net.lumalyte.lg.domain.values.GuildEmojiRules = net.lumalyte.lg.domain.values.GuildEmojiRules(),
     val creationCooldown: net.lumalyte.lg.domain.values.GuildCreationCooldown =
         net.lumalyte.lg.domain.values.GuildCreationCooldown()
 )
@@ -414,17 +418,10 @@ data class PartyConfig(
     var minPartyNameLength: Int = 1,
     var defaultPartyDurationHours: Int = 24,
     var maxSimultaneousPartiesPerGuild: Int = 3,
-    var allowPrivateParties: Boolean = true, // Allow creation of private guild-only parties
 
     // Party Chat
     var partyChatEnabled: Boolean = true,
     var partyChatPriority: Int = 100,
-    var useMiniMessage: Boolean = true, // Enable MiniMessage formatting support (allows tags like <gradient>, <rainbow>, etc.)
-    var partyChatFormat: String = "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}",
-    var useSimplifiedGuildPartyFormat: Boolean = true, // Use simplified format for guild-internal parties (Guild_Chat, Officer_Chat, etc.)
-    var guildPartyChatFormat: String = "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}", // Simplified format for guild-internal parties (no guild tag/emoji spam)
-    var partyChatPrefix: String = "[PARTY]",
-    var partyChatSuffix: String = "",
     var chatInputListenerPriority: String = "HIGHEST", // HIGHEST, HIGH, NORMAL, LOW, LOWEST
     var partyChatListenerPriority: String = "LOWEST", // Event priority for party chat auto-routing after /pc switch (LOWEST = runs first, before ChatControl)
 
@@ -433,10 +430,37 @@ data class PartyConfig(
     var defaultToAllMembers: Boolean = true
 )
 
+/** REQ-154 member credits. Disabled unless an operator enables them. */
+data class PrestigeMemberCreditsConfig(
+    var enabled: Boolean = false,
+    var minTenureHours: Long = 24,
+    var commands: List<String> = emptyList(),
+    var firstReachCommands: List<String> = emptyList(),
+)
+
+/** REQ-164 prestige fanfare switches. */
+data class PrestigeFanfareConfig(
+    var enabled: Boolean = true,
+    var serverWide: Boolean = true,
+    var memberTitle: Boolean = true,
+)
+
+/** Uncoloured fallback; the shipped config.yml carries the coloured badges. */
+val DEFAULT_PRESTIGE_BADGES = listOf("", "✦I", "✦II", "✦III", "✦IV", "✦V", "✦VI")
+
 data class PrestigeConfig(
     var enabled: Boolean = true,
     var maxCount: Int = 6,
-    var fees: List<Long> = listOf(10_000L, 20_000L, 30_000L, 30_000L, 30_000L, 30_000L),
+    // REQ-178: 20% below the original 10k/20k/30k fees (Fain, 2026-11-09).
+    var fees: List<Long> = listOf(8_000L, 16_000L, 24_000L, 24_000L, 24_000L, 24_000L),
+    var memberCredits: PrestigeMemberCreditsConfig = PrestigeMemberCreditsConfig(),
+    /** REQ-155 placeholder badges; index 0 is "no prestige". */
+    var badges: List<String> = DEFAULT_PRESTIGE_BADGES,
+    var fanfare: PrestigeFanfareConfig = PrestigeFanfareConfig(),
+    var carryOver: PrestigeCarryOverConfig = PrestigeCarryOverConfig(),
+    var perks: PrestigePerksConfig = PrestigePerksConfig(),
+    var discord: net.lumalyte.lg.application.services.PrestigeDiscordSettings =
+        net.lumalyte.lg.application.services.PrestigeDiscordSettings(),
 ) {
     init {
         require(maxCount in 1..6) { "Prestige lifetime maximum must be between 1 and 6" }
@@ -448,6 +472,34 @@ data class PrestigeConfig(
     fun feeFor(currentPrestigeCount: Int): Long {
         require(currentPrestigeCount in 0 until maxCount)
         return fees[currentPrestigeCount]
+    }
+}
+
+/** REQ-180, REQ-181: the prestige tier at which each practical perk unlocks. */
+data class PrestigePerksConfig(
+    val secondAllyHomeTier: Int = 2,
+    val extraStallTier: Int = 3,
+)
+
+/** REQ-175: XP earned past level 100 can start the next climb, up to the start of [landingLevel]. */
+data class PrestigeCarryOverConfig(
+    var enabled: Boolean = false,
+    var landingLevel: Int = 5,
+) {
+    init {
+        require(landingLevel in 1..99) { "Prestige carry-over landing level must be between 1 and 99" }
+    }
+}
+
+/** REQ-178: every guild earns [multiplier] times activity XP on [days] in [zone]. */
+data class WeekendBoostConfig(
+    val enabled: Boolean = true,
+    val multiplier: Double = 2.0,
+    val days: Set<java.time.DayOfWeek> = setOf(java.time.DayOfWeek.SATURDAY, java.time.DayOfWeek.SUNDAY),
+    val zone: java.time.ZoneId = java.time.ZoneId.of("America/New_York"),
+) {
+    init {
+        require(multiplier.isFinite() && multiplier >= 1.0) { "Weekend XP multiplier must be at least 1" }
     }
 }
 
@@ -489,7 +541,8 @@ data class ProgressionConfig(
     // 0 in either field disables the cleanup task entirely.
     var transactionRetentionDays: Int = 90,
     var transactionCleanupIntervalHours: Int = 24,
-    val xpBoost: net.lumalyte.lg.domain.values.ExperienceBoost? = null
+    val xpBoost: net.lumalyte.lg.domain.values.ExperienceBoost? = null,
+    val weekendBoost: WeekendBoostConfig = WeekendBoostConfig()
 )
 
 object ChapterTwoExperiencePolicies {
@@ -749,3 +802,16 @@ data class NameFilterNormalization(
     // Collapse repeated characters: "heeelllooo" → "hello"
     var collapseRepeats: Boolean = true
 )
+
+/** REQ-190: `base + per_step x floor(level / step_levels)`, at most [max]. */
+data class MemberCapacityConfig(
+    val enabled: Boolean = true,
+    val base: Int = 10,
+    val perStep: Int = 5,
+    val stepLevels: Int = 5,
+    val max: Int = 100,
+) {
+    init {
+        require(base >= 1 && perStep >= 0 && stepLevels >= 1 && max >= base) { "Invalid member capacity settings" }
+    }
+}

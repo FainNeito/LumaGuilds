@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.badgersmc.nexus.i18n.LangService
 import net.kyori.adventure.text.Component
 import net.lumalyte.lg.application.services.*
@@ -87,7 +88,7 @@ internal class GuildChronicleMenu(
                 if (snapshot.goal.rewardId == id) lang.gui("chronicle.tracked") else lang.gui("chronicle.shared"))),
             referenceItem("lg_sources", listOf(
                 lang.gui("chapter_two_rewards.capacity_bank", "capacity" to benefits.bankCapacity),
-                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to benefits.memberCapacity),
+                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, benefits.memberCapacity)),
                 lang.gui("chapter_two_rewards.multipliers", "cooldown" to benefits.homeCooldownMultiplier, "fee" to benefits.withdrawalFeeMultiplier))),
             referenceItem("lg_prestige", earningDetails(offer)),
         )
@@ -154,7 +155,7 @@ internal class GuildChronicleMenu(
             0 -> prestigeOverviewCards(overview)
             1 -> (1..overview.maxPrestigeCount).map { tier ->
                 referenceItem("lg_prestige", listOf(
-                    lang.gui("chronicle.prestige.milestone", "tier" to tier, "fee" to settings.feeFor(tier - 1)),
+                    lang.gui("chronicle.prestige.milestone", "tier" to PrestigeNumeral.of(tier), "fee" to settings.feeFor(tier - 1)),
                     if (tier <= overview.prestigeCount) lang.gui("chronicle.prestige.milestone_earned")
                     else lang.gui("chronicle.prestige.milestone_locked"),
                 ))
@@ -167,8 +168,8 @@ internal class GuildChronicleMenu(
     private fun prestigeOverviewCards(overview: PrestigeOverview): List<GuildDialogItem> = buildList {
         add(referenceItem("lg_prestige", listOf(
             lang.gui("chronicle.prestige.title"),
-            lang.gui("chronicle.prestige.progress", "count" to overview.prestigeCount,
-                "max" to overview.maxPrestigeCount, "level" to overview.currentLevel),
+            lang.gui("chronicle.prestige.progress", "count" to PrestigeNumeral.of(overview.prestigeCount),
+                "max" to PrestigeNumeral.of(overview.maxPrestigeCount), "level" to overview.currentLevel),
             lang.gui("chronicle.prestige.home_bonus", "count" to overview.prestigeCount),
             overview.nextFee?.let { lang.gui("chronicle.prestige.fee", "fee" to it) }
                 ?: lang.gui("chronicle.prestige.maximum"),
@@ -250,7 +251,8 @@ internal class GuildChronicleMenu(
     private fun effect(value: RewardEffect): Component = when (value) {
         is RewardEffect.BankCapacity -> lang.gui("chronicle.bank_effect", "amount" to value.amount)
         is RewardEffect.HomeCapacity -> lang.gui("chronicle.home_effect", "amount" to value.amount)
-        is RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt())
+        is RewardEffect.HomeCooldown -> lang.gui("chronicle.cooldown_effect", "percent" to (value.multiplier * 100).toInt(),
+        "seconds" to net.lumalyte.lg.domain.values.HomeTravelTimes.countdownSeconds(value.multiplier))
         is RewardEffect.WithdrawalFee -> lang.gui("chronicle.fee_effect", "percent" to (value.multiplier * 100).toInt())
         RewardEffect.AllyHomes -> lang.gui("chronicle.ally_effect")
     }

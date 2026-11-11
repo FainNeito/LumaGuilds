@@ -1,5 +1,7 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.application.services.GuildInfoPrestige
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.lumalyte.lg.infrastructure.i18n.bedrock
 
 import net.badgersmc.nexus.i18n.LangService
@@ -36,6 +38,7 @@ class BedrockGuildInfoMenu(
     private val relationService: RelationService by inject()
     private val warService: net.lumalyte.lg.application.services.WarService by inject()
     private val lang: LangService by inject()
+    private val prestigeHistory: net.lumalyte.lg.application.persistence.PrestigeHistory by inject()
 
     override fun getForm(): Form {
         val config = getBedrockConfig()
@@ -57,12 +60,16 @@ class BedrockGuildInfoMenu(
             lang.bedrock("bedrock.info.description"),
             createSectionHeader(lang.bedrock("bedrock.info.header.overview")),
             createOverviewSection(),
+            createSectionHeader(lang.bedrock("bedrock.info.header.prestige")),
+            createPrestigeSection(),
             createSectionHeader(lang.bedrock("bedrock.info.header.members")),
             createMembersSection(),
             createSectionHeader(lang.bedrock("bedrock.info.header.relations")),
             createRelationsSection(allies.map { it.guild.name }, enemies.map { it.guild.name }),
             createSectionHeader(lang.bedrock("bedrock.info.header.wars")),
             createWarSection(),
+            createSectionHeader(lang.bedrock("guild_page.card.facts_header")),
+            createFactsSection(),
         ).joinToString("\n\n")
 
         return SimpleForm.builder()
@@ -116,6 +123,24 @@ class BedrockGuildInfoMenu(
         return lang.bedrock("bedrock.info.header.format", "title" to title)
     }
 
+    private fun createPrestigeSection(): String = when (val prestige = GuildInfoPrestige.of(prestigeHistory, guild.id)) {
+        GuildInfoPrestige.None -> lang.bedrock("bedrock.info.prestige.none")
+        GuildInfoPrestige.Unavailable -> lang.bedrock("bedrock.info.prestige.unavailable")
+        is GuildInfoPrestige.Prestiged -> {
+            val formatter = DateTimeFormatter.ofPattern(lang.raw("bedrock.info.date_format"))
+            (listOf(lang.bedrock("bedrock.info.prestige.current", "tier" to PrestigeNumeral.of(prestige.current))) +
+                prestige.entries.map { entry ->
+                    val tier = PrestigeNumeral.of(entry.tier)
+                    val date = formatter.format(entry.appliedAt.atZone(java.time.ZoneId.systemDefault()))
+                    if (entry.serverFirst) {
+                        lang.bedrock("bedrock.info.prestige.entry_first", "tier" to tier, "date" to date)
+                    } else {
+                        lang.bedrock("bedrock.info.prestige.entry", "tier" to tier, "date" to date)
+                    }
+                }).joinToString("\n")
+        }
+    }
+
     private fun createOverviewSection(): String {
         val formatter = DateTimeFormatter.ofPattern(lang.raw("bedrock.info.date_format"))
         val foundedDate = formatter.format(guild.createdAt.atZone(java.time.ZoneId.systemDefault()))
@@ -146,6 +171,23 @@ class BedrockGuildInfoMenu(
                 "tag" to tag,
                 "founded" to foundedDate
             )
+        }
+    }
+
+    /** REQ-195: the same Yes/No lines as the Java guild card. */
+    private fun createFactsSection(): String {
+        val shop = runCatching {
+            org.bukkit.Bukkit.getServicesManager().load(net.lumalyte.lg.api.GuildShopLookup::class.java)?.ownsShop(guild.id)
+        }.getOrNull()
+        val facts = net.lumalyte.lg.domain.values.GuildCardFacts(
+            home = guild.homes.homeNames.isNotEmpty(),
+            banner = guild.banner != null,
+            vault = guild.vaultChestLocation != null && guild.vaultStatus == net.lumalyte.lg.domain.entities.VaultStatus.AVAILABLE,
+            shop = shop,
+        )
+        return facts.lines().joinToString("\n") { (fact, value) ->
+            net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(net.lumalyte.lg.interaction.menus.guild.GuildPageText.fact(lang, fact, value))
         }
     }
 
