@@ -195,7 +195,8 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             dailyWarMoneyCost = config.getInt("guild.daily_war_money_cost", 100),
             warFarmingCooldownHours = config.getInt("guild.war_farming_cooldown_hours", 24),
             nameFilter = loadNameFilterConfig(),
-            emojiGrants = loadEmojiGrantsConfig()
+            emojiGrants = loadEmojiGrantsConfig(),
+            emojiChoices = loadEmojiChoicesConfig()
         )
     }
 
@@ -230,7 +231,30 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
         return result
     }
 
+    /** REQ-216/217: guild.emoji_choices.allowed and guild.emoji_choices.guild_only. */
+    private fun loadEmojiChoicesConfig(): net.lumalyte.lg.domain.values.GuildEmojiRules {
+        val defaults = net.lumalyte.lg.domain.values.GuildEmojiRules()
+        val allowed = if (config.isList("guild.emoji_choices.allowed")) {
+            config.getStringList("guild.emoji_choices.allowed").map { it.trim().removePrefix(":").removeSuffix(":") }
+                .filter { EMOJI_ID.matches(it) }.distinct()
+        } else {
+            defaults.allowed
+        }
+        val section = config.getConfigurationSection("guild.emoji_choices.guild_only")
+        val guildOnly = section?.getKeys(false).orEmpty().mapNotNull { guild ->
+            val emoji = section?.getString(guild)?.trim()?.removePrefix(":")?.removeSuffix(":")
+            if (guild.isBlank() || emoji == null || !EMOJI_ID.matches(emoji)) {
+                logger.warn("Ignoring invalid guild-only emoji for '$guild'")
+                null
+            } else {
+                net.lumalyte.lg.domain.values.GuildEmojiRules.key(guild) to emoji
+            }
+        }.toMap()
+        return net.lumalyte.lg.domain.values.GuildEmojiRules(allowed, guildOnly)
+    }
+
     companion object {
+        private val EMOJI_ID = Regex("^[a-z0-9_-]{1,64}$")
         private val PERMISSION_NODE = Regex("^[a-z0-9][a-z0-9_.-]*$")
     }
     
@@ -627,15 +651,8 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             minPartyNameLength = config.getInt("party.min_party_name_length", 1),
             defaultPartyDurationHours = config.getInt("party.default_party_duration_hours", 24),
             maxSimultaneousPartiesPerGuild = config.getInt("party.max_simultaneous_parties_per_guild", 3),
-            allowPrivateParties = config.getBoolean("party.allow_private_parties", true),
             partyChatEnabled = config.getBoolean("party.party_chat_enabled", true),
             partyChatPriority = config.getInt("party.party_chat_priority", 100),
-            useMiniMessage = config.getBoolean("party.use_minimessage", true),
-            partyChatFormat = config.getString("party.party_chat_format") ?: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}",
-            useSimplifiedGuildPartyFormat = config.getBoolean("party.use_simplified_guild_party_format", true),
-            guildPartyChatFormat = config.getString("party.guild_party_chat_format") ?: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}",
-            partyChatPrefix = config.getString("party.party_chat_prefix") ?: "[PARTY]",
-            partyChatSuffix = config.getString("party.party_chat_suffix") ?: "",
             chatInputListenerPriority = config.getString("party.chat_input_listener_priority") ?: "HIGHEST",
             partyChatListenerPriority = config.getString("party.party_chat_listener_priority") ?: "LOWEST",
             allowRoleRestrictions = config.getBoolean("party.allow_role_restrictions", true),

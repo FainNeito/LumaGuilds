@@ -402,7 +402,6 @@ WHEN a guild withdrawal is offered THEN THE SYSTEM SHALL preview the calculated 
 ### REQ-095
 **Ubiquitous.** THE staging Season 2 resource pack SHALL resolve all LumaGuilds item IDs, including the nine missing navigation/source IDs and 37 emoji-choice IDs, to existing resources. Icons SHALL use readable silhouettes, consistent gold/slate pixel-art navigation, correctly directed pagination arrows and shape-distinct status indicators. Existing IDs, approved guild backgrounds and recognizable emoji identities SHALL be preserved. Pack generation SHALL retain SELFHOST. Java and Bedrock client validation SHALL be reported independently from static validation.
 
-
 ### REQ-096
 **Event-driven.** WHEN an authorized guild member opens Settings → GUI Theme THEN THE SYSTEM SHALL render a one-row six-choice theme selector using `guild_bg_<theme>_1_row`, place theme choices in slots 0–5 and Back in slot 8, use a distinct supplied symbol for every `GuiTheme`, identify the active theme with localized text plus a secondary visual cue, use the localized heading `GUI Theme`, keep the player inventory visible, and reject unauthorized selections without reporting success.
 
@@ -485,7 +484,6 @@ WHEN a guild withdrawal is offered THEN THE SYSTEM SHALL preview the calculated 
 THE SYSTEM SHALL compile, test and start without the retired AxKoth API dependency, repository, plugin soft dependency or team-hook registration. Existing guild war, reward, standings and persistence behavior SHALL remain unchanged. See retired-axkoth.md. IDs 121–146 are reserved by the existing reviewed guild stack.
 ### REQ-121
 **Event-driven.** WHEN an integrating plugin (EnthusiaHolidays) unlocks a guild cosmetic through the public `GuildCosmeticUnlocks` service THEN THE SYSTEM SHALL durably record that the guild owns the cosmetic `(type, key)` with its display name and source, idempotently, and SHALL report success for an already-owned cosmetic. Holiday menu styles marked `requiresUnlock` (`HALLOWEEN`, `CHRISTMAS`) SHALL be offered in the theme selector (Java and Bedrock) only as **locked** until the guild owns them, and `setGuiTheme` SHALL reject a locked theme regardless of caller. WHEN a cosmetic is revoked THE SYSTEM SHALL remove ownership idempotently and reset a guild currently using that theme to the default style without overwriting other guild fields. WHILE a guild uses a style with `seasonalIcons`, THE SYSTEM SHALL send its members the `<icon>_<style>` Nexo variant of each LumaGuilds menu icon that has one, and the normal icon otherwise. The API SHALL use JDK-only signatures, SHALL accept unknown nonblank keys (so a newer integration cannot wedge its sync), and SHALL return false for a nonexistent guild, an invalid blank/over-length identity, or a persistence failure.
-
 
 ### REQ-122
 **Event-driven.** WHEN a current guild member uses `/guild bank` or `/g bank` with the existing guild-menu command permission THEN THE SYSTEM SHALL open that member's platform-appropriate Guild Bank without requiring unrelated management permissions. Non-members SHALL receive the existing localized membership denial. Bank operation authorization and currency semantics SHALL remain unchanged.
@@ -717,6 +715,66 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 ### REQ-219
 **Event-driven.** WHEN %lumaguilds_guild_prestige_badge_minimessage% is requested THE SYSTEM SHALL return the same badge as %lumaguilds_guild_prestige_badge% with its colour codes written as MiniMessage, so proxy tab lists such as Velocitab show the badge instead of the raw code.
+
+### REQ-216
+**Ubiquitous.** THE SYSTEM SHALL offer in the guild emoji picker only the emojis on the configured approved list, to every guild without an emoji permission, and SHALL never offer an emoji that is not on that list, such as donor heads.
+
+### REQ-217
+**State-driven.** WHILE an emoji is configured as a guild-only emoji for a named guild THE SYSTEM SHALL offer it only to that guild, first in its picker, even IF the emoji is also on the approved list.
+
+### REQ-218
+**Unwanted.** IF a guild already uses an emoji that is no longer offered to it THEN THE SYSTEM SHALL keep showing that emoji and accept it being saved again, until the guild picks a different one.
+
+### REQ-203
+**Event-driven.** WHEN two guilds become allies, end an alliance, become enemies, start or end a truce, make peace, or end a war THE SYSTEM SHALL save one history entry for each guild with the other guild, the change as seen by that guild, the player who made it when there is one, the time and, for a truce, its length in days; IF the entry cannot be saved THEN THE SYSTEM SHALL still complete the change.
+
+### REQ-204
+**Event-driven.** WHEN a player opens a guild's diplomacy history THE SYSTEM SHALL list that guild's history entries newest first, 45 per page on Java and 20 per page on Bedrock, each with its date and the player who made it when there is one.
+
+### REQ-205
+**Ubiquitous.** THE SYSTEM SHALL show the Java Parties menu as 3 rows with every active party the guild is in centred on the top row, Create New Party, Incoming Requests, Outgoing Requests and How Parties Work on the middle row, and Back on the bottom row, and SHALL NOT show Send Party Request, Party Access Settings or a placeholder message for any button.
+
+### REQ-206
+**Event-driven.** WHEN a player clicks a party THE SYSTEM SHALL open that party's page showing its leader, dates, rank limits and guilds; WHERE the player has Manage Parties THE SYSTEM SHALL offer inviting a guild that is not in the party and, after a second click, leaving the party; WHERE the player has Manage Relations THE SYSTEM SHALL offer moderating the party channel.
+
+### REQ-207
+**Ubiquitous.** THE SYSTEM SHALL keep parties for talking between two or more guilds: WHEN a guild is created THE SYSTEM SHALL NOT create Guild_Chat, Officer_Chat or Leader_Chat parties for it, and IF anyone tries to create a party that only one guild can ever join THEN THE SYSTEM SHALL refuse it.
+
+### REQ-208
+**Event-driven.** WHEN the plugin starts THE SYSTEM SHALL end every active single-guild party by marking it dissolved, without deleting it, and SHALL move every player whose party chat pointed at one of those parties back to normal chat.
+
+### REQ-209
+**Event-driven.** WHEN a player turns on guild, ally or mod chat while party chat is on THE SYSTEM SHALL turn party chat off and tell them; WHEN a player switches to party chat while in guild, ally or mod chat THE SYSTEM SHALL move them out of that channel and tell them.
+
+### REQ-210
+**Event-driven.** WHEN a player runs /party THE SYSTEM SHALL open their guild's party menu; WHEN they run /party invite without a guild THE SYSTEM SHALL open the guild-invite page for their guild's party, or the party creation menu IF their guild has no party.
+
+### REQ-211
+**Event-driven.** WHEN a player with Manage Parties runs /party invite with a guild name THE SYSTEM SHALL invite that guild to their guild's party, first creating a party IF their guild has none, and SHALL tell the invited guild's online members how to accept.
+
+### REQ-212
+**Event-driven.** WHEN a player with Manage Parties runs /party accept, /party deny or /party cancel with a guild name THE SYSTEM SHALL accept or deny that guild's request to their guild, or cancel their guild's request to that guild; WHEN no guild is named THE SYSTEM SHALL list the matching requests with clickable actions.
+
+### REQ-213
+**Event-driven.** WHEN a player runs /party info THE SYSTEM SHALL show their guild's party name, leader, guilds, online count and end time; WHEN they run /party list THE SYSTEM SHALL list every active party between guilds with its guilds.
+
+### REQ-214
+**Event-driven.** WHEN a player with Manage Parties runs /party leave, or the party leader or a player with Manage Parties in the leader's guild runs /party disband, THE SYSTEM SHALL ask them to run the same command again within 30 seconds and only then leave or end the party.
+
+### REQ-215
+**Event-driven.** WHEN a player runs /party chat with no message THE SYSTEM SHALL switch party chat on for their guild's party, or off IF it is already on; WHEN they add a message THE SYSTEM SHALL send only that message to the party; WHEN a player with Manage Parties runs /party rename THE SYSTEM SHALL rename the party IF the name is 1 to 32 characters with no spaces.
+
+### REQ-220
+**Unwanted.** IF a party request has expired THEN THE SYSTEM SHALL leave it out of every request list, menu and /party command, so players are never offered an invite that can no longer be accepted, and SHALL say how long invites last when a guild has no request to act on.
+
+### REQ-221
+**Event-driven.** WHEN a player runs /pc with no arguments THE SYSTEM SHALL turn party chat on for their guild's party, or off IF it is already on, without the player naming the party; WHEN they run /pc on, /pc switch, /pc off or /pc mute THE SYSTEM SHALL turn party chat on, off, or hide party messages; WHEN they run /pc with any other text THE SYSTEM SHALL send that text once to their guild's party; and THE SYSTEM SHALL tab-complete these words and the party's name.
+
+### REQ-222
+**State-driven.** WHILE a player has party chat on THE SYSTEM SHALL cancel their chat message before other chat plugins handle it, so it never also appears in normal chat, and SHALL always show the sender their own party message; WHEN a player turns party chat on THE SYSTEM SHALL show party messages again IF they had hidden them.
+
+### REQ-223
+**Ubiquitous.** THE SYSTEM SHALL format a party chat message like guild chat, starting with [Party] and the sender's guild name in brackets, then the sender's name (no rank), and SHALL build it without PlaceholderAPI or guild emojis, so no raw placeholder text ever appears.
 
 ## Guild Chronicle
 

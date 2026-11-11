@@ -499,11 +499,19 @@ fun guildsModule() = module {
         // The first start with REQ-190 records every existing guild's member count.
         net.lumalyte.lg.infrastructure.persistence.guilds.MemberCapacityFloorsSQL(get()).also { it.snapshotOnce() }
     }
-    single<RelationService> { RelationServiceBukkit(get(), get(), get()) }
+    // REQ-203: diplomacy history.
+    single<net.lumalyte.lg.application.persistence.DiplomacyHistory> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.DiplomacyHistorySQL(get())
+    }
+    single { net.lumalyte.lg.application.services.DiplomacyLog(get()) }
+    single<RelationService> { RelationServiceBukkit(get(), get(), get(), get()) }
     single<LfgService> { LfgServiceBukkit(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<GuildBannerService> { GuildBannerServiceBukkit() }
     single<AuditService> { AuditServiceBukkit() }
-    single<NexoEmojiService> { NexoEmojiService(get(), guildCosmetics = get()) }
+    single<NexoEmojiService> {
+        val guilds = get<net.lumalyte.lg.application.persistence.GuildRepository>()
+        NexoEmojiService(get(), get<net.lumalyte.lg.application.services.GuildCosmeticUnlockService>()) { guilds.getById(it) }
+    }
     single<net.lumalyte.lg.application.services.AdminOverrideService> {
         net.lumalyte.lg.infrastructure.services.AdminOverrideServiceImpl()
     }
@@ -622,9 +630,7 @@ fun socialModule() = module {
     single<net.lumalyte.lg.interaction.listeners.GuildChatListener> {
         net.lumalyte.lg.interaction.listeners.GuildChatListener()
     }
-    single<net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener> {
-        net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener(get(), get())
-    }
+    single { net.lumalyte.lg.application.services.PrivatePartyRetirement(get(), get()) }
     single<net.lumalyte.lg.infrastructure.listeners.GuildDisbandedListener> {
         net.lumalyte.lg.infrastructure.listeners.GuildDisbandedListener(get(), get(), get(), get())
     }

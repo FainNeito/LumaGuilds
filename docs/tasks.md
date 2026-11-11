@@ -1347,3 +1347,50 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Prestige badge for proxy tab lists (REQ-219)
 
 - [x] **PRESTIGE-BADGE-MINIMESSAGE** Tag: TDD. REQ-219. Evidence: PrestigePlaceholderTest.
+
+## Approved guild emojis (REQ-216 to REQ-218)
+
+- [x] **EMOJI-APPROVED-LIST** Tag: TDD. REQ-216, REQ-217, REQ-218. Evidence: GuildEmojiRulesTest, GuildEmojiChoicesServiceTest.
+  - References: `docs/plans/2026-11-10-approved-guild-emojis.md`.
+
+## Diplomacy history (REQ-203, REQ-204)
+
+- [x] **DIPLOMACY-LOG** Tag: TDD. REQ-203. Evidence: DiplomacyLogTest, DiplomacyHistorySQLTest (SQLite + MariaDB), RelationServiceHistoryTest.
+- [x] **DIPLOMACY-PAGE** Tag: TDD. REQ-204. Evidence: MenuLocalizationTest, LocaleContractTest.
+  - References: `docs/plans/2026-11-10-diplomacy-history.md`.
+
+## Party menu and party pages (REQ-205, REQ-206)
+
+- [x] **PARTY-MENU** Tag: TDD. REQ-205. Evidence: CenteredRowTest, PartyMenuContractTest.
+- [x] **PARTY-PAGE** Tag: TDD. REQ-206. Evidence: PartyMenuContractTest.
+  - References: `docs/plans/2026-11-10-party-pages.md`.
+
+## Parties are only for talking between guilds (REQ-207 to REQ-209)
+
+- [x] **NO-PRIVATE-PARTIES** Tag: TDD. REQ-207. Evidence: PrivatePartyRetirementTest, PartyServicePrivatePartyTest, GuildPartyReturnTest.
+- [x] **RETIRE-PRIVATE-PARTIES** Tag: TDD. REQ-208. Evidence: PrivatePartyRetirementTest.
+- [x] **ONE-CHAT-AT-A-TIME** Tag: TDD. REQ-209. Evidence: GuildChatListenerTest.
+  - References: `docs/plans/2026-11-10-party-chat-only-between-guilds.md`.
+
+## /party commands (REQ-210 to REQ-215)
+
+- [x] **PARTY-COMMAND-MENUS** Tag: TDD. REQ-210. Evidence: PartyCommandContractTest.
+- [x] **PARTY-ACTIONS** Tag: TDD. REQ-211, REQ-212, REQ-214, REQ-215. Evidence: PartyActionsTest, ConfirmWindowTest.
+- [x] **PARTY-INFO** Tag: TDD. REQ-213. Evidence: PartyActionsTest.
+  - References: `docs/plans/2026-11-10-party-commands.md`.
+
+## Expired party invites (REQ-220)
+
+- [x] **EXPIRED-PARTY-REQUESTS** Tag: TDD. REQ-220. Evidence: PartyServiceExpiredRequestTest.
+
+## Simpler party chat command (REQ-221)
+
+- [x] **SIMPLE-PC** Tag: TDD. REQ-221. Evidence: PartyChatIntentTest, PartyChatCommandContractTest.
+
+## Party chat stays out of normal chat (REQ-222)
+
+- [x] **PARTY-CHAT-NO-LEAK** Tag: TDD. REQ-222. Evidence: PartyRecipientsTest, PartyChatLegacyEventContractTest.
+
+## Party chat line (REQ-223)
+
+- [x] **PARTY-CHAT-LINE** Tag: TDD. REQ-223. Evidence: PartyChatLineContractTest.

@@ -419,14 +419,6 @@ class LumaGuilds : JavaPlugin() {
         // Progression system info
         logColored("📈 Progression: XP rate ${config.progression.playerKillXp} (player kills), ${config.progression.cropBreakXp} (crops)")
 
-        // Party system info
-        val partyStatus = if (config.party.allowPrivateParties) {
-            "✓ Private parties allowed"
-        } else {
-            "✗ Private parties disabled"
-        }
-        logColored(partyStatus)
-
         // War system info
         logColored("⚔️ War system: Kill-based objectives, High-stakes wagering")
     }
@@ -862,33 +854,15 @@ class LumaGuilds : JavaPlugin() {
         }
 
         // Register parties completion (shows available parties for the player)
-        commandManager.commandCompletions.registerAsyncCompletion("parties") { context ->
-            val player = context.player ?: return@registerAsyncCompletion listOf("GLOBAL")
-            val playerId = player.uniqueId
-
+        // REQ-221: the player's guild party, by name (or "party" when it has none).
+        commandManager.commandCompletions.registerAsyncCompletion("guildparty") { context ->
+            val player = context.player ?: return@registerAsyncCompletion emptyList()
             val partyService = get().get<net.lumalyte.lg.application.services.PartyService>()
             val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
-
-            // Get player's guild IDs
-            val playerGuildIds = guildService.getPlayerGuilds(playerId).map { it.id }.toSet()
-
-            if (playerGuildIds.isEmpty()) {
-                return@registerAsyncCompletion listOf("GLOBAL")
-            }
-
-            // Get all active parties for player's guilds
-            val activeParties = playerGuildIds.flatMap { guildId ->
-                partyService.getActivePartiesForGuild(guildId)
-            }.toSet()
-
-            // Filter out parties the player is banned from and get their names
-            val partyNames = activeParties
-                .filter { party -> !party.isPlayerBanned(playerId) }
-                .mapNotNull { party -> party.name }
-                .sorted()
-
-            // Always include GLOBAL option first
-            listOf("GLOBAL") + partyNames
+            guildService.getPlayerGuilds(player.uniqueId).flatMap { partyService.getActivePartiesForGuild(it.id) }
+                .filter { !it.isPrivateParty() }
+                .map { it.name ?: "party" }
+                .distinct()
         }
     }
 
@@ -919,7 +893,9 @@ class LumaGuilds : JavaPlugin() {
      */
     private fun registerNonClaimCommands() {
         commandManager.registerCommand(GuildCommand())
-        commandManager.registerCommand(PartyChatCommand())
+        val partyChatCommand = PartyChatCommand()
+        commandManager.registerCommand(partyChatCommand)
+        commandManager.registerCommand(net.lumalyte.lg.interaction.commands.PartyCommand(partyChatCommand))
         commandManager.registerCommand(QuickGuildChatCommand())
         commandManager.registerCommand(QuickAllyChatCommand())
         commandManager.registerCommand(QuickModChatCommand())
@@ -1010,6 +986,15 @@ class LumaGuilds : JavaPlugin() {
             this,
             false // ignoreCancelled=false: run even if RoseChat/other plugins already cancelled
         )
+        @Suppress("DEPRECATION")
+        server.pluginManager.registerEvent(
+            org.bukkit.event.player.AsyncPlayerChatEvent::class.java,
+            partyChatListener,
+            org.bukkit.event.EventPriority.LOWEST,
+            { _, event -> partyChatListener.onLegacyChat(event as org.bukkit.event.player.AsyncPlayerChatEvent) },
+            this,
+            false,
+        )
         logColored("✓ Party chat auto-routing registered (priority: ${config.party.partyChatListenerPriority})")
 
         server.pluginManager.registerEvents(BannerSelectionListener(), this)
@@ -1061,9 +1046,13 @@ class LumaGuilds : JavaPlugin() {
             logColored("❌ Failed to start weekly quest coordinator: ${e.message}")
         }
 
-        // Register guild channel creation listener (for creating default channels)
-        val guildChannelCreationListener = get().get<net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener>()
-        server.pluginManager.registerEvents(guildChannelCreationListener, this)
+        // REQ-208: end the old single-guild parties (Guild_Chat, Officer_Chat, Leader_Chat).
+        try {
+            val ended = get().get<net.lumalyte.lg.application.services.PrivatePartyRetirement>().run()
+            if (ended > 0) logColored("✓ Ended $ended single-guild parties; guild chat now uses /g chat")
+        } catch (e: Exception) {
+            logColored("❌ Failed to end single-guild parties: ${e.message}")
+        }
 
         // Register vault protection listener
         vaultProtectionListener = net.lumalyte.lg.infrastructure.listeners.VaultProtectionListener()
@@ -1083,6 +1072,10 @@ class LumaGuilds : JavaPlugin() {
 
         // Register war kill tracking listener
         server.pluginManager.registerEvents(net.lumalyte.lg.infrastructure.listeners.WarKillTrackingListener(), this)
+        server.pluginManager.registerEvents(
+            net.lumalyte.lg.infrastructure.listeners.DiplomacyWarListener(get().get<net.lumalyte.lg.application.services.DiplomacyLog>()),
+            this,
+        )
         // REQ-199: every player kill goes to the kill log behind guild statistics.
         server.pluginManager.registerEvents(
             net.lumalyte.lg.infrastructure.listeners.GuildKillLogListener(this, get().get<net.lumalyte.lg.application.services.KillService>()),
@@ -1117,10 +1110,13 @@ class LumaGuilds : JavaPlugin() {
         // Register emoji grant listener and reconcile all plugin-managed permissions.
         val emojiGrantListener = get().get<net.lumalyte.lg.infrastructure.listeners.GuildEmojiGrantListener>()
         server.pluginManager.registerEvents(emojiGrantListener, this)
-        val emojiResult = get().get<net.lumalyte.lg.infrastructure.services.GuildEmojiGrantService>().reconcileAll()
-        if (!emojiResult.successful) {
-            logger.warning("Emoji permission reconciliation completed with ${emojiResult.failed} failure(s)")
-        }
+        // LuckPerms console commands fail while worlds are still loading, so wait for the first tick.
+        server.scheduler.runTask(this, Runnable {
+            val emojiResult = get().get<net.lumalyte.lg.infrastructure.services.GuildEmojiGrantService>().reconcileAll()
+            if (!emojiResult.successful) {
+                logger.warning("Emoji permission reconciliation completed with ${emojiResult.failed} failure(s)")
+            }
+        })
 
         // Optional DiscordSRV guild-role integration. The listener is always registered;
         // the service is a no-op unless discord.guild_roles.enabled is explicitly enabled.

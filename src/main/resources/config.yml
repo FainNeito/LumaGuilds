@@ -203,6 +203,21 @@ guild:
   #     AwesomeGuild: lumaguilds.emoji.star
   emoji_grants: {}
 
+  # Guild emoji picker. Only these emojis can be picked for a guild, by any
+  # guild and with no emoji permission needed; donor heads and other chat
+  # emojis are left out. Leave the key out to use the 34 Redstone Labs chat
+  # emojis. A guild keeps an emoji that is removed here until it picks another.
+  # guild_only gives a guild its own logo: only that guild sees it, first in
+  # the picker. Pair it with emoji_grants above so its members can use the
+  # logo in chat.
+  # Example:
+  #   emoji_choices:
+  #     allowed: [sheesh, skull, heart]
+  #     guild_only:
+  #       Vibe: vibe_logo
+  emoji_choices:
+    guild_only: {}
+
 # Guild directory / leaderboard browser
 guild_list:
   # Number of guilds fetched per page. Java inventory layout supports up to 36.
@@ -506,17 +521,10 @@ party:
   min_party_name_length: 1
   default_party_duration_hours: 24
   max_simultaneous_parties_per_guild: 3
-  allow_private_parties: true  # Allow creation of private guild-only parties
 
   # Party Chat
   party_chat_enabled: true
   party_chat_priority: 100
-  use_minimessage: true  # Enable MiniMessage formatting support (allows tags like <gradient>, <rainbow>, <bold>, etc.)
-  party_chat_format: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}"
-  use_simplified_guild_party_format: true  # Use simplified format for guild-internal parties (Guild_Chat, Officer_Chat, etc.)
-  guild_party_chat_format: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}"  # Simplified format for guild-internal parties - no guild tag/emoji spam
-  party_chat_prefix: "[PARTY]"
-  party_chat_suffix: ""
   chat_input_listener_priority: "HIGHEST"  # HIGHEST, HIGH, NORMAL, LOW, LOWEST
 
   # Party chat auto-routing listener priority (for /pc switch auto-routing)
