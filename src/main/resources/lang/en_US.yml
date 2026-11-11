@@ -35,7 +35,6 @@ bedrock:
       name:
         label: Party Name
         placeholder: Enter a party name
-      private: Create a private party
       invite_other: Invite another guild
       select_guild: Select a guild
       none: None
@@ -46,7 +45,6 @@ bedrock:
         need_guilds: '<red>❌ A public party needs at least two guilds.'
         created: '<green>✅ Party created successfully!'
         name_set: '<gray>Party name: <white><party>'
-        private_created: '<green>Created as a private party.'
         invited: '<green>Invited <guild> to the party.'
         failed: '<red>❌ Failed to create party.'
     management:
@@ -2267,20 +2265,6 @@ command:
         parties_are_disabled_on_this_server: '<red>❌ Parties are disabled on this server!'
       clear:
         failed_to_clear_party_preference: '<red>❌ Failed to clear party preference!'
-        returned_to_global_chat: '<green>✅ Returned to GLOBAL chat'
-        your_messages_will_now_go_to_global: '<gray>Your messages will now go to global chat'
-      help:
-        blank_line: '<gold>========================='
-        party_chat_commands: '<gold>=== Party Chat Commands ==='
-        party_preferences_persist_across_restarts: '<gray>Party preferences persist across restarts!'
-        pc_clear_return_to_default_party: '<white>/pc clear <gray>- Return to default party'
-        pc_help_show_this_help: '<white>/pc help <gray>- Show this help'
-        pc_message_send_message_to_current_party: '<white>/pc \<message> <gray>- Send message to current party'
-        pc_show_current_party_info: '<white>/pc <gray>- Show current party info'
-        pc_switch_list_available_parties: '<white>/pc switch <gray>- List available parties'
-        pc_switch_name_switch_to_party_or: '<white>/pc switch \<name> <gray>- Switch to party or GLOBAL'
-        pc_toggle_toggle_seeing_party_messages_visibility: '<white>/pc toggle <gray>- Toggle seeing party messages (visibility)'
-        use_pc_switch_global_to_send_to: '<gray>Use <white>/pc switch GLOBAL <gray>to send to global chat!'
       sendpartymessage:
         contact_a_moderator_to_appeal: '<gray>Contact a moderator to appeal.'
         failed_to_send_party_message: '<red>❌ Failed to send party message!'
@@ -2288,63 +2272,18 @@ command:
         some_party_members_may_have_party_chat: '<gray>Some party members may have party chat visibility disabled'
         the_party_may_have_been_disbanded_or: '<gray>The party may have been disbanded or expired.'
         time_remaining_h_m: '<gray>Time remaining: <white><hours>h <minutes>m'
-        use_pc_partyname_to_switch_to_a: '<gray>Use <white>/pc \<partyname> <gray>to switch to a party first'
         you_are_banned_from_this_channel: '<red>❌ You are banned from this channel!'
         you_are_muted_in_this_channel: '<red>❌ You are muted in this channel!'
-        you_are_not_in_an_active_party: '<red>❌ You are not in an active party!'
         you_are_permanently_muted_in_this_channel: '<red>❌ You are permanently muted in this channel!'
         you_don_t_have_permission_to_chat: '<red>❌ You don''t have permission to chat in this party!'
         your_message_was_not_sent_because_there: '<gray>Your message was not sent because there are no recipients'
       showcurrentpartyinfo:
-        expires_in_hours_line: '<gray>Expires: <white>in <hours>h'
-        expires_never_line: '<gray>Expires: <white>Never'
-        open_to_all: 'Open to all'
-        role_restricted: 'Role-restricted'
-        available_parties: '<gray>Available parties: <white><size>'
-        blank_line: '<gold>====================='
-        current_party: '<gold>=== Current Party ==='
-        guilds: '<gray>Guilds: <white><size>'
-        name: '<gray>Name: <white><unnamed>'
-        restrictions: '<gray>Restrictions: <white><all>'
-        status_active_you_are_sending_to_this: '<gray>Status: <green>Active (you are sending to this party)'
-        use_pc_message_to_send_a_message: '<gray>Use <white>/pc \<message> <gray>to send a message'
-        use_pc_switch_global_to_return_to: '<gray>Use <white>/pc switch GLOBAL <gray>to return to global chat'
-        use_pc_switch_to_see_and_join: '<gray>Use <white>/pc switch <gray>to see and join a party'
-        use_pc_switch_to_see_other_parties: '<gray>Use <white>/pc switch <gray>to see other parties'
-        you_are_currently_using_global_chat: '<green>✅ You are currently using <underlined>GLOBAL<green> chat'
         your_active_party_is_no_longer_available: '<red>❌ Your active party is no longer available!'
-        your_messages_go_to_global_chat_not: '<gray>Your messages go to global chat, not party chat'
-      switch:
-        failed_to_switch_to_global_chat: '<red>❌ Failed to switch to global chat!'
-        party_not_found: '<red>❌ Party not found: <white><target_name>'
-        switched_to_global_chat: '<green>✅ Switched to GLOBAL chat'
-        use_pc_switch_partyname_to_switch_back: '<gray>Use <white>/pc switch \<partyname> <gray>to switch back to a party'
-        use_pc_switch_to_see_available_parties: '<gray>Use <white>/pc switch <gray>to see available parties'
-        you_are_already_using_global_chat: '<gray>You are already using global chat'
-        your_messages_will_now_go_to_global: '<gray>Your messages will now go to global chat, not party chat'
       switchlist:
-        available_parties: '<gold>=== Available Parties ==='
-        blank_line_4: '<gold>========================'
-        global: '<gray>  GLOBAL'
-        global_current: '<green>▶ GLOBAL <gray>(current)'
-        no_available_parties_to_switch_to: '<red>❌ No available parties to switch to!'
-        party: '<gray>  <white><party>'
-        party_current: '<green>▶ <white><party> <gray>(current)'
-        use_pc_switch_name_to_switch: '<gray>Use <white>/pc switch \<name> <gray>to switch'
         you_are_not_in_any_guild: '<red>❌ You are not in any guild!'
       switchtoparty:
-        all_your_messages_will_now_go_to: '<gray>All your messages will now go to this party chat!'
         failed_to_save_party_preference: '<red>❌ Failed to save party preference!'
-        switched_to_party: '<green>✅ Switched to party: <white><unnamed>'
-        this_preference_will_persist_across_server_restarts: '<gray><italic>This preference will persist across server restarts!'
-        use_pc_to_see_current_party_info: '<gray>Use <white>/pc <gray>to see current party info'
-      toggle:
-        party_chat_off: '<yellow>⚠️ Party chat: <underlined>OFF'
-        party_chat_on: '<green>✅ Party chat: <underlined>ON'
-        use_pc_switch_party_to_also_send: '<gray>Use <white>/pc switch \<party> <gray>to also send to a party channel'
-        you_will_no_longer_see_party_messages: '<gray>You will no longer see party messages'
-        you_will_now_see_party_messages_in: '<gray>You will now see party messages in your chat'
-        your_messages_now_go_to_global_chat: '<gray>Your messages now go to global chat'
+        guild_chat_off: '<gray>You left guild chat. Only one chat can be on at a time.'
     quick_ally_chat:
       default:
         quick_ally_chat: '<dark_aqua>=== Quick Ally Chat ==='
@@ -2549,30 +2488,6 @@ menu:
     creation:
       title: '<white>Create New Party - <guild>'
       unnamed: Unnamed
-      type:
-        private_name: '<red>Party Type'
-        public_name: '<green>Party Type'
-        private_status: Private (Guild Only)
-        public_status: Public (Multi-Guild)
-        current: '<gray>Current: <white><type>'
-        private_header: '<gray>Private parties:'
-        private_members: '<gray>• Only your guild members'
-        private_invites: '<gray>• No guild invitations'
-        private_management: '<gray>• Simpler party management'
-        public_header: '<gray>Public parties:'
-        public_invites: '<gray>• Can invite other guilds'
-        public_coordination: '<gray>• More complex coordination'
-        make_public: '<yellow>Click to make public'
-        make_private: '<yellow>Click to make private'
-        private: private
-        public: public
-      private_info:
-        name: '<green>✅ Private Guild Party'
-        first: '<gray>This party will only include'
-        second: '<gray>members from your guild'
-        no_invites: '<gray>• No external guild invitations'
-        management: '<gray>• Simpler management'
-        members: '<gray>• All guild members can join'
       name:
         name: '<gold>Party Name'
         value: '<white><party>'
@@ -2632,7 +2547,6 @@ menu:
         create_lore: '<gray>Create the party with selected settings'
         ready: '<green>Ready to create party!'
         confirm: '<yellow>Click to confirm'
-        need_one: '<red>• Need at least 1 guild'
         need_two: '<red>• Need at least 2 guilds'
         clear: '<red>Clear All'
         clear_lore: '<gray>Reset all selections'
@@ -2650,8 +2564,6 @@ menu:
         name_length: 'Name must be 32 characters or less (current: <current>)'
       feedback:
         disabled: '<red>❌ Parties are disabled on this server!'
-        type_changed: '<green>✅ Party type changed to <type>'
-        private_disabled: '<red>❌ Private parties are disabled in the configuration!'
         already_waiting: '<yellow>Already waiting for name input. Type the name or click cancel.'
         restrictions_disabled: '<red>❌ Disabled role restrictions - all guild members can join'
         restrictions_enabled: '<green>✅ Enabled role restrictions - select roles below'
@@ -2659,7 +2571,6 @@ menu:
         enable_restrictions: '<red>❌ Enable role restrictions first!'
         role_removed: '<red>❌ Removed <rank> from allowed roles'
         role_added: '<green>✅ Added <rank> to allowed roles'
-        need_one: '<red>❌ Cannot create party - need at least 1 guild!'
         need_two: '<red>❌ Cannot create party - need at least 2 guilds!'
         cleared: '<yellow>Cleared all selections!'
         name_spaces: '<red>❌ Party names cannot contain spaces!'
@@ -2670,7 +2581,6 @@ menu:
         created_guilds: '<gray>Guilds: <white><count>'
         created_roles: '<gray>Role restrictions: <white><count> roles'
         expires: '<gray>Expires in: <white>24 hours'
-        private_created: '<green>✅ Private party created! All guild members can now join.'
         create_failed: '<red>❌ Failed to create party!'
         create_error: '<red>❌ Error creating party!'
         invite_sent: '<gray>✉ Invite sent to <white><guild>'
@@ -2687,7 +2597,6 @@ menu:
       title: '<white>Parties • <guild>'
       unnamed: Unnamed
       never: Never
-      this_channel: this channel
       no_message: No message
       permission:
         required: '<red>Requires Admin+ permission'
@@ -2700,14 +2609,10 @@ menu:
         members: '<gray>Members: <white><count> guilds'
         created: '<gray>Created: <white><date>'
         expires: '<gray>Expires: <white><date>'
-      more:
-        name: '<yellow>+<count> More Parties'
-        lore: '<yellow>Click to view all parties'
+        open: '<yellow>Click to open'
       moderate:
         name: '<gold>Moderate Channel'
         lore: '<gray>Manage mutes, bans, and kicks'
-        channel: '<gray>for <channel>'
-        click: '<yellow>Click to moderate'
       incoming:
         name: '<green>Incoming Requests'
         lore: '<gray>Party invitations to join'
@@ -2715,37 +2620,19 @@ menu:
         name: '<yellow>Outgoing Requests'
         lore: '<gray>Your party''s sent invitations'
       request_count: '<gray>Count: <white><count>'
-      send:
-        name: '<green>Send Party Request'
-        locked_name: '<red>❌ Send Party Request'
-        lore: '<gray>Invite another guild to a party'
-        hint: '<yellow>Click to choose a guild'
-        locked_lore: '<gray>Only administrators can send party requests'
       create:
         name: '<gold>Create New Party'
         locked_name: '<red>❌ Create New Party'
         lore: '<gray>Start a fresh party'
         hint: '<yellow>Click to create a party'
         locked_lore: '<gray>Only administrators can create parties'
-      access:
-        name: '<aqua>Party Access Settings'
-        locked_name: '<red>❌ Party Access Settings'
-        lore: '<gray>Configure who can join parties'
-        default: '<gray>Default: All guild members'
-        action: '<yellow>Click to set rank restrictions'
       permissions:
-        name: '<yellow>Party Permissions'
         view: '<gray>View invites: <white>Everyone'
-        accept: '<gray>Accept invites: <white>Admin and up'
-        send: '<gray>Send invites: <white>Admin and up'
         manage: '<gray>Change settings: <white>Admin and up'
         join: '<gray>Join parties: <white>Everyone (or chosen ranks)'
       info:
         name: '<gold>How Parties Work'
         invite_only: '<gray>All parties are invite-only'
-        no_browser: '<gray>No public party browser'
-        events: '<gray>Parties coordinate guild events'
-        restrictions: '<gray>Rank restrictions available'
       back:
         name: '<yellow>⬅ Back'
         lore: '<gray>Return to the previous menu'
@@ -2762,20 +2649,7 @@ menu:
         lore: '<gray>Return to the previous menu'
       feedback:
         disabled: '<red>❌ Parties are disabled on this server!'
-        send_permission: '<red>❌ You need Admin+ permission to send party requests!'
         create_permission: '<red>❌ You need Admin+ permission to create parties!'
-        access_permission: '<red>❌ You need Admin+ permission to manage party access!'
-        details_coming_soon: '<yellow>Party details use the current party status and moderation data.'
-        details_description: '<gray>Use the available party and moderation controls for member status and restrictions.'
-        list_coming_soon: '<yellow>The active-party list is shown in the party management view.'
-        list_description: '<gray>Current active parties are loaded from the persisted party service.'
-        send_coming_soon: '<yellow>Party invitations are handled through the existing request and creation flows.'
-        send_description: '<gray>Use the party request or creation controls to invite another guild.'
-        create_coming_soon: '<yellow>Party creation is available through the dedicated creation menu.'
-        create_description: '<gray>Create a private party or invite guilds using the current party service.'
-        access_coming_soon: '<yellow>Party access is controlled by guild rank permissions and per-party role restrictions.'
-        access_description: '<gray>There is no separate mutable party-permission table.'
-        access_example: '<gray>Adjust guild rank permissions or party role restrictions instead.'
         no_incoming: '<yellow>No incoming party requests!'
         no_incoming_description: '<gray>Your guild hasn''t received any party invitations.'
         accepted: '<green>✅ Party invitation accepted!'
@@ -7401,6 +7275,7 @@ notification:
     guild_channel_missing: '<red>❌ Guild channel ''<channel>'' is not configured in RoseChat. Ask staff to enable it in channels.yml.'
     ally_channel_missing: '<red>❌ Ally channel ''<channel>'' is not configured in RoseChat.'
     mod_channel_missing: '<red>❌ Mod chat channel is not configured.'
+    party_chat_off: '<gray>Party chat is off. Use <white>/pc switch<gray> to talk with other guilds again.'
     not_in_guild: '<red>❌ You are not in a guild!'
     guild_muted: '<red>❌ Your guild is muted—guild chat is disabled until the mute expires.'
     mod_permission: '<red>❌ Only guild moderators can use mod chat!'
@@ -7485,8 +7360,7 @@ notification:
       without_tag: '<gray><player>:</gray> <message>'
     party:
       default_name: Party
-      with_tag: '<light_purple>[P] <tag> <player>:</light_purple> <message>'
-      without_tag: '<light_purple>[P] <player>:</light_purple> <message>'
+      line: '<dark_gray>[<aqua>Party</aqua>] [<yellow><guild></yellow>]</dark_gray> <white><player></white> <aqua>»</aqua> <white><message>'
   vault:
     inventory:
       access_denied: '<red>You no longer have access to this guild vault.'
@@ -8160,3 +8034,118 @@ guild_ban:
     not_banned: "<yellow><player> isn't banned from your guild."
   notify:
     target: '<red>You were banned from <guild>.'
+# REQ-206: a party's page.
+party_chat:
+  no_guild: '<red>You need to be in a guild to use party chat.'
+  no_party: '<gray>Your guild is not in a party. Use <white>/party invite [guild]<gray> to start one.'
+  turned_on: '<green>Party chat on: your messages go to <white><party><green>. Type <white>/pc<green> again to turn it off.'
+  turned_off: '<gray>Party chat off. Your messages go to normal chat again.'
+  already_on: '<gray>Party chat is already on for <white><party><gray>. Type <white>/pc off<gray> to turn it off.'
+  already_off: '<gray>Party chat is already off. Type <white>/pc<gray> to turn it on.'
+  muted: '<gray>Party messages hidden. Type <white>/pc mute<gray> to show them again.'
+  unmuted: '<green>Party messages shown again.'
+  help:
+    header: '<gold><bold>Party chat</bold>'
+    toggle: '<yellow>/pc <gray>— turn party chat on or off'
+    message: '<yellow>/pc [message] <gray>— send one message to your party'
+    on_off: '<yellow>/pc on <gray>/ <yellow>/pc off <gray>— turn party chat on or off'
+    mute: '<yellow>/pc mute <gray>— hide or show party messages'
+party_command:
+  unnamed: 'Unnamed party'
+  disabled: '<red>Parties are turned off on this server.'
+  no_guild: '<red>You need to be in a guild to use parties.'
+  no_permission: '<red>You need the Manage Parties permission in your guild.'
+  no_party: '<gray>Your guild is not in a party. Use <white>/party invite [guild]<gray> to start one.'
+  unknown_guild: '<red>No guild called <white><guild><red>.'
+  failed: '<red>That didn''t work. Try again from <white>/party<red>.'
+  help:
+    header: '<gold><bold>Party commands</bold> <gray>(click one to fill it in)'
+    menu: '<yellow>/party <gray>— open the party menu'
+    invite: '<yellow>/party invite [guild] <gray>— invite a guild, or open the invite page'
+    accept: '<yellow>/party accept [guild] <gray>— accept a guild''s request'
+    deny: '<yellow>/party deny [guild] <gray>— deny a guild''s request'
+    cancel: '<yellow>/party cancel [guild] <gray>— cancel your guild''s request'
+    info: '<yellow>/party info <gray>— your guild''s party'
+    list: '<yellow>/party list <gray>— every party between guilds'
+    chat: '<yellow>/party chat [message] <gray>— party chat on or off, or send one message'
+    rename: '<yellow>/party rename [name] <gray>— rename your party'
+    leave: '<yellow>/party leave <gray>— your guild leaves the party'
+    disband: '<yellow>/party disband <gray>— end the party (leader''s guild)'
+  invite:
+    created: '<green>Started a new party for your guild.'
+    sent: '<green>Invited <white><guild><green> to your party.'
+    received: '<aqua><guild><gray> invited your guild to a party.'
+    already_in: '<yellow><guild> is already in your party.'
+    already_invited: '<yellow><guild> already has an invite from your guild.'
+    own_guild: '<red>You can''t invite your own guild.'
+  accept:
+    done: '<green>Your guild joined the party with <white><guild><green>.'
+  deny:
+    done: '<gray>Denied the request from <white><guild><gray>.'
+  cancel:
+    done: '<gray>Cancelled your request to <white><guild><gray>.'
+  requests:
+    incoming_header: '<gold>Requests to your guild:'
+    outgoing_header: '<gold>Requests from your guild:'
+    none_incoming: '<gray>No guild has asked your guild to join a party.'
+    none_outgoing: '<gray>Your guild has no requests waiting.'
+    entry: '<gray>• <white><guild>'
+    accept: '<green>[Accept]'
+    deny: '<red>[Deny]'
+    cancel: '<red>[Cancel]'
+    no_request: '<red>There''s no request with <white><guild><red>. Invites last 15 minutes, so ask them to send a new one.'
+  info:
+    date_format: 'MMM d, h:mm a'
+    header: '<gold><bold><party>'
+    leader: '<gray>Leader: <white><player>'
+    guilds: '<gray>Guilds: <white><guilds>'
+    online: '<gray>Online: <white><count>'
+    ends: '<gray>Ends: <white><date>'
+    waiting: '<yellow>Waiting for another guild to accept an invite.'
+  list:
+    header: '<gold>Parties (<count>):'
+    entry: '<gray>• <aqua><party><gray>: <white><guilds>'
+    empty: '<gray>There are no parties right now.'
+  leave:
+    confirm: '<yellow>Run <white>/party leave<yellow> again within 30 seconds to leave <white><party><yellow>. <gray>(click)'
+    done: '<gray>Your guild left <white><party><gray>.'
+  disband:
+    confirm: '<yellow>Run <white>/party disband<yellow> again within 30 seconds to end <white><party><yellow>. <gray>(click)'
+    done: '<gray>Ended <white><party><gray>.'
+    not_leader: '<red>Only the party leader''s guild can end the party. Use <white>/party leave<red> instead.'
+  rename:
+    done: '<green>Party renamed to <white><party><green>.'
+    bad_name: '<red>Party names are 1 to 32 characters with no spaces.'
+party_page:
+  title: '<white>Party • <party>'
+  card:
+    name: '<aqua><party>'
+    leader: '<gray>Leader: <white><leader>'
+    created: '<gray>Created: <white><date>'
+    expires: '<gray>Expires: <white><date>'
+    never: '<gray>Expires: <white>Never'
+    open_to_all: '<gray>Open to: <white>Every member'
+    open_to: '<gray>Open to: <ranks>'
+    chat: '<yellow>Chat with /pc'
+  guild:
+    name: '<white><guild>'
+    started: '<gold>Started this party'
+    member: '<gray>In this party'
+    view: '<yellow>Click to view their guild'
+  invite:
+    name: '<green>Invite a Guild'
+    lore: '<gray>They join when they accept.'
+    title: '<white>Invite a guild'
+    click: '<yellow>Click to invite'
+    already: '<gray>Already invited'
+  leave:
+    name: '<red>Leave Party'
+    lore: '<gray>Your guild leaves <party>.'
+    hint: '<yellow>Click to leave'
+    confirm: '<red>Click again to confirm'
+  feedback:
+    gone: '<red>That party has ended.'
+    left: '<yellow>Your guild left <party>.'
+    leave_failed: "<red>Couldn't leave the party. Try again."
+    invited: '<green>Invited <guild>. They join when they accept.'
+    invite_failed: "<red>Couldn't invite <guild>. They may already be invited or in a party with you."

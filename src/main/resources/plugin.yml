@@ -25,6 +25,9 @@ commands:
   claimoverride:
     description: Override claim permissions
     usage: /claimoverride <subcommand> [args]
+  party:
+    description: Parties between guilds — invite, requests, info, chat
+    usage: /party [invite|accept|deny|cancel|info|list|chat|rename|leave|disband|help]
   pc:
     description: Party chat commands
     usage: /pc <subcommand> [args]
@@ -304,6 +307,10 @@ permissions:
   lumaguilds.command.claimoverride:
     description: Override claim permissions
     default: op
+
+  lumaguilds.party:
+    description: Use /party (guild rank permissions still decide what each player can change)
+    default: true
 
   # Party Chat Permissions
   lumaguilds.partychat.*:

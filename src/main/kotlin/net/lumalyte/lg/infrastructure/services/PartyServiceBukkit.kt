@@ -63,8 +63,12 @@ class PartyServiceBukkit(
                 return null
             }
 
-            // For private parties, only 1 guild is required
-            val isPrivateParty = party.isPrivateParty()
+            // REQ-207: parties are only for talking between guilds. A party only one guild
+            // can ever join is refused; guild, ally and mod chat use RoseChat channels.
+            if (party.isPrivateParty()) {
+                logger.warn("Cannot create single-guild party ${party.name}")
+                return null
+            }
 
             // Validate that the leader has permission to manage parties for their guild
             val leaderGuildId = memberService.getPlayerGuilds(party.leaderId).firstOrNull()
@@ -73,17 +77,14 @@ class PartyServiceBukkit(
                 return null
             }
 
-            // A guild may only be in one multi-guild party at a time. Its own internal
-            // single-guild channels (Guild_Chat, Officer_Chat, ...) are also Party rows,
-            // so they must be excluded from this check.
-            if (!isPrivateParty) {
-                for (guildId in party.guildIds) {
-                    val inMultiGuildParty = partyRepository.getActivePartiesByGuild(guildId)
-                        .any { !it.isPrivateParty() }
-                    if (inMultiGuildParty) {
-                        logger.warn("Guild $guildId is already in an active multi-guild party")
-                        return null
-                    }
+            // A guild may only be in one multi-guild party at a time. Old single-guild
+            // parties (Guild_Chat, ...) that were not ended yet don't count.
+            for (guildId in party.guildIds) {
+                val inMultiGuildParty = partyRepository.getActivePartiesByGuild(guildId)
+                    .any { !it.isPrivateParty() }
+                if (inMultiGuildParty) {
+                    logger.warn("Guild $guildId is already in an active multi-guild party")
+                    return null
                 }
             }
 
@@ -543,11 +544,13 @@ class PartyServiceBukkit(
     }
     
     override fun getPendingRequestsForGuild(guildId: UUID): Set<PartyRequest> {
-        return partyRequestRepository.getPendingRequestsForGuild(guildId)
+        // REQ-220: the cleanup task marks expired requests later; never offer one meanwhile.
+        return partyRequestRepository.getPendingRequestsForGuild(guildId).filterTo(mutableSetOf()) { it.isValid() }
     }
     
     override fun getPendingRequestsFromGuild(guildId: UUID): Set<PartyRequest> {
-        return partyRequestRepository.getPendingRequestsFromGuild(guildId)
+        // REQ-220: the cleanup task marks expired requests later; never offer one meanwhile.
+        return partyRequestRepository.getPendingRequestsFromGuild(guildId).filterTo(mutableSetOf()) { it.isValid() }
     }
     
     override fun canManageParties(playerId: UUID, guildId: UUID): Boolean {
