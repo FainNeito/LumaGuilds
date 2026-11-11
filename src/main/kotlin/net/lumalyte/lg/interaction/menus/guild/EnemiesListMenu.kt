@@ -37,8 +37,8 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
-internal fun LangService.enemyDurationMessage(key: String, duration: Component): Component =
-    msg(key, "duration" to PlainTextComponentSerializer.plainText().serialize(duration))
+/** Chat messages take the duration as plain text; a Component argument prints its debug form. */
+internal fun plainDuration(duration: Component): String = PlainTextComponentSerializer.plainText().serialize(duration)
 
 class EnemiesListMenu(
     private val menuNavigator: MenuNavigator,
@@ -246,10 +246,10 @@ class EnemiesListMenu(
 
         val warDetailsGuiItem = GuiItem(warDetailsItem) {
             player.sendMessage(lang.msg("menu.enemies_list.feedback.details_header", "guild" to guildName))
-            player.sendMessage(lang.enemyDurationMessage("menu.enemies_list.feedback.started", formatDuration(Duration.between(relation.createdAt, Instant.now()))))
+            player.sendMessage(lang.msg("menu.enemies_list.feedback.started", "duration" to plainDuration(formatDuration(Duration.between(relation.createdAt, Instant.now())))))
             player.sendMessage(lang.msg("menu.enemies_list.feedback.type", "type" to relation.type.name))
             if (relation.expiresAt != null) {
-                player.sendMessage(lang.enemyDurationMessage("menu.enemies_list.feedback.expires", formatDuration(Duration.between(Instant.now(), relation.expiresAt))))
+                player.sendMessage(lang.msg("menu.enemies_list.feedback.expires", "duration" to plainDuration(formatDuration(Duration.between(Instant.now(), relation.expiresAt)))))
             }
         }
         pane.addItem(warDetailsGuiItem, 7, 1)
