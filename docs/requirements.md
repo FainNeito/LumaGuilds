@@ -713,6 +713,15 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-202
 **Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
 
+### REQ-216
+**Ubiquitous.** THE SYSTEM SHALL offer in the guild emoji picker only the emojis on the configured approved list, to every guild without an emoji permission, and SHALL never offer an emoji that is not on that list, such as donor heads.
+
+### REQ-217
+**State-driven.** WHILE an emoji is configured as a guild-only emoji for a named guild THE SYSTEM SHALL offer it only to that guild, first in its picker, even IF the emoji is also on the approved list.
+
+### REQ-218
+**Unwanted.** IF a guild already uses an emoji that is no longer offered to it THEN THE SYSTEM SHALL keep showing that emoji and accept it being saved again, until the guild picks a different one.
+
 ### REQ-203
 **Event-driven.** WHEN two guilds become allies, end an alliance, become enemies, start or end a truce, make peace, or end a war THE SYSTEM SHALL save one history entry for each guild with the other guild, the change as seen by that guild, the player who made it when there is one, the time and, for a truce, its length in days; IF the entry cannot be saved THEN THE SYSTEM SHALL still complete the change.
 

@@ -201,6 +201,8 @@ data class GuildConfig(
 
     // Emoji Grants — map guild names to emoji permission nodes
     var emojiGrants: Map<String, String> = emptyMap(),
+    // REQ-216/217: the emojis a guild may pick, and guild-only logos
+    var emojiChoices: net.lumalyte.lg.domain.values.GuildEmojiRules = net.lumalyte.lg.domain.values.GuildEmojiRules(),
     val creationCooldown: net.lumalyte.lg.domain.values.GuildCreationCooldown =
         net.lumalyte.lg.domain.values.GuildCreationCooldown()
 )

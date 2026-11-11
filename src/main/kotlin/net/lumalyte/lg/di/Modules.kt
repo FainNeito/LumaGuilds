@@ -508,7 +508,10 @@ fun guildsModule() = module {
     single<LfgService> { LfgServiceBukkit(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<GuildBannerService> { GuildBannerServiceBukkit() }
     single<AuditService> { AuditServiceBukkit() }
-    single<NexoEmojiService> { NexoEmojiService(get(), guildCosmetics = get()) }
+    single<NexoEmojiService> {
+        val guilds = get<net.lumalyte.lg.application.persistence.GuildRepository>()
+        NexoEmojiService(get(), get<net.lumalyte.lg.application.services.GuildCosmeticUnlockService>()) { guilds.getById(it) }
+    }
     single<net.lumalyte.lg.application.services.AdminOverrideService> {
         net.lumalyte.lg.infrastructure.services.AdminOverrideServiceImpl()
     }
