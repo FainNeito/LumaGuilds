@@ -204,6 +204,7 @@ tasks.register<Test>("mariaDbRewardTest") {
         includeTestsMatching("*InviteBlockMigrationSQLTest")
         includeTestsMatching("*InviteBlockDurabilitySQLTest")
         includeTestsMatching("*QuestFixturePersistenceTest")
+        includeTestsMatching("*PartyInvitationMigrationSQLTest")
     }
     doFirst {
         val port = providers.gradleProperty("mariaDbTestPort").orNull

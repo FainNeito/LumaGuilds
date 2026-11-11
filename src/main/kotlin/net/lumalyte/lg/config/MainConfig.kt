@@ -416,17 +416,10 @@ data class PartyConfig(
     var minPartyNameLength: Int = 1,
     var defaultPartyDurationHours: Int = 24,
     var maxSimultaneousPartiesPerGuild: Int = 3,
-    var allowPrivateParties: Boolean = true, // Allow creation of private guild-only parties
 
     // Party Chat
     var partyChatEnabled: Boolean = true,
     var partyChatPriority: Int = 100,
-    var useMiniMessage: Boolean = true, // Enable MiniMessage formatting support (allows tags like <gradient>, <rainbow>, etc.)
-    var partyChatFormat: String = "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}",
-    var useSimplifiedGuildPartyFormat: Boolean = true, // Use simplified format for guild-internal parties (Guild_Chat, Officer_Chat, etc.)
-    var guildPartyChatFormat: String = "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}", // Simplified format for guild-internal parties (no guild tag/emoji spam)
-    var partyChatPrefix: String = "[PARTY]",
-    var partyChatSuffix: String = "",
     var chatInputListenerPriority: String = "HIGHEST", // HIGHEST, HIGH, NORMAL, LOW, LOWEST
     var partyChatListenerPriority: String = "LOWEST", // Event priority for party chat auto-routing after /pc switch (LOWEST = runs first, before ChatControl)
 
