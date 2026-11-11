@@ -1367,3 +1367,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Expired party invites (REQ-220)
 
 - [x] **EXPIRED-PARTY-REQUESTS** Tag: TDD. REQ-220. Evidence: PartyServiceExpiredRequestTest.
+
+## Simpler party chat command (REQ-221)
+
+- [x] **SIMPLE-PC** Tag: TDD. REQ-221. Evidence: PartyChatIntentTest, PartyChatCommandContractTest.
