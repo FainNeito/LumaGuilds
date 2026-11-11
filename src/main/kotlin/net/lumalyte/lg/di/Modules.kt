@@ -499,7 +499,12 @@ fun guildsModule() = module {
         // The first start with REQ-190 records every existing guild's member count.
         net.lumalyte.lg.infrastructure.persistence.guilds.MemberCapacityFloorsSQL(get()).also { it.snapshotOnce() }
     }
-    single<RelationService> { RelationServiceBukkit(get(), get(), get()) }
+    // REQ-203: diplomacy history.
+    single<net.lumalyte.lg.application.persistence.DiplomacyHistory> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.DiplomacyHistorySQL(get())
+    }
+    single { net.lumalyte.lg.application.services.DiplomacyLog(get()) }
+    single<RelationService> { RelationServiceBukkit(get(), get(), get(), get()) }
     single<LfgService> { LfgServiceBukkit(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<GuildBannerService> { GuildBannerServiceBukkit() }
     single<AuditService> { AuditServiceBukkit() }

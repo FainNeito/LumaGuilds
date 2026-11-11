@@ -402,7 +402,6 @@ WHEN a guild withdrawal is offered THEN THE SYSTEM SHALL preview the calculated 
 ### REQ-095
 **Ubiquitous.** THE staging Season 2 resource pack SHALL resolve all LumaGuilds item IDs, including the nine missing navigation/source IDs and 37 emoji-choice IDs, to existing resources. Icons SHALL use readable silhouettes, consistent gold/slate pixel-art navigation, correctly directed pagination arrows and shape-distinct status indicators. Existing IDs, approved guild backgrounds and recognizable emoji identities SHALL be preserved. Pack generation SHALL retain SELFHOST. Java and Bedrock client validation SHALL be reported independently from static validation.
 
-
 ### REQ-096
 **Event-driven.** WHEN an authorized guild member opens Settings → GUI Theme THEN THE SYSTEM SHALL render a one-row six-choice theme selector using `guild_bg_<theme>_1_row`, place theme choices in slots 0–5 and Back in slot 8, use a distinct supplied symbol for every `GuiTheme`, identify the active theme with localized text plus a secondary visual cue, use the localized heading `GUI Theme`, keep the player inventory visible, and reject unauthorized selections without reporting success.
 
@@ -485,7 +484,6 @@ WHEN a guild withdrawal is offered THEN THE SYSTEM SHALL preview the calculated 
 THE SYSTEM SHALL compile, test and start without the retired AxKoth API dependency, repository, plugin soft dependency or team-hook registration. Existing guild war, reward, standings and persistence behavior SHALL remain unchanged. See retired-axkoth.md. IDs 121–146 are reserved by the existing reviewed guild stack.
 ### REQ-121
 **Event-driven.** WHEN an integrating plugin (EnthusiaHolidays) unlocks a guild cosmetic through the public `GuildCosmeticUnlocks` service THEN THE SYSTEM SHALL durably record that the guild owns the cosmetic `(type, key)` with its display name and source, idempotently, and SHALL report success for an already-owned cosmetic. Holiday menu styles marked `requiresUnlock` (`HALLOWEEN`, `CHRISTMAS`) SHALL be offered in the theme selector (Java and Bedrock) only as **locked** until the guild owns them, and `setGuiTheme` SHALL reject a locked theme regardless of caller. WHEN a cosmetic is revoked THE SYSTEM SHALL remove ownership idempotently and reset a guild currently using that theme to the default style without overwriting other guild fields. WHILE a guild uses a style with `seasonalIcons`, THE SYSTEM SHALL send its members the `<icon>_<style>` Nexo variant of each LumaGuilds menu icon that has one, and the normal icon otherwise. The API SHALL use JDK-only signatures, SHALL accept unknown nonblank keys (so a newer integration cannot wedge its sync), and SHALL return false for a nonexistent guild, an invalid blank/over-length identity, or a persistence failure.
-
 
 ### REQ-122
 **Event-driven.** WHEN a current guild member uses `/guild bank` or `/g bank` with the existing guild-menu command permission THEN THE SYSTEM SHALL open that member's platform-appropriate Guild Bank without requiring unrelated management permissions. Non-members SHALL receive the existing localized membership denial. Bank operation authorization and currency semantics SHALL remain unchanged.
@@ -714,6 +712,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 ### REQ-202
 **Event-driven.** WHEN a player opens Recent Activity, Rivalries or Top Killers THE SYSTEM SHALL list, from the kill log, the guild's last 15 kills and deaths, the guilds it has the most kills against or deaths from, or its 10 members with the most kills.
+
+### REQ-203
+**Event-driven.** WHEN two guilds become allies, end an alliance, become enemies, start or end a truce, make peace, or end a war THE SYSTEM SHALL save one history entry for each guild with the other guild, the change as seen by that guild, the player who made it when there is one, the time and, for a truce, its length in days; IF the entry cannot be saved THEN THE SYSTEM SHALL still complete the change.
+
+### REQ-204
+**Event-driven.** WHEN a player opens a guild's diplomacy history THE SYSTEM SHALL list that guild's history entries newest first, 45 per page on Java and 20 per page on Bedrock, each with its date and the player who made it when there is one.
 
 ### REQ-205
 **Ubiquitous.** THE SYSTEM SHALL show the Java Parties menu as 3 rows with every active party the guild is in centred on the top row, Create New Party, Incoming Requests, Outgoing Requests and How Parties Work on the middle row, and Back on the bottom row, and SHALL NOT show Send Party Request, Party Access Settings or a placeholder message for any button.

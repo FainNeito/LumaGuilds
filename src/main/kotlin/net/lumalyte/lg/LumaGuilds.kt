@@ -1072,6 +1072,10 @@ class LumaGuilds : JavaPlugin() {
 
         // Register war kill tracking listener
         server.pluginManager.registerEvents(net.lumalyte.lg.infrastructure.listeners.WarKillTrackingListener(), this)
+        server.pluginManager.registerEvents(
+            net.lumalyte.lg.infrastructure.listeners.DiplomacyWarListener(get().get<net.lumalyte.lg.application.services.DiplomacyLog>()),
+            this,
+        )
         // REQ-199: every player kill goes to the kill log behind guild statistics.
         server.pluginManager.registerEvents(
             net.lumalyte.lg.infrastructure.listeners.GuildKillLogListener(this, get().get<net.lumalyte.lg.application.services.KillService>()),
