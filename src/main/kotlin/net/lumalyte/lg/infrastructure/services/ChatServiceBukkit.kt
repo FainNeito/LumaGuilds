@@ -263,9 +263,7 @@ class ChatServiceBukkit(
 
                 // Get online members of the specific party
                 val partyMembers = partyService.getOnlinePartyMembers(activeParty.id)
-                partyMembers.filter { playerId ->
-                    getVisibilitySettings(playerId).partyChatVisible
-                }.toSet()
+                net.lumalyte.lg.domain.values.PartyRecipients.of(partyMembers, senderId) { getVisibilitySettings(it).partyChatVisible }
             }
             ChatChannel.PUBLIC -> {
                 // Return all online players for public chat

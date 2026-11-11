@@ -129,6 +129,10 @@ class PartyChatCommand : BaseCommand(), KoinComponent {
         val success = preferenceRepository.save(preference)
 
         if (success) {
+            // REQ-222: turning party chat on shows party messages again.
+            if (!chatService.getVisibilitySettings(playerId).partyChatVisible) {
+                chatService.toggleChatVisibility(playerId, ChatChannel.PARTY)
+            }
             player.sendMessage(lang.msg("party_chat.turned_on", "party" to partyName(party)))
             // REQ-209: one chat at a time.
             if (guildChat.leaveGuildChannels(player)) {

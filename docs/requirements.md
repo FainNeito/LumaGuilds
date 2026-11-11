@@ -754,6 +754,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-221
 **Event-driven.** WHEN a player runs /pc with no arguments THE SYSTEM SHALL turn party chat on for their guild's party, or off IF it is already on, without the player naming the party; WHEN they run /pc on, /pc switch, /pc off or /pc mute THE SYSTEM SHALL turn party chat on, off, or hide party messages; WHEN they run /pc with any other text THE SYSTEM SHALL send that text once to their guild's party; and THE SYSTEM SHALL tab-complete these words and the party's name.
 
+### REQ-222
+**State-driven.** WHILE a player has party chat on THE SYSTEM SHALL cancel their chat message before other chat plugins handle it, so it never also appears in normal chat, and SHALL always show the sender their own party message; WHEN a player turns party chat on THE SYSTEM SHALL show party messages again IF they had hidden them.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

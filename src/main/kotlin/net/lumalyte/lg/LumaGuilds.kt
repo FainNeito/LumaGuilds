@@ -986,6 +986,15 @@ class LumaGuilds : JavaPlugin() {
             this,
             false // ignoreCancelled=false: run even if RoseChat/other plugins already cancelled
         )
+        @Suppress("DEPRECATION")
+        server.pluginManager.registerEvent(
+            org.bukkit.event.player.AsyncPlayerChatEvent::class.java,
+            partyChatListener,
+            org.bukkit.event.EventPriority.LOWEST,
+            { _, event -> partyChatListener.onLegacyChat(event as org.bukkit.event.player.AsyncPlayerChatEvent) },
+            this,
+            false,
+        )
         logColored("✓ Party chat auto-routing registered (priority: ${config.party.partyChatListenerPriority})")
 
         server.pluginManager.registerEvents(BannerSelectionListener(), this)
