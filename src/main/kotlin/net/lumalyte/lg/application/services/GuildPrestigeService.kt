@@ -1,9 +1,11 @@
 package net.lumalyte.lg.application.services
 
+import net.lumalyte.lg.application.persistence.PrestigeHistory
 import net.lumalyte.lg.application.persistence.PrestigeRepository
 import net.lumalyte.lg.application.persistence.ProgressionRepository
 import net.lumalyte.lg.application.persistence.RewardOwnershipRepository
 import net.lumalyte.lg.domain.rewards.*
+import java.time.Instant
 import java.util.UUID
 import org.slf4j.LoggerFactory
 
@@ -15,6 +17,8 @@ class GuildPrestigeService(
     private val access: GuildRewardPurchaseAccess,
     private val config: ConfigService,
     private val announcement: GuildPrestigeAnnouncement = GuildPrestigeAnnouncement { _, _ -> },
+    private val history: PrestigeHistory? = null,
+    private val notifiers: List<GuildPrestigeNotifier> = emptyList(),
 ) {
     private val resolver = RewardEntitlementResolver(catalog)
     private val logger = LoggerFactory.getLogger(GuildPrestigeService::class.java)
@@ -90,14 +94,77 @@ class GuildPrestigeService(
                 else -> null
             }
         }
+        return settle(quote, confirmation)
+    }
+
+    /** REQ-186: the prestige choices a staff grant may keep (those of a level 100 guild). */
+    fun grantChoices(guildId: UUID): List<RewardDefinition> = try {
+        val settings = config.loadConfig()
+        val snapshot = (owners.read(guildId) as? RewardOwnershipRead.Found)?.snapshot
+        if (snapshot == null || snapshot.ownership.prestigeCount >= settings.progression.prestige.maxCount) {
+            emptyList()
+        } else {
+            resolver.resolve(100, snapshot.ownership, settings.bank.maxBankBalance.toLong(), settings.guild.maxMembersPerGuild)
+                .prestigeChoices
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    /**
+     * REQ-186: a staff prestige with no fee and no level requirement. Announcements,
+     * fanfare, credits and every listener run as for a guild's own prestige.
+     */
+    fun staffGrant(actorId: UUID, guildId: UUID, retainedRewardId: String): PrestigeResult {
+        val snapshot = (runCatching { owners.read(guildId) }.getOrNull() as? RewardOwnershipRead.Found)?.snapshot
+            ?: return PrestigeResult.Rejected(PrestigeRejection.UNINITIALIZED)
+        val quote = PrestigeQuote(
+            transactionId = UUID.randomUUID(),
+            guildId = guildId,
+            actorId = actorId,
+            retainedRewardId = retainedRewardId,
+            quotedFee = 0,
+            expectedOwnershipVersion = snapshot.version,
+            expectedPrestigeCount = snapshot.ownership.prestigeCount,
+        )
+        return settle(quote, repository.grantWithCommitStatus(quote))
+    }
+
+    private fun settle(
+        quote: PrestigeQuote,
+        confirmation: net.lumalyte.lg.application.persistence.PrestigeConfirmation,
+    ): PrestigeResult {
         val result = confirmation.result
         if (result is PrestigeResult.Applied) {
             if (confirmation.newlyCommitted) {
                 runCatching { announcement.announce(quote.guildId, result.prestigeCount) }
                     .onFailure { logger.warn("Failed to announce prestige for guild ${quote.guildId}", it) }
+                publish(quote, result)
             }
             progression.refreshGuildProgression(quote.guildId)
         }
         return result
+    }
+
+    /** REQ-153: one completion per new commit; each listener is isolated from the others. */
+    private fun publish(quote: PrestigeQuote, result: PrestigeResult.Applied) {
+        if (notifiers.isEmpty()) return
+        val record = runCatching { history?.history(quote.guildId)?.firstOrNull { it.transactionId == quote.transactionId } }
+            .getOrNull()
+        val first = runCatching { history?.firstToReach(result.prestigeCount)?.transactionId == quote.transactionId }
+            .getOrDefault(false)
+        val completion = PrestigeCompletion(
+            transactionId = quote.transactionId,
+            guildId = quote.guildId,
+            actorId = quote.actorId,
+            tier = result.prestigeCount,
+            retainedRewardId = result.retainedRewardId,
+            appliedAt = record?.appliedAt ?: Instant.now(),
+            firstToReachTier = first,
+        )
+        for (notifier in notifiers) {
+            runCatching { notifier.prestiged(completion) }
+                .onFailure { logger.warn("Prestige listener failed for guild ${quote.guildId}", it) }
+        }
     }
 }

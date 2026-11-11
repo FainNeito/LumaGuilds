@@ -25,6 +25,9 @@ commands:
   claimoverride:
     description: Override claim permissions
     usage: /claimoverride <subcommand> [args]
+  party:
+    description: Parties between guilds — invite, requests, info, chat
+    usage: /party [invite|accept|deny|cancel|info|list|chat|rename|leave|disband|help]
   pc:
     description: Party chat commands
     usage: /pc <subcommand> [args]
@@ -86,6 +89,7 @@ permissions:
       lumaguilds.guild.leaderboard: true
       lumaguilds.guild.invite: true
       lumaguilds.guild.kick: true
+      lumaguilds.guild.ban: true
       lumaguilds.guild.tag: true
       lumaguilds.guild.description: true
       lumaguilds.guild.war: true
@@ -159,6 +163,9 @@ permissions:
     default: true
   lumaguilds.guild.kick:
     description: Kick players from guild
+    default: true
+  lumaguilds.guild.ban:
+    description: Ban and unban players from your guild
     default: true
   lumaguilds.guild.tag:
     description: Change guild tag
@@ -301,6 +308,10 @@ permissions:
     description: Override claim permissions
     default: op
 
+  lumaguilds.party:
+    description: Use /party (guild rank permissions still decide what each player can change)
+    default: true
+
   # Party Chat Permissions
   lumaguilds.partychat.*:
     description: All party chat permissions
@@ -319,6 +330,7 @@ permissions:
     children:
       bellclaims.admin: true
       lumaguilds.admin.xp: true
+      lumaguilds.admin.prestige: true
 
   bellclaims.admin:
     description: Allows access to admin commands including guild override mode
@@ -326,6 +338,10 @@ permissions:
 
   lumaguilds.admin.xp:
     description: Grant permanent guild XP with /lumaguilds xp give
+    default: op
+
+  lumaguilds.admin.prestige:
+    description: Inspect, set, grant and re-run guild prestige with /lumaguilds prestige
     default: op
 
   lumaguilds.admin.owner.recover:

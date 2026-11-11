@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import com.github.stefvanschie.inventoryframework.gui.GuiItem
 import com.github.stefvanschie.inventoryframework.gui.type.ChestGui
 import net.badgersmc.nexus.i18n.LangService
@@ -459,7 +460,7 @@ class GuildProgressionMenu(
             meta.displayName(lang.gui("chapter_two_rewards.title"))
             meta.lore(listOf(
                 lang.gui("chapter_two_rewards.capacity_bank", "capacity" to benefits.bankCapacity),
-                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to benefits.memberCapacity),
+                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, benefits.memberCapacity)),
                 lang.gui("chapter_two_rewards.multipliers", "cooldown" to benefits.homeCooldownMultiplier, "fee" to benefits.withdrawalFeeMultiplier)))
         } }
         pane.addItem(GuiItem(summary) { it.isCancelled = true }, 4, 5)
@@ -541,8 +542,8 @@ class GuildProgressionMenu(
                 overview.prestigeCount >= overview.maxPrestigeCount ->
                     lore += lang.gui(
                         "menu.guild_progression.prestige.state.maximum",
-                        "count" to overview.prestigeCount,
-                        "max" to overview.maxPrestigeCount,
+                        "count" to PrestigeNumeral.of(overview.prestigeCount),
+                        "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
                     )
                 overview.currentLevel < 100 -> lore += lang.gui(
                     "menu.guild_progression.prestige.state.level",
@@ -553,8 +554,8 @@ class GuildProgressionMenu(
                 else -> {
                     lore += lang.gui(
                         "menu.guild_progression.prestige.state.ready",
-                        "count" to overview.prestigeCount,
-                        "max" to overview.maxPrestigeCount,
+                        "count" to PrestigeNumeral.of(overview.prestigeCount),
+                        "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
                         "fee" to (overview.nextFee ?: 0L),
                         "choices" to overview.choices.size,
                     )
@@ -596,6 +597,7 @@ class GuildProgressionMenu(
                     "reward" to reward.name,
                 ))
                 meta.lore(listOf(
+                    referenceRewardEffect(lang, reward.effect),
                     lang.gui("menu.guild_progression.prestige.selection.reward.level", "level" to reward.level),
                     lang.gui("menu.guild_progression.prestige.selection.reward.retain"),
                     lang.gui(

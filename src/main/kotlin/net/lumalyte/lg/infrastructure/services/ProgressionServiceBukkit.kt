@@ -407,6 +407,10 @@ class ProgressionServiceBukkit(
     }
 
     override fun getMaxMembers(guildId: UUID): Int {
+        // REQ-190: the member service owns the cap (level, prestige, floor).
+        org.koin.core.context.GlobalContext.getOrNull()
+            ?.getOrNull<net.lumalyte.lg.application.services.MemberService>()
+            ?.let { members -> runCatching { return members.getMemberLimit(guildId) } }
         guildRewards?.entitlementsIfEnabled(guildId)?.let { return it.memberCapacity }
         val progression = progressionRepository.getGuildProgression(guildId) ?: return 10 // Default
         val progressionConfig = progressionConfigService.getProgressionConfig()

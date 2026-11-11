@@ -184,10 +184,18 @@ tasks.register<Test>("mariaDbRewardTest") {
         includeTestsMatching("*Reward*RepositorySQLTest")
         includeTestsMatching("*ExperienceBoostRepositorySQLTest")
         includeTestsMatching("*PrestigeRepositorySQLTest")
+        includeTestsMatching("*PrestigeCreditLedgerSQLTest")
+        includeTestsMatching("*PrestigeTombstoneSQLTest")
+        includeTestsMatching("*AllyHomeAccessSQLTest")
+        includeTestsMatching("*MemberCapacityFloorSQLTest")
+        includeTestsMatching("*GuildBanRepositorySQLTest")
+        includeTestsMatching("*GuildKillLogSQLTest")
+        includeTestsMatching("*DiplomacyHistorySQLTest")
         includeTestsMatching("*ChronicleGoalSQLTest")
         includeTestsMatching("*GuildCreation*SQLTest")
         includeTestsMatching("*GuildCosmeticUnlockRepositorySQLiteTest")
         includeTestsMatching("*GuildInsertColumnOrderTest")
+        includeTestsMatching("*GuildDescriptionPersistenceTest")
         includeTestsMatching("*GuildThemeUpdateSQLTest")
         includeTestsMatching("*GuildChatReconnectSettingsRepositorySQLTest")
         includeTestsMatching("*GuildOnboardingRepositorySQLTest")
@@ -196,6 +204,7 @@ tasks.register<Test>("mariaDbRewardTest") {
         includeTestsMatching("*InviteBlockMigrationSQLTest")
         includeTestsMatching("*InviteBlockDurabilitySQLTest")
         includeTestsMatching("*QuestFixturePersistenceTest")
+        includeTestsMatching("*PartyInvitationMigrationSQLTest")
     }
     doFirst {
         val port = providers.gradleProperty("mariaDbTestPort").orNull

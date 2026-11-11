@@ -1,5 +1,7 @@
 package net.lumalyte.lg.interaction.menus.bedrock
 
+import net.lumalyte.lg.interaction.menus.guild.bedrockRewardEffect
+import net.lumalyte.lg.domain.values.PrestigeNumeral
 import net.badgersmc.nexus.i18n.LangService
 import net.lumalyte.lg.application.services.GuildPrestigeService
 import net.lumalyte.lg.domain.entities.Guild
@@ -41,6 +43,7 @@ class BedrockPrestigeSelectionMenu(
                         "menu.guild_progression.prestige.selection.reward.name",
                         "reward" to reward.name,
                     ),
+                    bedrockRewardEffect(lang, reward.effect),
                     lang.bedrock(
                         "menu.guild_progression.prestige.selection.reward.level",
                         "level" to reward.level,
@@ -122,8 +125,8 @@ class BedrockPrestigeSelectionMenu(
         overview.prestigeCount >= overview.maxPrestigeCount ->
             lang.bedrock(
                 "menu.guild_progression.prestige.state.maximum",
-                "count" to overview.prestigeCount,
-                "max" to overview.maxPrestigeCount,
+                "count" to PrestigeNumeral.of(overview.prestigeCount),
+                "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
             )
         overview.currentLevel < 100 ->
             lang.bedrock(
@@ -135,8 +138,8 @@ class BedrockPrestigeSelectionMenu(
         else ->
             lang.bedrock(
                 "menu.guild_progression.prestige.state.ready",
-                "count" to overview.prestigeCount,
-                "max" to overview.maxPrestigeCount,
+                "count" to PrestigeNumeral.of(overview.prestigeCount),
+                "max" to PrestigeNumeral.of(overview.maxPrestigeCount),
                 "fee" to (overview.nextFee ?: 0L),
                 "choices" to overview.choices.size,
             )

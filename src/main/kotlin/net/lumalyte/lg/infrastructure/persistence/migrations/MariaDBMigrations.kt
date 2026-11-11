@@ -202,6 +202,17 @@ class MariaDBMigrations(private val plugin: JavaPlugin, private val connection: 
                 updateDatabaseVersion(BankContributionSchema.VERSION)
                 currentDbVersion = BankContributionSchema.VERSION
             }
+            PrestigeTombstoneSchema.create(connection, mariaDb = true)
+            if (currentDbVersion < PrestigeTombstoneSchema.VERSION) {
+                updateDatabaseVersion(PrestigeTombstoneSchema.VERSION)
+                currentDbVersion = PrestigeTombstoneSchema.VERSION
+            }
+            AllyHomeAccessSchema.create(connection, mariaDb = true)
+            if (currentDbVersion < AllyHomeAccessSchema.VERSION) {
+                updateDatabaseVersion(AllyHomeAccessSchema.VERSION)
+                currentDbVersion = AllyHomeAccessSchema.VERSION
+            }
+            GuildDescriptionSchema.ensure(connection)
             connection.commit()
             val finalVersion = getCurrentDatabaseVersion()
             componentLogger.info(Component.text("✓ Database migrations completed (v$finalVersion)"))
