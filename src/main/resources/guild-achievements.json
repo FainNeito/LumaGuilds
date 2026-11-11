@@ -150,7 +150,7 @@
     {
       "id": "to_the_victor",
       "parent": "cry_havoc",
-      "title": "To the Victor Go the Spoils",
+      "title": "A Guild War Won",
       "description": [
         "Emerge victorious and win your first Guild War"
       ],
@@ -426,7 +426,7 @@
     {
       "id": "free_the_end",
       "parent": "mob_grinder",
-      "title": "Free the End",
+      "title": "The End, Together",
       "description": [
         "Slay the Ender Dragon with 3+ guild members in The End"
       ],
