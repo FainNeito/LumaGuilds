@@ -854,33 +854,15 @@ class LumaGuilds : JavaPlugin() {
         }
 
         // Register parties completion (shows available parties for the player)
-        commandManager.commandCompletions.registerAsyncCompletion("parties") { context ->
-            val player = context.player ?: return@registerAsyncCompletion listOf("GLOBAL")
-            val playerId = player.uniqueId
-
+        // REQ-221: the player's guild party, by name (or "party" when it has none).
+        commandManager.commandCompletions.registerAsyncCompletion("guildparty") { context ->
+            val player = context.player ?: return@registerAsyncCompletion emptyList()
             val partyService = get().get<net.lumalyte.lg.application.services.PartyService>()
             val guildService = get().get<net.lumalyte.lg.application.services.GuildService>()
-
-            // Get player's guild IDs
-            val playerGuildIds = guildService.getPlayerGuilds(playerId).map { it.id }.toSet()
-
-            if (playerGuildIds.isEmpty()) {
-                return@registerAsyncCompletion listOf("GLOBAL")
-            }
-
-            // Get all active parties for player's guilds
-            val activeParties = playerGuildIds.flatMap { guildId ->
-                partyService.getActivePartiesForGuild(guildId)
-            }.toSet()
-
-            // Filter out parties the player is banned from and get their names
-            val partyNames = activeParties
-                .filter { party -> !party.isPlayerBanned(playerId) }
-                .mapNotNull { party -> party.name }
-                .sorted()
-
-            // Always include GLOBAL option first
-            listOf("GLOBAL") + partyNames
+            guildService.getPlayerGuilds(player.uniqueId).flatMap { partyService.getActivePartiesForGuild(it.id) }
+                .filter { !it.isPrivateParty() }
+                .map { it.name ?: "party" }
+                .distinct()
         }
     }
 
