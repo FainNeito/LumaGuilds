@@ -40,6 +40,15 @@ internal class GuildAchievementCatalogTest {
         assertEquals("75", byId.getValue(vanguard.getString("parent")).getString("target"))
     }
 
+    @Test fun `parents are listed before their children for the advancement renderer`() {
+        val seen = mutableSetOf<String>()
+        nodes.forEach {
+            val parent = it.optString("parent").takeUnless { p -> p.isBlank() || p == "null" }
+            assertTrue(parent == null || parent in seen, "${it.getString("id")} is listed before its parent $parent")
+            seen += it.getString("id")
+        }
+    }
+
     @Test fun `every tier chains from the previous tier and no frames overlap`() {
         val engine = GuildAchievementEngine(nodes.map {
             GuildAchievement(it.getString("id"), it.optString("parent").takeUnless { p -> p.isBlank() || p == "null" },

@@ -110,26 +110,6 @@
       "y": 4.5
     },
     {
-      "id": "vanguard_status",
-      "parent": "pillar_of_the_realm",
-      "title": "Vanguard Status",
-      "description": [
-        "Reach the maximum Guild Level"
-      ],
-      "requirement": "GUILD_LEVEL_UP",
-      "target": "100",
-      "goal": 1,
-      "personalXp": 0,
-      "messages": [
-        "<gold><bold>Your guild has reached legendary Vanguard Status!"
-      ],
-      "category": "Foundations",
-      "icon": "DRAGON_EGG",
-      "frame": "CHALLENGE",
-      "x": 6.0,
-      "y": 4.5
-    },
-    {
       "id": "cry_havoc",
       "parent": "guilds_root",
       "title": "Cry Havoc",
@@ -605,6 +585,26 @@
       "icon": "BEACON",
       "frame": "CHALLENGE",
       "x": 5.0,
+      "y": 4.5
+    },
+    {
+      "id": "vanguard_status",
+      "parent": "pillar_of_the_realm",
+      "title": "Vanguard Status",
+      "description": [
+        "Reach the maximum Guild Level"
+      ],
+      "requirement": "GUILD_LEVEL_UP",
+      "target": "100",
+      "goal": 1,
+      "personalXp": 0,
+      "messages": [
+        "<gold><bold>Your guild has reached legendary Vanguard Status!"
+      ],
+      "category": "Foundations",
+      "icon": "DRAGON_EGG",
+      "frame": "CHALLENGE",
+      "x": 6.0,
       "y": 4.5
     },
     {
