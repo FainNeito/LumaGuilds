@@ -1,5 +1,6 @@
 package net.lumalyte.lg.infrastructure.services
 
+import net.lumalyte.lg.domain.values.SystemAward
 import io.mockk.*
 import net.lumalyte.lg.application.persistence.MemberRepository
 import net.lumalyte.lg.application.persistence.ProgressionRepository
@@ -184,8 +185,10 @@ internal class GuildAchievementRuntimeTest {
         every { stalls.read(any(), any()) } returns java.util.concurrent.CompletableFuture.completedFuture(
             net.lumalyte.lg.application.services.StallReadResult.Unavailable)
         return GuildAchievementRuntime(plugin, members, progression, stalls,
-            guildXp = { g, amount, tx -> paid += Paid(g, amount, tx); accept() })
+            guildXp = { g, amount, tx -> paid += Paid(g, amount, tx); outcome(accept()) })
     }
+
+    private fun outcome(accepted: Boolean): SystemAward = SystemAward.FAILED.takeUnless { accepted } ?: SystemAward.PAID_NOW
 
     private fun onlinePlayer(server: org.mockbukkit.mockbukkit.ServerMock) = spyk(server.addPlayer()).also {
         every { it.isOnline } returns true
@@ -243,5 +246,67 @@ internal class GuildAchievementRuntimeTest {
         assertEquals(refused + 1, paid.count { it.tx == tx })
         runtime.initialize(player)
         assertEquals(refused + 1, paid.count { it.tx == tx }, "A confirmed payout is not attempted again")
+    }
+
+    @Test fun `only the guild's first completion is announced to the server`() {
+        assertTrue(GuildAchievementRuntime.broadcasts(SystemAward.PAID_NOW, joining = true))
+        assertTrue(GuildAchievementRuntime.broadcasts(SystemAward.PAID_NOW, joining = false))
+        assertFalse(GuildAchievementRuntime.broadcasts(SystemAward.ALREADY_PAID, joining = false))
+        assertFalse(GuildAchievementRuntime.broadcasts(SystemAward.ALREADY_PAID, joining = true))
+        // No reward to tell first from later: quiet on join, announced during play.
+        assertFalse(GuildAchievementRuntime.broadcasts(null, joining = true))
+        assertTrue(GuildAchievementRuntime.broadcasts(null, joining = false))
+        // A ledger failure outside join must never hide a genuine first.
+        assertTrue(GuildAchievementRuntime.broadcasts(SystemAward.FAILED, joining = false))
+        assertFalse(GuildAchievementRuntime.broadcasts(SystemAward.FAILED, joining = true))
+    }
+
+    @Test fun `a member catching up on join is told privately that the guild earned it earlier`() {
+        val server = MockBukkit.mock()
+        val guild = UUID.randomUUID()
+        val player = onlinePlayer(server)
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        every { members.getByGuild(guild) } returns emptySet()
+        val progression = mockk<ProgressionRepository>()
+        every { progression.getGuildProgression(guild) } returns
+            mockk<net.lumalyte.lg.domain.entities.GuildProgression> { every { currentLevel } returns 10 }
+        val stalls = mockk<net.lumalyte.lg.application.services.GuildStallReadService>()
+        every { stalls.read(any(), any()) } returns java.util.concurrent.CompletableFuture.completedFuture(
+            net.lumalyte.lg.application.services.StallReadResult.Unavailable)
+        val runtime = GuildAchievementRuntime(plugin, members, progression, stalls,
+            guildXp = { _, _, _ -> SystemAward.ALREADY_PAID })
+        runtime.initialize(player)
+        val said = generateSequence { (player as org.mockbukkit.mockbukkit.entity.PlayerMock).nextComponentMessage() }
+            .map { net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(it) }.toList()
+        assertTrue(said.any { "Expanding the Empire" in it && "earlier" in it }, said.toString())
+    }
+
+    @Test fun `old milestones a guild already qualifies for stay private for a newly joining member`() {
+        val server = MockBukkit.mock()
+        val guild = UUID.randomUUID()
+        val player = onlinePlayer(server)
+        val ledger = mutableSetOf<UUID>()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        every { members.getByGuild(guild) } returns emptySet()
+        val progression = mockk<ProgressionRepository>()
+        every { progression.getGuildProgression(guild) } returns
+            mockk<net.lumalyte.lg.domain.entities.GuildProgression> { every { currentLevel } returns 10 }
+        val stalls = mockk<net.lumalyte.lg.application.services.GuildStallReadService>()
+        every { stalls.read(any(), any()) } returns java.util.concurrent.CompletableFuture.completedFuture(
+            net.lumalyte.lg.application.services.StallReadResult.Unavailable)
+        // A real-ledger fake: the first attempt for an ID pays, later attempts are duplicates.
+        val runtime = GuildAchievementRuntime(plugin, members, progression, stalls,
+            guildXp = { _, _, id -> if (ledger.add(id)) SystemAward.PAID_NOW else SystemAward.ALREADY_PAID })
+        runtime.initialize(player)
+        val said = generateSequence { (player as org.mockbukkit.mockbukkit.entity.PlayerMock).nextComponentMessage() }
+            .map { net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(it) }.toList()
+        assertTrue(said.any { "Expanding the Empire" in it && "earlier" in it }, said.toString())
+        assertTrue(GuildAchievementRuntime.payoutId(guild, "expanding_the_empire") in ledger)
     }
 }

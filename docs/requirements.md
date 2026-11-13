@@ -791,6 +791,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-228
 **State-driven.** WHILE a guild meets the goal of a level, combined play hours, member count or guild age advancement THE SYSTEM SHALL pay that advancement's guild XP once, even if every online member had already completed it before guild XP rewards existed; jokes and penalties (Friendly Fire, The Exile, Coup d'etat) and the root SHALL pay no guild XP, and the advancement inspector SHALL show each advancement's guild XP reward.
 
+### REQ-229
+**Event-driven.** WHEN a member completes a guild advancement THE SYSTEM SHALL announce it to the server (chat, toast and Discord) only when that completion is the guild's first, which for advancements with a guild XP reward is the completion that pays it; WHEN the guild had already earned it, or a reward-free advancement completes while the member is joining, THE SYSTEM SHALL tell only that member, privately, in chat.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

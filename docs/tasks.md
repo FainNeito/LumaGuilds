@@ -1405,3 +1405,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 
 - [x] **ADV-GUILD-XP-ONCE** Tag: TDD. REQ-227. Evidence: GuildAchievementRuntimeTest, ActiveExperienceBoostTest.
 - [x] **ADV-GUILD-XP-STANDING** Tag: TDD. REQ-228. Evidence: GuildAchievementRuntimeTest, GuildAchievementCatalogTest.
+
+## Quiet advancement catch-up (REQ-229)
+
+- [x] **ADV-QUIET-CATCHUP** Tag: TDD. REQ-229. Evidence: GuildAchievementRuntimeTest, ProgressionServiceBukkitAwardTest.
