@@ -75,6 +75,22 @@ class ProgressionServiceBukkitAwardTest {
         verify(exactly = 1) { progression.refreshGuildProgression(guildId) }
     }
 
+    /** REQ-227: advancement XP goes through the once-only ledger under its own source and payout ID. */
+    @Test
+    fun advancementXpUsesItsOwnSourceAndPayoutId() {
+        val awards = RecordingRepository()
+        val progression = mockk<ProgressionRepository>(relaxed = true)
+        val guildId = UUID.randomUUID()
+        val payout = UUID.randomUUID()
+        val service = serviceWith(awards, progression)
+
+        assertTrue(service.awardUncappedSystemExperienceOnce(guildId, 2_500, ExperienceSource.GUILD_ADVANCEMENT, payout))
+
+        assertEquals(ExperienceSource.GUILD_ADVANCEMENT, awards.request?.source)
+        assertEquals(payout, awards.request?.transactionId)
+        assertEquals(2_500, awards.requestedXp)
+    }
+
     @Test
     fun `legacy positive award delegates raw XP through capped permanent service`() {
         val awards = RecordingRepository()

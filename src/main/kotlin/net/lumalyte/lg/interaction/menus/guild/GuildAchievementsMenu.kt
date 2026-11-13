@@ -105,7 +105,9 @@ internal class GuildAchievementsMenu(
                 Component.text(earning(node)), Component.text(credit(node)))),
             referenceItem("lg_reward", listOf(lang.gui("achievements.reward"),
                 if (node.personalXp > 0) lang.gui("achievements.personal_xp", "amount" to node.personalXp)
-                else lang.gui("achievements.no_extra"), lang.gui("achievements.no_guild_xp"))),
+                else lang.gui("achievements.no_extra"),
+                if (node.guildXp > 0) lang.gui("achievements.guild_xp", "amount" to "%,d".format(java.util.Locale.ROOT, node.guildXp))
+                else lang.gui("achievements.no_guild_xp"))),
             referenceItem("lg_prestige", listOf(lang.gui("achievements.record_rules"), lang.gui("achievements.offline"),
                 lang.gui("achievements.retained"), lang.gui("achievements.connections"))),
         ).let { listOf(it[detailTab]) }
@@ -176,19 +178,6 @@ internal class GuildAchievementsMenu(
         "Reputation" -> "lg_prestige"
         else -> "lg_banner"
     }
-    private fun earning(node: GuildAchievement): String = when (node.requirement) {
-        "GUILD_STALL_OWNED" -> "Market must confirm your guild owns a stall (active or rent grace). Existing ownership qualifies; checked on join and each minute. No purchase receipt is required."
-        "GUILD_SHOP_SALE" -> "Complete ${node.goal} paid guild SELL shop sales confirmed by Market. Own-guild, personal, free, BUY and barter transactions do not count."
-        "GUILD_LEVEL_UP" -> "Reach guild level ${node.target}; current level is checked when joining."
-        "GUILD_COMBINED_PLAYTIME" -> "Accumulate 1,000 combined vanilla playtime hours among current guild members."
-        "GUILD_COLLECTIVE_CROP_HARVEST" -> "Break mature eligible crops, melons or pumpkins in Survival or Adventure."
-        "GUILD_COLLECTIVE_SMELT" -> "Collect smelted or cooked furnace output in Survival or Adventure."
-        "GUILD_COLLECTIVE_BLOCK_BREAK" -> "Break blocks in Survival or Adventure; cancelled actions do not count."
-        "GUILD_COLLECTIVE_BOSS_KILL" -> if (node.target == "ENDER_DRAGON") "Kill the Ender Dragon with at least three guild members in the End world." else "Kill a Wither with a guild member credited as killer."
-        "GUILD_LEADERBOARD_RANK" -> "Enter a qualifying top-${node.target} rank on a guild leaderboard."
-        "GUILD_MEMBER_REMOVED" -> "Kick another member from your guild; voluntary departures do not count."
-        else -> node.description.joinToString(" ")
-    }
     private fun credit(node: GuildAchievement): String = when (node.requirement) {
         "GUILD_CREATE", "GUILD_BANNER_SET", "GUILD_HOME_SET", "GUILD_VAULT_PLACED", "GUILD_MEMBER_REMOVED",
         "GUILD_WAR_KILL", "GUILD_FRIENDLY_FIRE", "GUILD_OWNERSHIP_TRANSFER", "SHOP_CREATED" -> "Credit: the acting player (new owner for ownership transfers)."
@@ -196,5 +185,30 @@ internal class GuildAchievementsMenu(
         "GUILD_ALLIANCE_FORMED" -> "Credit: online members of both allied guilds."
         else -> "Credit: online members of the qualifying guild; records remain personal."
     }
-    companion object { val CATEGORIES = listOf("Foundations", "Cooperation", "Combat", "Commerce", "Reputation") }
+    companion object {
+        val CATEGORIES = listOf("Foundations", "Cooperation", "Combat", "Commerce", "Reputation")
+
+        fun earning(node: GuildAchievement): String = when (node.requirement) {
+            "GUILD_STALL_OWNED" -> "Market must confirm your guild owns a stall (active or rent grace). Existing ownership qualifies; checked on join and each minute. No purchase receipt is required."
+            "GUILD_SHOP_SALE" -> "Complete ${n(node.goal)} paid guild SELL shop sales confirmed by Market. Own-guild, personal, free, BUY and barter transactions do not count."
+            "GUILD_LEVEL_UP" -> "Reach guild level ${node.target}; current level is checked when joining."
+            "GUILD_COMBINED_PLAYTIME" -> "Accumulate ${n(node.goal)} combined vanilla playtime hours among current guild members."
+            "GUILD_COLLECTIVE_CROP_HARVEST" -> "Break ${n(node.goal)} mature eligible crops, melons or pumpkins in Survival or Adventure."
+            "GUILD_COLLECTIVE_SMELT" -> "Collect ${n(node.goal)} smelted or cooked furnace items in Survival or Adventure."
+            "GUILD_COLLECTIVE_BLOCK_BREAK" -> "Break ${n(node.goal)} blocks in Survival or Adventure; cancelled actions do not count."
+            "GUILD_COLLECTIVE_BOSS_KILL" -> if (node.target == "ENDER_DRAGON") "Kill the Ender Dragon ${times(node.goal)}with at least three guild members in the End world." else "Kill a Wither ${times(node.goal)}with a guild member credited as killer."
+            "GUILD_COLLECTIVE_MOB_KILL" -> "Kill ${n(node.goal)} hostile mobs in Survival or Adventure."
+            "GUILD_WAR_KILL" -> "Kill ${n(node.goal)} players from a guild you are at war with."
+            "GUILD_WAR_WON" -> "Win ${n(node.goal)} guild wars."
+            "KOTH_CAPTURE" -> "Capture the Warzone KOTH ${n(node.goal)} times."
+            "GUILD_ALLIANCE_FORMED" -> "Form ${n(node.goal)} alliances with other guilds."
+            "GUILD_MEMBER_COUNT" -> "Have ${n(node.goal)} members in your guild at once; checked when joining and each minute."
+            "GUILD_AGE_DAYS" -> "Keep your guild for ${n(node.goal)} days since it was founded; checked when joining and each minute."
+            "GUILD_LEADERBOARD_RANK" -> "Enter a qualifying top-${node.target} rank on a guild leaderboard."
+            "GUILD_MEMBER_REMOVED" -> "Kick another member from your guild; voluntary departures do not count."
+            else -> node.description.joinToString(" ")
+        }
+        private fun n(value: Int) = "%,d".format(java.util.Locale.ROOT, value)
+        private fun times(goal: Int) = if (goal > 1) "${n(goal)} times " else ""
+    }
 }

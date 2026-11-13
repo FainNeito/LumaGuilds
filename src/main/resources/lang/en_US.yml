@@ -5885,6 +5885,7 @@ menu:
         claim_destroyed: "Claims"
         weekly_activity: "Weekly Activity"
         admin_bonus: "Admin Bonus"
+        guild_advancement: "Guild Advancements"
     rank:
       name: "<gold>Guild Rank"
       description: "<gray>Your guild's standing"
@@ -7892,7 +7893,8 @@ achievements:
   reward: '<gold>Completion reward</gold>'
   personal_xp: '<green><amount> personal Minecraft XP, once per player.</green>'
   no_extra: '<gray>Achievement completion; no extra XP configured.</gray>'
-  no_guild_xp: '<gray>These XP rewards are personal experience, not guild progression XP.</gray>'
+  no_guild_xp: '<gray>No guild XP for this one.</gray>'
+  guild_xp: '<gold><amount> guild XP, paid once to the guild by whichever member completes it first.</gold>'
   record_rules: '<gold>Saved personal achievement record</gold>'
   offline: '<gray>Shared activities credit online guild members. Offline activity is not replayed; current guild level and combined playtime are checked again when online.</gray>'
   retained: '<gray>Completed achievements and tracked goals remain on your player record across reconnects, guild changes and prestige.</gray>'

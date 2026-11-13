@@ -29,6 +29,7 @@ class ActiveExperienceBoostTest {
     fun `quest and admin XP are never doubled`() {
         assertEquals(100, xp("2026-11-14T15:00:00Z", ExperienceSource.WEEKLY_ACTIVITY))
         assertEquals(100, xp("2026-11-14T15:00:00Z", ExperienceSource.ADMIN_BONUS))
+        assertEquals(100, xp("2026-11-14T15:00:00Z", ExperienceSource.GUILD_ADVANCEMENT)) // REQ-227
     }
 
     @Test

@@ -9,9 +9,9 @@ import java.time.Instant
  * deposit quotes) honours the weekend too. The two never stack: the larger wins.
  */
 object ActiveExperienceBoost {
-    /** Quest and admin XP keep their exact amounts. */
+    /** Quest, advancement and admin XP keep their exact amounts. */
     private val WEEKEND_SOURCES = ExperienceSource.entries
-        .filterNot { it == ExperienceSource.WEEKLY_ACTIVITY || it == ExperienceSource.ADMIN_BONUS }
+        .filterNot { it == ExperienceSource.WEEKLY_ACTIVITY || it == ExperienceSource.ADMIN_BONUS || it == ExperienceSource.GUILD_ADVANCEMENT }
         .toSet()
 
     fun at(now: Instant, dated: ExperienceBoost?, weekend: WeekendBoostConfig): ExperienceBoost? {

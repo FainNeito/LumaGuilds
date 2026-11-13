@@ -705,6 +705,8 @@ progression:
     elder_guardian_kill: { enabled: true, award_xp: 500, cap_xp: 7500, period: WEEKLY, pool: ELDER_GUARDIAN_KILL }
     warden_kill: { enabled: true, award_xp: 600, cap_xp: 6000, period: WEEKLY, pool: WARDEN_KILL }
     weekly_activity: { enabled: true, award_xp: 1, cap_xp: 0, period: UNLIMITED, pool: WEEKLY_ACTIVITY }
+    # Paid once per guild per advancement; amounts live in guild-achievements.json.
+    guild_advancement: { enabled: true, award_xp: 1, cap_xp: 0, period: UNLIMITED, pool: GUILD_ADVANCEMENT }
     admin_bonus: { enabled: true, award_xp: 1, cap_xp: 0, period: UNLIMITED, pool: ADMIN_BONUS }
 
   # Any valid vanilla material/entity identifier may be configured here.
