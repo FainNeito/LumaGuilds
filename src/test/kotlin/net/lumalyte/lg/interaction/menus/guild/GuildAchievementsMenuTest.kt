@@ -135,4 +135,13 @@ internal class GuildAchievementsMenuTest : RecruitmentDialogFixture() {
         assertEquals(3, renderedPage!!.diagram.size)
         assertEquals("milestone_1", record.tracked)
     }
+
+    @Test fun `earning text states each advancement's own goal`() {
+        fun node(req: String, goal: Int) = net.lumalyte.lg.domain.achievements.GuildAchievement("n", null, "N", listOf("d"),
+            req, null, goal, 0, emptyList(), "Cooperation", "STONE", "TASK", 0f, 0f)
+        assertTrue("100,000" in GuildAchievementsMenu.earning(node("GUILD_COMBINED_PLAYTIME", 100_000)))
+        assertTrue("25" in GuildAchievementsMenu.earning(node("GUILD_MEMBER_COUNT", 25)))
+        assertTrue("365" in GuildAchievementsMenu.earning(node("GUILD_AGE_DAYS", 365)))
+        assertTrue("1,000,000" in GuildAchievementsMenu.earning(node("GUILD_COLLECTIVE_BLOCK_BREAK", 1_000_000)))
+    }
 }

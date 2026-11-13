@@ -17,7 +17,7 @@
       "icon": "SHIELD",
       "frame": "TASK",
       "x": 1.0,
-      "y": 15.0
+      "y": 16.0
     },
     {
       "id": "founding",
@@ -111,7 +111,7 @@
     },
     {
       "id": "vanguard_status",
-      "parent": "expanding_the_empire",
+      "parent": "pillar_of_the_realm",
       "title": "Vanguard Status",
       "description": [
         "Reach the maximum Guild Level"
@@ -126,7 +126,7 @@
       "category": "Foundations",
       "icon": "DRAGON_EGG",
       "frame": "CHALLENGE",
-      "x": 3.0,
+      "x": 6.0,
       "y": 4.5
     },
     {
@@ -552,6 +552,554 @@
       "frame": "CHALLENGE",
       "x": 2.0,
       "y": 28.5
+    },
+    {
+      "id": "rising_banner",
+      "parent": "expanding_the_empire",
+      "title": "Rising Banner",
+      "description": [
+        "Reach Guild Level 25"
+      ],
+      "requirement": "GUILD_LEVEL_UP",
+      "target": "25",
+      "goal": 1,
+      "personalXp": 300,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "EXPERIENCE_BOTTLE",
+      "frame": "GOAL",
+      "x": 3.0,
+      "y": 4.5
+    },
+    {
+      "id": "seasoned_house",
+      "parent": "rising_banner",
+      "title": "Seasoned House",
+      "description": [
+        "Reach Guild Level 50"
+      ],
+      "requirement": "GUILD_LEVEL_UP",
+      "target": "50",
+      "goal": 1,
+      "personalXp": 500,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "ENCHANTED_BOOK",
+      "frame": "GOAL",
+      "x": 4.0,
+      "y": 4.5
+    },
+    {
+      "id": "pillar_of_the_realm",
+      "parent": "seasoned_house",
+      "title": "Pillar of the Realm",
+      "description": [
+        "Reach Guild Level 75"
+      ],
+      "requirement": "GUILD_LEVEL_UP",
+      "target": "75",
+      "goal": 1,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "BEACON",
+      "frame": "CHALLENGE",
+      "x": 5.0,
+      "y": 4.5
+    },
+    {
+      "id": "seasoned_campaigners",
+      "parent": "to_the_victor",
+      "title": "Seasoned Campaigners",
+      "description": [
+        "Win 5 Guild Wars"
+      ],
+      "requirement": "GUILD_WAR_WON",
+      "target": null,
+      "goal": 5,
+      "personalXp": 500,
+      "messages": [],
+      "category": "Combat",
+      "icon": "IRON_SWORD",
+      "frame": "GOAL",
+      "x": 4.0,
+      "y": 6.0
+    },
+    {
+      "id": "conquerors",
+      "parent": "seasoned_campaigners",
+      "title": "Conquerors",
+      "description": [
+        "Win 25 Guild Wars"
+      ],
+      "requirement": "GUILD_WAR_WON",
+      "target": null,
+      "goal": 25,
+      "personalXp": 2000,
+      "messages": [
+        "<gold><bold>Your guild has won 25 wars. Conquerors!</bold></gold>"
+      ],
+      "category": "Combat",
+      "icon": "NETHERITE_SWORD",
+      "frame": "CHALLENGE",
+      "x": 5.0,
+      "y": 6.0
+    },
+    {
+      "id": "king_of_the_hill",
+      "parent": "unstoppable_force",
+      "title": "King of the Hill",
+      "description": [
+        "Capture the Warzone KOTH 10 times"
+      ],
+      "requirement": "KOTH_CAPTURE",
+      "target": null,
+      "goal": 10,
+      "personalXp": 500,
+      "messages": [],
+      "category": "Combat",
+      "icon": "GOLDEN_HELMET",
+      "frame": "GOAL",
+      "x": 5.0,
+      "y": 7.5
+    },
+    {
+      "id": "eternal_throne",
+      "parent": "king_of_the_hill",
+      "title": "The Eternal Throne",
+      "description": [
+        "Capture the Warzone KOTH 50 times"
+      ],
+      "requirement": "KOTH_CAPTURE",
+      "target": null,
+      "goal": 50,
+      "personalXp": 2000,
+      "messages": [
+        "<gold><bold>50 KOTH captures. The throne is yours.</bold></gold>"
+      ],
+      "category": "Combat",
+      "icon": "NETHERITE_HELMET",
+      "frame": "CHALLENGE",
+      "x": 6.0,
+      "y": 7.5
+    },
+    {
+      "id": "war_machine",
+      "parent": "bounty_hunter",
+      "title": "War Machine",
+      "description": [
+        "Eliminate 250 rival players during wars"
+      ],
+      "requirement": "GUILD_WAR_KILL",
+      "target": null,
+      "goal": 250,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Combat",
+      "icon": "CROSSBOW",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 9.0
+    },
+    {
+      "id": "legion_of_doom",
+      "parent": "war_machine",
+      "title": "Legion of Doom",
+      "description": [
+        "Eliminate 1,000 rival players during wars"
+      ],
+      "requirement": "GUILD_WAR_KILL",
+      "target": null,
+      "goal": 1000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Combat",
+      "icon": "WITHER_SKELETON_SKULL",
+      "frame": "CHALLENGE",
+      "x": 5.0,
+      "y": 9.0
+    },
+    {
+      "id": "ten_thousand_hours",
+      "parent": "time_is_money",
+      "title": "Ten Thousand Hours",
+      "description": [
+        "Accumulate 10,000 combined play hours"
+      ],
+      "requirement": "GUILD_COMBINED_PLAYTIME",
+      "target": null,
+      "goal": 10000,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "CLOCK",
+      "frame": "CHALLENGE",
+      "x": 3.0,
+      "y": 10.5
+    },
+    {
+      "id": "generations",
+      "parent": "ten_thousand_hours",
+      "title": "Generations",
+      "description": [
+        "Accumulate 50,000 combined play hours"
+      ],
+      "requirement": "GUILD_COMBINED_PLAYTIME",
+      "target": null,
+      "goal": 50000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "RECOVERY_COMPASS",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 10.5
+    },
+    {
+      "id": "timeless",
+      "parent": "generations",
+      "title": "Timeless",
+      "description": [
+        "Accumulate 100,000 combined play hours"
+      ],
+      "requirement": "GUILD_COMBINED_PLAYTIME",
+      "target": null,
+      "goal": 100000,
+      "personalXp": 5000,
+      "messages": [
+        "<gold><bold>100,000 hours together. Your guild is Timeless.</bold></gold>"
+      ],
+      "category": "Cooperation",
+      "icon": "NETHER_STAR",
+      "frame": "CHALLENGE",
+      "x": 5.0,
+      "y": 10.5
+    },
+    {
+      "id": "trade_empire",
+      "parent": "market_dominance",
+      "title": "Trade Empire",
+      "description": [
+        "Complete 10,000 paid guild SELL shop sales"
+      ],
+      "requirement": "GUILD_SHOP_SALE",
+      "target": null,
+      "goal": 10000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Commerce",
+      "icon": "EMERALD_BLOCK",
+      "frame": "CHALLENGE",
+      "x": 6.0,
+      "y": 13.5
+    },
+    {
+      "id": "forge_of_industry",
+      "parent": "industrial_revolution",
+      "title": "Forge of Industry",
+      "description": [
+        "Smelt or cook 100,000 items collectively"
+      ],
+      "requirement": "GUILD_COLLECTIVE_SMELT",
+      "target": null,
+      "goal": 100000,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "BLAST_FURNACE",
+      "frame": "CHALLENGE",
+      "x": 3.0,
+      "y": 16.5
+    },
+    {
+      "id": "eternal_flame",
+      "parent": "forge_of_industry",
+      "title": "Eternal Flame",
+      "description": [
+        "Smelt or cook 1,000,000 items collectively"
+      ],
+      "requirement": "GUILD_COLLECTIVE_SMELT",
+      "target": null,
+      "goal": 1000000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "LAVA_BUCKET",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 16.5
+    },
+    {
+      "id": "terraformers",
+      "parent": "clear_cutting",
+      "title": "Terraformers",
+      "description": [
+        "Break 1,000,000 blocks collectively"
+      ],
+      "requirement": "GUILD_COLLECTIVE_BLOCK_BREAK",
+      "target": null,
+      "goal": 1000000,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "DIAMOND_PICKAXE",
+      "frame": "CHALLENGE",
+      "x": 3.0,
+      "y": 18.0
+    },
+    {
+      "id": "world_shapers",
+      "parent": "terraformers",
+      "title": "World Shapers",
+      "description": [
+        "Break 10,000,000 blocks collectively"
+      ],
+      "requirement": "GUILD_COLLECTIVE_BLOCK_BREAK",
+      "target": null,
+      "goal": 10000000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "NETHERITE_PICKAXE",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 18.0
+    },
+    {
+      "id": "breadbasket",
+      "parent": "bountiful_harvest",
+      "title": "Breadbasket",
+      "description": [
+        "Harvest 50,000 fully-grown crops"
+      ],
+      "requirement": "GUILD_COLLECTIVE_CROP_HARVEST",
+      "target": null,
+      "goal": 50000,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "HAY_BLOCK",
+      "frame": "CHALLENGE",
+      "x": 3.0,
+      "y": 19.5
+    },
+    {
+      "id": "feeding_the_realm",
+      "parent": "breadbasket",
+      "title": "Feeding the Realm",
+      "description": [
+        "Harvest 500,000 fully-grown crops"
+      ],
+      "requirement": "GUILD_COLLECTIVE_CROP_HARVEST",
+      "target": null,
+      "goal": 500000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "GOLDEN_CARROT",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 19.5
+    },
+    {
+      "id": "monster_hunters",
+      "parent": "mob_grinder",
+      "title": "Monster Hunters",
+      "description": [
+        "Defeat 100,000 hostile mobs as a team"
+      ],
+      "requirement": "GUILD_COLLECTIVE_MOB_KILL",
+      "target": null,
+      "goal": 100000,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "DIAMOND_SWORD",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 21.75
+    },
+    {
+      "id": "scourge_of_the_night",
+      "parent": "monster_hunters",
+      "title": "Scourge of the Night",
+      "description": [
+        "Defeat 1,000,000 hostile mobs as a team"
+      ],
+      "requirement": "GUILD_COLLECTIVE_MOB_KILL",
+      "target": null,
+      "goal": 1000000,
+      "personalXp": 2500,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "ZOMBIE_HEAD",
+      "frame": "CHALLENGE",
+      "x": 5.0,
+      "y": 21.75
+    },
+    {
+      "id": "dragon_tamers",
+      "parent": "free_the_end",
+      "title": "Dragon Tamers",
+      "description": [
+        "Slay the Ender Dragon 5 times with 3+ guild members"
+      ],
+      "requirement": "GUILD_COLLECTIVE_BOSS_KILL",
+      "target": "ENDER_DRAGON",
+      "goal": 5,
+      "personalXp": 2000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "DRAGON_HEAD",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 21.0
+    },
+    {
+      "id": "wither_hunters",
+      "parent": "withered_away",
+      "title": "Wither Hunters",
+      "description": [
+        "Defeat the Wither 10 times as a guild"
+      ],
+      "requirement": "GUILD_COLLECTIVE_BOSS_KILL",
+      "target": "WITHER",
+      "goal": 10,
+      "personalXp": 2000,
+      "messages": [],
+      "category": "Cooperation",
+      "icon": "WITHER_ROSE",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 22.5
+    },
+    {
+      "id": "web_of_alliances",
+      "parent": "diplomatic_immunity",
+      "title": "Web of Alliances",
+      "description": [
+        "Form 5 alliances with other guilds"
+      ],
+      "requirement": "GUILD_ALLIANCE_FORMED",
+      "target": null,
+      "goal": 5,
+      "personalXp": 500,
+      "messages": [],
+      "category": "Reputation",
+      "icon": "LEAD",
+      "frame": "GOAL",
+      "x": 3.0,
+      "y": 25.5
+    },
+    {
+      "id": "growing_ranks",
+      "parent": "guilds_root",
+      "title": "Growing Ranks",
+      "description": [
+        "Have 10 members in your guild"
+      ],
+      "requirement": "GUILD_MEMBER_COUNT",
+      "target": null,
+      "goal": 10,
+      "personalXp": 0,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "PLAYER_HEAD",
+      "frame": "TASK",
+      "x": 2.0,
+      "y": 30.0
+    },
+    {
+      "id": "strength_in_numbers",
+      "parent": "growing_ranks",
+      "title": "Strength in Numbers",
+      "description": [
+        "Have 25 members in your guild"
+      ],
+      "requirement": "GUILD_MEMBER_COUNT",
+      "target": null,
+      "goal": 25,
+      "personalXp": 500,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "IRON_CHESTPLATE",
+      "frame": "GOAL",
+      "x": 3.0,
+      "y": 30.0
+    },
+    {
+      "id": "a_great_house",
+      "parent": "strength_in_numbers",
+      "title": "A Great House",
+      "description": [
+        "Have 50 members in your guild"
+      ],
+      "requirement": "GUILD_MEMBER_COUNT",
+      "target": null,
+      "goal": 50,
+      "personalXp": 1000,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "DIAMOND_CHESTPLATE",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 30.0
+    },
+    {
+      "id": "first_month",
+      "parent": "guilds_root",
+      "title": "The First Month",
+      "description": [
+        "Keep your guild going for 30 days"
+      ],
+      "requirement": "GUILD_AGE_DAYS",
+      "target": null,
+      "goal": 30,
+      "personalXp": 0,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "CANDLE",
+      "frame": "TASK",
+      "x": 2.0,
+      "y": 31.5
+    },
+    {
+      "id": "half_a_year",
+      "parent": "first_month",
+      "title": "Half a Year",
+      "description": [
+        "Keep your guild going for 180 days"
+      ],
+      "requirement": "GUILD_AGE_DAYS",
+      "target": null,
+      "goal": 180,
+      "personalXp": 500,
+      "messages": [],
+      "category": "Foundations",
+      "icon": "CAKE",
+      "frame": "GOAL",
+      "x": 3.0,
+      "y": 31.5
+    },
+    {
+      "id": "standing_the_test_of_time",
+      "parent": "half_a_year",
+      "title": "Standing the Test of Time",
+      "description": [
+        "Keep your guild going for 365 days"
+      ],
+      "requirement": "GUILD_AGE_DAYS",
+      "target": null,
+      "goal": 365,
+      "personalXp": 2000,
+      "messages": [
+        "<gold><bold>One year strong. Your guild has stood the test of time.</bold></gold>"
+      ],
+      "category": "Foundations",
+      "icon": "LODESTONE",
+      "frame": "CHALLENGE",
+      "x": 4.0,
+      "y": 31.5
     }
   ]
 }

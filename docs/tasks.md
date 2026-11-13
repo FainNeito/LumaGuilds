@@ -1394,3 +1394,9 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Party chat line (REQ-223)
 
 - [x] **PARTY-CHAT-LINE** Tag: TDD. REQ-223. Evidence: PartyChatLineContractTest.
+
+## Long-term advancements (REQ-224 to REQ-226)
+
+- [x] **ADV-LONG-TIERS** Tag: TDD. REQ-224. Evidence: GuildAchievementCatalogTest.
+- [x] **ADV-MEMBERS-AGE** Tag: TDD. REQ-225. Evidence: GuildAchievementRuntimeTest.
+- [x] **ADV-PLAYTIME-CAP** Tag: TDD. REQ-226. Evidence: GuildAchievementRuntimeTest, GuildAchievementsMenuTest.

@@ -776,6 +776,15 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-223
 **Ubiquitous.** THE SYSTEM SHALL format a party chat message like guild chat, starting with [Party] and the sender's guild name in brackets, then the sender's name (no rank), and SHALL build it without PlaceholderAPI or guild emojis, so no raw placeholder text ever appears.
 
+### REQ-224
+**Ubiquitous.** THE SYSTEM SHALL offer long-term guild advancements that extend the existing chains: guild levels 25, 50 and 75 before Vanguard Status; 5 and 25 war wins; 250 and 1,000 war kills; 10 and 50 KOTH captures; 10,000, 50,000 and 100,000 combined play hours; 10,000 guild shop sales; 5 alliances; 10 Withers and 5 Ender Dragons; and larger collective smelting, block-breaking, harvesting and mob-kill totals, with no two advancements drawn at the same position in the advancement tree.
+
+### REQ-225
+**State-driven.** WHILE a player is online in a guild THE SYSTEM SHALL check, when they join and every minute, the guild's current member count and the number of whole days since the guild was created, and SHALL award member-count advancements at 10, 25 and 50 members and guild-age advancements at 30, 180 and 365 days.
+
+### REQ-226
+**Ubiquitous.** THE SYSTEM SHALL count combined play hours without a ceiling, so play-hour advancements above 1,000 hours can be earned, and the advancement inspector SHALL state each advancement's own goal.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

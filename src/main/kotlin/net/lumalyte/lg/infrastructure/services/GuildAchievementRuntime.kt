@@ -21,6 +21,9 @@ internal class GuildAchievementRuntime(
     private val members: MemberRepository,
     private val progression: ProgressionRepository,
     private val stalls: GuildStallReadService = GuildStallReadClient(),
+    /** When each guild was founded; drives the guild-age advancements (REQ-225). */
+    private val createdAt: (UUID) -> java.time.Instant? = { null },
+    private val clock: () -> java.time.Instant = java.time.Instant::now,
 ) {
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
@@ -43,12 +46,10 @@ internal class GuildAchievementRuntime(
             Bukkit.getOnlinePlayers().groupBy { guild(it.uniqueId) }.forEach { (guild, players) ->
                 if (guild != null) {
                     refreshStallOwnership(players.first(), guild)
-                    val hours = combinedHours(guild)
-                    val level = progression.getGuildProgression(guild)?.currentLevel
+                    val totals = totals(guild)
                     players.forEach { player ->
                         signal(player, "ROOT")
-                        level?.let { signal(player, "GUILD_LEVEL_UP", it.toString()) }
-                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true)
+                        signalTotals(player, totals)
                         read(player)?.let { projection.project(player, it) }
                     }
                 }
@@ -79,8 +80,7 @@ internal class GuildAchievementRuntime(
             if (pending.completed.isNotEmpty()) deliver(player, record, pending)
         }
         signal(player, "ROOT")
-        progression.getGuildProgression(guild)?.let { signal(player, "GUILD_LEVEL_UP", it.currentLevel.toString()) }
-        signal(player, "GUILD_COMBINED_PLAYTIME", amount = combinedHours(guild), absolute = true)
+        signalTotals(player, totals(guild))
         read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
     }
@@ -202,9 +202,22 @@ internal class GuildAchievementRuntime(
         failed.remove(player.uniqueId)
     }
 
-    private fun combinedHours(guild: UUID): Int = (members.getByGuild(guild).sumOf {
-        Bukkit.getOfflinePlayer(it.playerId).getStatistic(Statistic.PLAY_ONE_MINUTE).toLong()
-    } / 72000L).coerceAtMost(1000L).toInt()
+    /** Guild-wide figures read from the guild itself rather than counted while a member is online. */
+    private data class GuildTotals(val level: Int?, val hours: Int, val members: Int, val ageDays: Int?)
+
+    private fun totals(guild: UUID): GuildTotals {
+        val roster = members.getByGuild(guild)
+        val hours = playHours(roster.map { Bukkit.getOfflinePlayer(it.playerId).getStatistic(Statistic.PLAY_ONE_MINUTE).toLong() })
+        val age = createdAt(guild)?.let { java.time.Duration.between(it, clock()).toDays().coerceIn(0L, Int.MAX_VALUE.toLong()).toInt() }
+        return GuildTotals(progression.getGuildProgression(guild)?.currentLevel, hours, roster.size, age)
+    }
+
+    private fun signalTotals(player: Player, totals: GuildTotals) {
+        totals.level?.let { signal(player, "GUILD_LEVEL_UP", it.toString()) }
+        signal(player, "GUILD_COMBINED_PLAYTIME", amount = totals.hours, absolute = true)
+        signal(player, "GUILD_MEMBER_COUNT", amount = totals.members, absolute = true)
+        totals.ageDays?.let { signal(player, "GUILD_AGE_DAYS", amount = it, absolute = true) }
+    }
 
     private fun write(player: Player, record: AchievementRecord) {
         records[player.uniqueId] = record
@@ -235,6 +248,15 @@ internal class GuildAchievementRuntime(
                 n.optString("target").takeUnless { it.isBlank() || it == "null" }, n.getInt("goal"),
                 n.getInt("personalXp"), list("messages"), n.getString("category"), n.getString("icon"),
                 n.getString("frame"), n.getFloat("x"), n.getFloat("y"))
+        }
+    }
+
+    companion object {
+        /** Whole hours from vanilla play ticks, with no upper limit below Int.MAX_VALUE (REQ-226). */
+        fun playHours(ticks: List<Long>): Int {
+            var total = 0L
+            for (t in ticks) { total += t.coerceAtLeast(0L) / 72_000L; if (total >= Int.MAX_VALUE) return Int.MAX_VALUE }
+            return total.toInt()
         }
     }
 }
