@@ -24,7 +24,14 @@ internal class GuildAchievementRuntime(
     /** When each guild was founded; drives the guild-age advancements (REQ-225). */
     private val createdAt: (UUID) -> java.time.Instant? = { null },
     private val clock: () -> java.time.Instant = java.time.Instant::now,
+    /**
+     * Pays guild XP at most once per payout ID (REQ-227). Returns true when paid now or already paid;
+     * false leaves the payout to be retried on a later check.
+     */
+    private val guildXp: (guildId: UUID, amount: Int, payoutId: UUID) -> Boolean = { _, _, _ -> true },
 ) {
+    /** Guild-wide payouts confirmed this run, so the ledger is not asked again every minute. */
+    private val paidGuildXp = mutableSetOf<UUID>()
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
     private val projection by lazy { GuildAchievementProjection(plugin, engine.definitions) }
@@ -47,6 +54,7 @@ internal class GuildAchievementRuntime(
                 if (guild != null) {
                     refreshStallOwnership(players.first(), guild)
                     val totals = totals(guild)
+                    payStanding(guild, totals)
                     players.forEach { player ->
                         signal(player, "ROOT")
                         signalTotals(player, totals)
@@ -80,7 +88,9 @@ internal class GuildAchievementRuntime(
             if (pending.completed.isNotEmpty()) deliver(player, record, pending)
         }
         signal(player, "ROOT")
-        signalTotals(player, totals(guild))
+        val totals = totals(guild)
+        signalTotals(player, totals)
+        payStanding(guild, totals)
         read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
     }
@@ -153,6 +163,7 @@ internal class GuildAchievementRuntime(
             // Claimed IDs and experience are saved together in player.dat; no guild XP or bank calls here.
             write(player, change.record)
             if (xp > 0) player.giveExp(xp)
+            guild(player.uniqueId)?.let { guildId -> change.completed.forEach { payGuild(guildId, it) } }
             if (change.completed.isNotEmpty()) flush(player)
             if (change.completed.isNotEmpty()) projection.project(player, change.record)
             change.completed.forEach { announce(player, it) }
@@ -212,6 +223,30 @@ internal class GuildAchievementRuntime(
         return GuildTotals(progression.getGuildProgression(guild)?.currentLevel, hours, roster.size, age)
     }
 
+    /** Each guild is paid once per advancement; the XP ledger rejects a repeated payout ID. */
+    private fun payGuild(guildId: UUID, node: GuildAchievement) {
+        if (node.guildXp <= 0) return
+        val id = payoutId(guildId, node.id)
+        if (id in paidGuildXp) return
+        val paid = runCatching { guildXp(guildId, node.guildXp, id) }
+            .onFailure { plugin.logger.warning("Guild XP for advancement ${node.id} will be retried: ${it.javaClass.simpleName}") }
+            .getOrDefault(false)
+        if (paid) paidGuildXp += id
+    }
+
+    /** REQ-228: guild-wide goals pay the guild once it qualifies, even if members completed them earlier. */
+    private fun payStanding(guildId: UUID, totals: GuildTotals) {
+        engine.definitions.filter { node ->
+            when (node.requirement) {
+                "GUILD_LEVEL_UP" -> (totals.level ?: 0) >= (node.target?.toIntOrNull() ?: Int.MAX_VALUE)
+                "GUILD_COMBINED_PLAYTIME" -> totals.hours >= node.goal
+                "GUILD_MEMBER_COUNT" -> totals.members >= node.goal
+                "GUILD_AGE_DAYS" -> (totals.ageDays ?: -1) >= node.goal
+                else -> false
+            }
+        }.forEach { payGuild(guildId, it) }
+    }
+
     private fun signalTotals(player: Player, totals: GuildTotals) {
         totals.level?.let { signal(player, "GUILD_LEVEL_UP", it.toString()) }
         signal(player, "GUILD_COMBINED_PLAYTIME", amount = totals.hours, absolute = true)
@@ -247,11 +282,15 @@ internal class GuildAchievementRuntime(
                 n.getString("title"), list("description"), n.getString("requirement"),
                 n.optString("target").takeUnless { it.isBlank() || it == "null" }, n.getInt("goal"),
                 n.getInt("personalXp"), list("messages"), n.getString("category"), n.getString("icon"),
-                n.getString("frame"), n.getFloat("x"), n.getFloat("y"))
+                n.getString("frame"), n.getFloat("x"), n.getFloat("y"), n.optInt("guildXp", 0))
         }
     }
 
     companion object {
+        /** Stable per guild and advancement, so every member's completion maps to one ledger entry. */
+        fun payoutId(guildId: UUID, nodeId: String): UUID =
+            UUID.nameUUIDFromBytes("lumaguilds:advancement-xp:$guildId:$nodeId".toByteArray(Charsets.UTF_8))
+
         /** Whole hours from vanilla play ticks, with no upper limit below Int.MAX_VALUE (REQ-226). */
         fun playHours(ticks: List<Long>): Int {
             var total = 0L

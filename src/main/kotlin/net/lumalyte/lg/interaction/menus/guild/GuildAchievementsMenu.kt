@@ -105,7 +105,9 @@ internal class GuildAchievementsMenu(
                 Component.text(earning(node)), Component.text(credit(node)))),
             referenceItem("lg_reward", listOf(lang.gui("achievements.reward"),
                 if (node.personalXp > 0) lang.gui("achievements.personal_xp", "amount" to node.personalXp)
-                else lang.gui("achievements.no_extra"), lang.gui("achievements.no_guild_xp"))),
+                else lang.gui("achievements.no_extra"),
+                if (node.guildXp > 0) lang.gui("achievements.guild_xp", "amount" to "%,d".format(java.util.Locale.ROOT, node.guildXp))
+                else lang.gui("achievements.no_guild_xp"))),
             referenceItem("lg_prestige", listOf(lang.gui("achievements.record_rules"), lang.gui("achievements.offline"),
                 lang.gui("achievements.retained"), lang.gui("achievements.connections"))),
         ).let { listOf(it[detailTab]) }

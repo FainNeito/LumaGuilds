@@ -710,7 +710,9 @@ fun socialModule() = module {
  */
 fun progressionModule() = module {
     single { net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime(get<JavaPlugin>(), get(), get(),
-        createdAt = { id -> get<net.lumalyte.lg.application.persistence.GuildRepository>().getById(id)?.createdAt }) }
+        createdAt = { id -> get<net.lumalyte.lg.application.persistence.GuildRepository>().getById(id)?.createdAt },
+        guildXp = { guild, amount, payout -> get<net.lumalyte.lg.application.services.ProgressionService>()
+            .awardUncappedSystemExperienceOnce(guild, amount, net.lumalyte.lg.domain.values.ExperienceSource.GUILD_ADVANCEMENT, payout) }) }
     single { net.lumalyte.lg.application.services.GuildActionCoordinator() }
     single { net.lumalyte.lg.domain.rewards.RewardCatalog.chapterTwo() }
     single<net.lumalyte.lg.application.persistence.ChronicleGoalRepository> {

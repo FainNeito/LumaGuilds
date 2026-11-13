@@ -785,6 +785,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-226
 **Ubiquitous.** THE SYSTEM SHALL count combined play hours without a ceiling, so play-hour advancements above 1,000 hours can be earned, and the advancement inspector SHALL state each advancement's own goal.
 
+### REQ-227
+**Event-driven.** WHEN a member of a guild completes a guild advancement that carries a guild XP reward THE SYSTEM SHALL award that guild XP to the member's guild once, using a payout ID fixed per guild and advancement, so later members completing the same advancement, restarts and retries never pay that guild again; the award SHALL use its own XP source that no weekend or dated XP boost multiplies.
+
+### REQ-228
+**State-driven.** WHILE a guild meets the goal of a level, combined play hours, member count or guild age advancement THE SYSTEM SHALL pay that advancement's guild XP once, even if every online member had already completed it before guild XP rewards existed; jokes and penalties (Friendly Fire, The Exile, Coup d'etat) and the root SHALL pay no guild XP, and the advancement inspector SHALL show each advancement's guild XP reward.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

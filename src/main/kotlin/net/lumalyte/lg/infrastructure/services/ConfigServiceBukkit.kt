@@ -427,7 +427,7 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
         val prefix = "progression.xp_boost"
         val sources = if (config.contains("$prefix.sources")) config.getStringList("$prefix.sources").map {
             ExperienceSource.valueOf(it.uppercase(Locale.ROOT))
-        }.toSet() else ExperienceSource.entries.filterNot { it == ExperienceSource.ADMIN_BONUS }.toSet()
+        }.toSet() else ExperienceSource.entries.filterNot { it == ExperienceSource.ADMIN_BONUS || it == ExperienceSource.GUILD_ADVANCEMENT }.toSet()
         return net.lumalyte.lg.domain.values.ExperienceBoost(
             java.time.Instant.parse(requireNotNull(config.getString("$prefix.starts_at")) { "XP boost starts_at is required" }),
             java.time.Instant.parse(requireNotNull(config.getString("$prefix.ends_at")) { "XP boost ends_at is required" }),

@@ -591,6 +591,7 @@ object ChapterTwoExperiencePolicies {
         enabled(ExperienceSource.WARDEN_KILL, 600, 6_000, CapPeriod.WEEKLY)
 
         enabled(ExperienceSource.WEEKLY_ACTIVITY, 1, 0, CapPeriod.UNLIMITED)
+        enabled(ExperienceSource.GUILD_ADVANCEMENT, 1, 0, CapPeriod.UNLIMITED)
         enabled(ExperienceSource.ADMIN_BONUS, 1, 0, CapPeriod.UNLIMITED)
         return policies.toMap()
     }

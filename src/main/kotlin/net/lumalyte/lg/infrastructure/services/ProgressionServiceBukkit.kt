@@ -97,7 +97,8 @@ class ProgressionServiceBukkit(
         experience: Int,
         source: ExperienceSource,
     ): Int? {
-        require(source == ExperienceSource.WEEKLY_ACTIVITY || source == ExperienceSource.ADMIN_BONUS) {
+        require(source == ExperienceSource.WEEKLY_ACTIVITY || source == ExperienceSource.ADMIN_BONUS ||
+            source == ExperienceSource.GUILD_ADVANCEMENT) {
             "Only trusted system sources may bypass caps"
         }
         if (experience <= 0) return null
@@ -114,7 +115,8 @@ class ProgressionServiceBukkit(
         source: ExperienceSource,
         transactionId: UUID,
     ): Boolean {
-        require(source == ExperienceSource.WEEKLY_ACTIVITY || source == ExperienceSource.ADMIN_BONUS) {
+        require(source == ExperienceSource.WEEKLY_ACTIVITY || source == ExperienceSource.ADMIN_BONUS ||
+            source == ExperienceSource.GUILD_ADVANCEMENT) {
             "Only trusted system sources may bypass caps"
         }
         if (experience <= 0) return true

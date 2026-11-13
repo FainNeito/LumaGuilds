@@ -34,6 +34,15 @@ internal class GuildAchievementCatalogTest {
         assertEquals(setOf(30, 180, 365), goals("GUILD_AGE_DAYS"))
     }
 
+    @Test fun `guild XP rewards scale with difficulty and jokes pay nothing`() {
+        val xp = nodes.associate { it.getString("id") to it.getInt("guildXp") }
+        listOf("guilds_root", "friendly_fire", "the_exile", "coup_detat").forEach { assertEquals(0, xp[it], it) }
+        nodes.filter { it.getString("id") !in setOf("guilds_root", "friendly_fire", "the_exile", "coup_detat") }
+            .forEach { assertTrue(it.getInt("guildXp") > 0, "${it.getString("id")} needs a guild XP reward") }
+        assertTrue(xp.getValue("timeless") > xp.getValue("ten_thousand_hours"))
+        assertTrue(xp.getValue("ten_thousand_hours") > xp.getValue("founding"))
+    }
+
     @Test fun `vanguard status ends the level chain`() {
         val byId = nodes.associateBy { it.getString("id") }
         val vanguard = byId.getValue("vanguard_status")
