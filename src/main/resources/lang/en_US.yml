@@ -3867,6 +3867,12 @@ menu:
       duration: '<gray>Duration: <white><days> days'
       must_accept: '<gray>They must accept your declaration for war to begin.'
       send_failed: '<red>❌ Failed to send war declaration!'
+      blocked:
+        declaration_cooldown: '<red>⏳ Your guild declared a war recently. You can declare again in <white><time><red>.'
+        own_farming_cooldown: '<red>⏳ Your guild just won a war. You can declare again in <white><time><red>.'
+        target_farming_cooldown: '<red>⏳ <white><guild><red> just won a war and can''t be challenged for <white><time><red>.'
+        own_war_limit: '<red>Your guild is already in as many wars as it can fight at once.'
+        target_war_limit: '<red><white><guild><red> is already in as many wars as it can fight at once.'
       sent: '<gold>⚔ WAR DECLARATION SENT to <guild>!'
       terms_cancelled: '<gray>War terms input cancelled'
       terms_prompt: '<yellow>Type your war terms in chat (or ''cancel'' to skip):'
