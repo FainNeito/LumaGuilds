@@ -1424,3 +1424,8 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **MOMENTS-WAR** Tag: TDD. REQ-233. Evidence: GuildMomentTest, WarNotificationRecoveryTest.
 - [x] **MOMENTS-ALLIANCE** Tag: TDD. REQ-234. Evidence: GuildMomentTest.
 - [x] **MOMENTS-KILL** Tag: TDD. REQ-235. Evidence: GuildMomentTest.
+
+## Recruitment browse card and guild info card (REQ-236, REQ-237)
+
+- [x] **RECRUIT-BROWSE-CARD** Tag: TDD. REQ-236. Evidence: RecruitmentDialogMenuTest.
+- [x] **INFO-CARD-PRESTIGE** Tag: TDD. REQ-237. Evidence: GuildInfoCardOrderTest.

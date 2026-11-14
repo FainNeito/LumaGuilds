@@ -812,6 +812,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-235
 **Event-driven.** WHEN a player gets a war kill THE SYSTEM SHALL play the killer a war-kill sound (a slowed critical hit followed by a quick level-up chime) with the existing war-kill chat line.
 
+### REQ-236
+**Ubiquitous.** THE SYSTEM SHALL show a clickable "Browse Recruiting Guilds" card directly under the guild's recruitment status on the Manage Recruitment dialog, and SHALL show listing setup, settings and the player's applications as ordinary buttons there instead of behind "More listing options".
+
+### REQ-237
+**Ubiquitous.** THE SYSTEM SHALL show a guild's prestige badge and tier with its level directly under its name on the guild info card, and SHALL list the guild's active wars last, under an "Active wars" heading.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through

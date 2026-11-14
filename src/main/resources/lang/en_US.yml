@@ -5119,6 +5119,9 @@ menu:
       unknown_player: "Unknown Player"
       member: "Member"
     overview:
+      prestige: '<light_purple>Prestige <tier> <dark_gray>· <gray>Level <white><level>'
+      level_only: '<gray>Level <white><level>'
+      active_wars: '<gray>Active wars'
       mode: "<gray>Mode: <white><mode>"
       emoji: "<gray>Emoji: <white><emoji>"
       tag: "<gray>Tag: <white><tag>"
@@ -7674,6 +7677,9 @@ recruitment:
   discord_setup: "<yellow>Add a Guild Discord Invite and application instructions in Recruitment Settings before choosing Discord.</yellow>"
   title: Guild Recruitment
   browse: Find a Guild
+  browse_card:
+    title: "» Browse Recruiting Guilds «"
+    hint: "See every guild recruiting right now"
   mine: My Applications
   search: Search by Name or Interest
   filter: "Guild Mode Filter (Any / Peaceful / Hostile)"
@@ -7773,7 +7779,6 @@ dialog_v2:
   guild_settings: "Guild Settings"
   guild_frame: "Guild frame"
   more_settings: "More guild settings"
-  more_listing_options: "More listing options"
   more_filters: "More filters and preferences"
   filters: "Filters"
   open_recruitment: "Open recruitment"
