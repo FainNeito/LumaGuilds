@@ -222,6 +222,12 @@ interface WarService {
     fun canGuildDeclareWar(guildId: UUID): Boolean
 
     /**
+     * REQ-239: the first cooldown or war limit stopping [declaringGuildId] from
+     * declaring on [defendingGuildId], or null when neither applies.
+     */
+    fun declarationBlock(declaringGuildId: UUID, defendingGuildId: UUID): net.lumalyte.lg.domain.values.WarDeclarationBlock? = null
+
+    /**
      * Checks if a player can manage wars for their guild.
      *
      * @param playerId The ID of the player.

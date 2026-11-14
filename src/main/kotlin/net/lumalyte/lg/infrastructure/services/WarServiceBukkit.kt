@@ -11,6 +11,7 @@ import net.lumalyte.lg.application.services.WarNotificationService
 import net.lumalyte.lg.application.services.ChapterTwoGuildAwardService
 import net.lumalyte.lg.application.services.ProgressionService
 import net.lumalyte.lg.domain.values.ExperienceSource
+import net.lumalyte.lg.domain.values.WarDeclarationBlock
 import net.lumalyte.lg.domain.entities.*
 import net.lumalyte.lg.api.events.GuildWarDeclaredEvent
 import net.lumalyte.lg.api.events.GuildWarEndEvent
@@ -867,6 +868,24 @@ class WarServiceBukkit(
      * (REQ-008), refined upward by progression war slots — consistent with the
      * check in `createWarDeclaration`.
      */
+    override fun declarationBlock(
+        declaringGuildId: UUID,
+        defendingGuildId: UUID,
+    ): WarDeclarationBlock? {
+        val snapshot = warRepository.getAll()
+        val combat = configService.loadConfig().combat
+        return declarationBlock(
+            now = Instant.now(),
+            declarationCooldownEnd = declarationCooldownEnd(declaringGuildId, snapshot, combat.warDeclarationCooldownHours),
+            ownFarmingEnd = farmingCooldownEnd(declaringGuildId, snapshot, combat.warFarmingCooldownHours),
+            targetFarmingEnd = farmingCooldownEnd(defendingGuildId, snapshot, combat.warFarmingCooldownHours),
+            ownWarsFull = activeWarCount(declaringGuildId, snapshot.mapNotNull { it.war }) >=
+                maxWarsForGuild(declaringGuildId, combat.maxSimultaneousWars),
+            targetWarsFull = activeWarCount(defendingGuildId, snapshot.mapNotNull { it.war }) >=
+                maxWarsForGuild(defendingGuildId, combat.maxSimultaneousWars),
+        )
+    }
+
     override fun canGuildDeclareWar(guildId: UUID): Boolean {
         if (guildRepository.getById(guildId)?.mode != GuildMode.HOSTILE) return false
         val snapshot = warRepository.getAll()
@@ -1354,6 +1373,28 @@ class WarServiceBukkit(
          * base, refined upward by the highest progression war-slot reward among the
          * levels the guild has reached. `levelRewards` is keyed by level number.
          */
+        /** REQ-239: pure ordering of declaration blocks, checked in the same order as createWarDeclaration. */
+        fun declarationBlock(
+            now: Instant,
+            declarationCooldownEnd: Instant?,
+            ownFarmingEnd: Instant?,
+            targetFarmingEnd: Instant?,
+            ownWarsFull: Boolean,
+            targetWarsFull: Boolean,
+        ): WarDeclarationBlock? {
+            fun active(end: Instant?) = end != null && now.isBefore(end)
+            return when {
+                active(declarationCooldownEnd) ->
+                    WarDeclarationBlock(WarDeclarationBlock.Reason.DECLARATION_COOLDOWN, declarationCooldownEnd)
+                active(ownFarmingEnd) -> WarDeclarationBlock(WarDeclarationBlock.Reason.OWN_FARMING_COOLDOWN, ownFarmingEnd)
+                active(targetFarmingEnd) ->
+                    WarDeclarationBlock(WarDeclarationBlock.Reason.TARGET_FARMING_COOLDOWN, targetFarmingEnd)
+                ownWarsFull -> WarDeclarationBlock(WarDeclarationBlock.Reason.OWN_WAR_LIMIT)
+                targetWarsFull -> WarDeclarationBlock(WarDeclarationBlock.Reason.TARGET_WAR_LIMIT)
+                else -> null
+            }
+        }
+
         fun maxWarsForGuild(currentLevel: Int?, configMax: Int, levelRewards: Map<Int, net.lumalyte.lg.config.LevelRewardConfig>): Int {
             if (currentLevel == null) return configMax
             var maxWars = configMax
