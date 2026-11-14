@@ -804,3 +804,8 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
 CHR-005 in [the Chronicle specification](plans/2026-10-16-guild-chronicle.md).
+
+## Steady dialog buttons
+
+### REQ-240
+**Ubiquitous.** THE SYSTEM SHALL keep every pack-art dialog button label no wider than the button's width minus 4 pixels, so the client never scrolls the label and its artwork side to side.
