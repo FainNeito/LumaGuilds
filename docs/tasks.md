@@ -1418,3 +1418,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Menu titles fit (REQ-232)
 
 - [x] **MENU-TITLE-FIT** Tag: TDD. REQ-232. Evidence: MenuTitleBuilderTest.
+
+## War declaration feedback (REQ-239)
+
+- [x] **WAR-DECLARE-BLOCK-REASON** Tag: TDD. REQ-239. Evidence: WarDeclarationBlockTest.
