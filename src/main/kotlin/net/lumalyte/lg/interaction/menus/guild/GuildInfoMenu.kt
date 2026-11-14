@@ -77,6 +77,7 @@ class GuildInfoMenu(
     private val lang: LangService by inject()
     private val nexoEmojiService: NexoEmojiService by inject()
     private val prestigeHistory: net.lumalyte.lg.application.persistence.PrestigeHistory by inject()
+    private val configService: net.lumalyte.lg.application.services.ConfigService by inject()
 
     private var page = 0
     private var sort = RosterSort.RANK
@@ -198,6 +199,7 @@ class GuildInfoMenu(
             ?: lang.raw("menu.guild_info.fallback.unknown_player")
         val item = NexoItemProvider.getItemStackOrFallback("lg_nav_info") { ItemStack.of(Material.NAME_TAG) }
             .name(lang.gui("guild_page.card.name", "guild" to guild.name))
+        prestigeLine()?.let(item::lore)
         guild.tag?.let { item.lore(lang.gui("menu.guild_info.overview.tag", "tag" to ColorCodeUtils.toMiniMessage(it))) }
         guild.emoji?.let { item.lore(lang.gui("menu.guild_info.overview.emoji", "emoji" to nexoEmojiService.emojiToFontTag(it))) }
         item.lore(lang.gui("guild_page.card.leader", "leader" to leader))
@@ -205,10 +207,37 @@ class GuildInfoMenu(
             .lore(lang.gui("menu.guild_info.overview.mode", "mode" to modeName()))
             .lore(lang.gui("menu.guild_info.overview.founded", "date" to date(guild.createdAt)))
             .lore(lang.gui("guild_page.card.balance", "balance" to bankService.getBalance(guild.id)))
-        activeWarLines().forEach(item::lore)
         cardFacts().lines().forEach { (fact, value) -> item.lore(GuildPageText.fact(lang, fact, value)) }
+        // REQ-237: wars come last, under their own heading.
+        val wars = activeWarLines()
+        if (wars.isNotEmpty()) {
+            item.lore(lang.gui("menu.common.blank")).lore(lang.gui("menu.guild_info.overview.active_wars"))
+            wars.forEach(item::lore)
+        }
         return GuiItem(item)
     }
+
+    /** REQ-237: the prestige badge, tier and level under the guild's name; level alone before any prestige. */
+    private fun prestigeLine(): net.kyori.adventure.text.Component? {
+        val prestige = GuildInfoPrestige.of(prestigeHistory, guild.id) as? GuildInfoPrestige.Prestiged
+            ?: return lang.gui("menu.guild_info.overview.level_only", "level" to guild.level)
+        val line = lang.gui("menu.guild_info.overview.prestige", "tier" to PrestigeNumeral.of(prestige.current), "level" to guild.level)
+        return withBadge(prestige.current, line)
+    }
+
+    /** The tier's prestige badge (the same glyph as the tab list), or null when none is configured. */
+    private fun badge(tier: Int): net.kyori.adventure.text.Component? {
+        val badges = runCatching { configService.loadConfig().progression.prestige.badges }.getOrNull()
+            ?: net.lumalyte.lg.config.DEFAULT_PRESTIGE_BADGES
+        val raw = net.lumalyte.lg.infrastructure.placeholders.PrestigePlaceholder.badge(tier, badges).takeIf { it.isNotEmpty() } ?: return null
+        val mm = net.lumalyte.lg.infrastructure.placeholders.PrestigePlaceholder.withFonts(
+            net.lumalyte.lg.utils.ColorCodeUtils.toMiniMessage(raw)) { runCatching { nexoEmojiService.glyphFont(it) }.getOrNull() }
+        return net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize("<!italic><white>$mm</white>")
+    }
+
+    /** REQ-237: the badge in front of a prestige line, so tiers line up like the mockup. */
+    private fun withBadge(tier: Int, line: net.kyori.adventure.text.Component): net.kyori.adventure.text.Component =
+        badge(tier)?.let { net.kyori.adventure.text.Component.text().append(it).append(net.kyori.adventure.text.Component.space()).append(line).build() } ?: line
 
     private fun cardFacts(): GuildCardFacts = GuildCardFacts(
         home = guild.homes.homeNames.isNotEmpty(),
@@ -242,14 +271,14 @@ class GuildInfoMenu(
             GuildInfoPrestige.None -> item.lore(lang.gui("menu.guild_info.prestige.none"))
             GuildInfoPrestige.Unavailable -> item.lore(lang.gui("menu.guild_info.prestige.unavailable"))
             is GuildInfoPrestige.Prestiged -> {
-                item.lore(lang.gui("menu.guild_info.prestige.current", "tier" to PrestigeNumeral.of(prestige.current)))
+                item.lore(withBadge(prestige.current, lang.gui("menu.guild_info.prestige.current", "tier" to PrestigeNumeral.of(prestige.current))))
                 prestige.entries.forEach { entry ->
                     val tier = PrestigeNumeral.of(entry.tier)
                     val at = date(entry.appliedAt)
-                    item.lore(
+                    item.lore(withBadge(entry.tier,
                         if (entry.serverFirst) lang.gui("menu.guild_info.prestige.entry_first", "tier" to tier, "date" to at)
                         else lang.gui("menu.guild_info.prestige.entry", "tier" to tier, "date" to at),
-                    )
+                    ))
                 }
             }
         }

@@ -800,6 +800,24 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-231
 **Ubiquitous.** THE SYSTEM SHALL show each war's own kill target wherever a war's target is displayed, including "Until a guild gets N kills" in the declare menu, the war list and details, and guild info.
 
+### REQ-236
+**Ubiquitous.** THE SYSTEM SHALL show a clickable "Browse Recruiting Guilds" card directly under the guild's recruitment status on the Manage Recruitment dialog, and SHALL show listing setup, settings and the player's applications as ordinary buttons there instead of behind "More listing options".
+
+### REQ-237
+**Ubiquitous.** THE SYSTEM SHALL show a guild's prestige badge and tier with its level directly under its name on the guild info card, and SHALL list the guild's active wars last, under an "Active wars" heading.
+
+### REQ-233
+**Event-driven.** WHEN a war is declared, begins, ends in victory or defeat, or ends by accepted peace, THE SYSTEM SHALL show each online member of the guilds involved a centred title and subtitle naming the guilds, a one-line "⚔ <MOMENT> »" chat line, and a sound distinct to that moment (two bells and a low impact for a declaration), as in the approved war notification mockup; members who were offline SHALL get the same moment when they next join.
+
+### REQ-234
+**Event-driven.** WHEN two guilds become allies THE SYSTEM SHALL show online members of both guilds an "ALLIANCE FORMED" title, subtitle, chat line and sound in the same style.
+
+### REQ-235
+**Event-driven.** WHEN a player gets a war kill THE SYSTEM SHALL play the killer a war-kill sound (a slowed critical hit followed by a quick level-up chime) with the existing war-kill chat line.
+
+### REQ-232
+**Ubiquitous.** THE SYSTEM SHALL fit every chest menu title inside the menu's title bar, shortening a title that would run past it with "..." while keeping its colors, so long guild names never draw outside the menu.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
@@ -809,3 +827,8 @@ CHR-005 in [the Chronicle specification](plans/2026-10-16-guild-chronicle.md).
 
 ### REQ-240
 **Ubiquitous.** THE SYSTEM SHALL keep every pack-art dialog button label no wider than the button's width minus 4 pixels, so the client never scrolls the label and its artwork side to side.
+
+## War declaration feedback
+
+### REQ-239
+**Unwanted behaviour.** IF a guild can't declare war because of its declaration cooldown, a farming cooldown on either guild, or either guild's war limit, THEN THE SYSTEM SHALL tell the player which one applies and, for cooldowns, how long is left, instead of a generic failure.
