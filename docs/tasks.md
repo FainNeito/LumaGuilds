@@ -1419,3 +1419,17 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 
 - [x] **RECRUIT-BROWSE-CARD** Tag: TDD. REQ-236. Evidence: RecruitmentDialogMenuTest.
 - [x] **INFO-CARD-PRESTIGE** Tag: TDD. REQ-237. Evidence: GuildInfoCardOrderTest.
+
+## War and diplomacy moments (REQ-233 to REQ-235)
+
+- [x] **MOMENTS-WAR** Tag: TDD. REQ-233. Evidence: GuildMomentTest, WarNotificationRecoveryTest.
+- [x] **MOMENTS-ALLIANCE** Tag: TDD. REQ-234. Evidence: GuildMomentTest.
+- [x] **MOMENTS-KILL** Tag: TDD. REQ-235. Evidence: GuildMomentTest.
+
+## Menu titles fit (REQ-232)
+
+- [x] **MENU-TITLE-FIT** Tag: TDD. REQ-232. Evidence: MenuTitleBuilderTest.
+
+## War declaration feedback (REQ-239)
+
+- [x] **WAR-DECLARE-BLOCK-REASON** Tag: TDD. REQ-239. Evidence: WarDeclarationBlockTest.
