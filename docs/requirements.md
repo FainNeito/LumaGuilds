@@ -800,6 +800,9 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-231
 **Ubiquitous.** THE SYSTEM SHALL show each war's own kill target wherever a war's target is displayed, including "Until a guild gets N kills" in the declare menu, the war list and details, and guild info.
 
+### REQ-232
+**Ubiquitous.** THE SYSTEM SHALL fit every chest menu title inside the menu's title bar, shortening a title that would run past it with "..." while keeping its colors, so long guild names never draw outside the menu.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
