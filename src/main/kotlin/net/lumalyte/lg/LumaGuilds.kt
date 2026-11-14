@@ -1079,6 +1079,10 @@ class LumaGuilds : JavaPlugin() {
         // Register war kill tracking listener
         server.pluginManager.registerEvents(net.lumalyte.lg.infrastructure.listeners.WarKillTrackingListener(), this)
         server.pluginManager.registerEvents(
+            net.lumalyte.lg.infrastructure.listeners.GuildAllianceMomentListener(get().get(), get().get(), get().get()),
+            this,
+        )
+        server.pluginManager.registerEvents(
             net.lumalyte.lg.infrastructure.listeners.DiplomacyWarListener(get().get<net.lumalyte.lg.application.services.DiplomacyLog>()),
             this,
         )
