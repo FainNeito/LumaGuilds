@@ -26,9 +26,7 @@ internal class RecruitmentDialogMenu(
             if (controller.screen == RecruitmentScreen.MANAGE) {
                 rawView.copy(
                     items =
-                        rawView.items.filterNot {
-                            it.label in managementToolLabels()
-                        },
+                        rawView.items.filterNot { it.label == controller.lang.raw("recruitment.browse") },
                 )
             } else {
                 rawView
@@ -44,7 +42,7 @@ internal class RecruitmentDialogMenu(
         return present(
             GuildDialogPage(
                 Component.text("${pageTitle(view)} ${controller.page + 1}/$pages"),
-                bodies(entries),
+                bodies(entries) + listOfNotNull(browseCard(rawView)),
                 pageActions(view, pages),
                 GuildDialogAction(
                     guildDialogIconLabel(
@@ -78,15 +76,6 @@ internal class RecruitmentDialogMenu(
                                 ) {
                                     advancedFilters(rawView)
                                 }
-                        RecruitmentScreen.MANAGE ->
-                            listOf(
-                                GuildDialogAction(
-                                    Component.text(controller.lang.raw("dialog_v2.more_listing_options")),
-                                    Component.empty(),
-                                ) {
-                                    managementTools(rawView)
-                                },
-                            )
                         else -> emptyList()
                     },
                 bodyActionGroupSize = if (controller.screen == RecruitmentScreen.FILTER) 3 else null,
@@ -105,28 +94,19 @@ internal class RecruitmentDialogMenu(
             else -> view.title
         }
 
-    private fun managementToolLabels(): Set<String> =
-        setOf(
-            controller.lang.raw("recruitment.setup"),
-            controller.lang.raw("recruitment.settings"),
-            controller.lang.raw("recruitment.browse"),
-            controller.lang.raw("recruitment.mine"),
-        )
-
-    private fun managementTools(view: RecruitmentView) {
-        present(
-            GuildDialogPage(
-                Component.text(controller.lang.raw("dialog_v2.more_listing_options")),
-                emptyList(),
-                view.items.filter { it.label in managementToolLabels() && it.isInteractive() }.map { action(it) },
-                GuildDialogAction(
-                    Component.text(controller.lang.raw("recruitment.dialog.back")),
-                    Component.empty(),
-                    controller.refresh,
-                ),
-                columns = 2,
-                theme = controller.theme(),
-            ),
+    /** REQ-236: a framed, clickable card under the status so players find the board of recruiting guilds. */
+    private fun browseCard(view: RecruitmentView): GuildDialogItem? {
+        if (controller.screen != RecruitmentScreen.MANAGE) return null
+        val browse = view.items.firstOrNull { it.label == controller.lang.raw("recruitment.browse") && it.isInteractive() } ?: return null
+        val title = Component.text(controller.lang.raw("recruitment.browse_card.title"), NamedTextColor.GOLD)
+            .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD, true)
+        val hint = Component.text(controller.lang.raw("recruitment.browse_card.hint"), NamedTextColor.YELLOW)
+        val icon = NexoItemProvider.getItemStackOrFallback(RecruitmentIcons.NAV_MEMBERS) { ItemStack.of(Material.SPYGLASS) }
+        return GuildDialogItem(
+            icon,
+            Component.text().append(title).append(Component.newline()).append(hint).build(),
+            cardLines = listOf(title, hint),
+            onClick = GuildDialogAction(title, hint) { controller.run(browse.action) },
         )
     }
 
