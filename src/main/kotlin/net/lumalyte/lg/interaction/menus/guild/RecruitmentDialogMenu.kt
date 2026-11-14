@@ -100,7 +100,7 @@ internal class RecruitmentDialogMenu(
         if (controller.screen != RecruitmentScreen.MANAGE) return null
         val browse = view.items.firstOrNull { it.label == controller.lang.raw("recruitment.browse") && it.isInteractive() } ?: return null
         return GuildDialogAction(
-            Component.text(controller.lang.raw("recruitment.browse_card.title")),
+            guildDialogIconLabel(Component.text(controller.lang.raw("recruitment.browse_card.title")), browse.icon),
             Component.text(controller.lang.raw("recruitment.browse_card.hint"), NamedTextColor.YELLOW),
         ) { controller.run(browse.action) }
     }
