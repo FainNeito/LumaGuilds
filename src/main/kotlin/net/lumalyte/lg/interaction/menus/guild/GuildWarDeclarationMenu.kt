@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.domain.values.WarDeclarationBlock
 import net.lumalyte.lg.infrastructure.i18n.plain
 import net.lumalyte.lg.utils.inventoryframework.addPane
 
@@ -597,6 +598,14 @@ class GuildWarDeclarationMenu(
                 return
             }
 
+            // REQ-239: say which cooldown or limit is in the way, and for how long.
+            val block = warService.declarationBlock(guild.id, target.id)
+            if (block != null) {
+                player.sendMessage(blockMessage(block, target.name))
+                player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+                return
+            }
+
             // REQ-024: no auto-accept — every declaration goes through the
             // accept/decline flow. REQ-039: escrow is handled by the war service
             // (createWager deducts both guilds on acceptance); the menu no longer
@@ -644,6 +653,22 @@ class GuildWarDeclarationMenu(
             // Menu operation - catching all exceptions to prevent UI failure
             player.sendMessage(lang.msg("menu.war_declaration.feedback.error", "error" to (e.message ?: lang.raw("general.unknown"))))
             player.playSound(player.location, Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f)
+        }
+    }
+
+    private fun blockMessage(block: WarDeclarationBlock, targetName: String): Component {
+        val time = block.remaining(java.time.Instant.now())?.let(WarDeclarationBlock::format) ?: ""
+        return when (block.reason) {
+            WarDeclarationBlock.Reason.DECLARATION_COOLDOWN ->
+                lang.msg("menu.war_declaration.feedback.blocked.declaration_cooldown", "time" to time)
+            WarDeclarationBlock.Reason.OWN_FARMING_COOLDOWN ->
+                lang.msg("menu.war_declaration.feedback.blocked.own_farming_cooldown", "time" to time)
+            WarDeclarationBlock.Reason.TARGET_FARMING_COOLDOWN ->
+                lang.msg("menu.war_declaration.feedback.blocked.target_farming_cooldown", "guild" to targetName, "time" to time)
+            WarDeclarationBlock.Reason.OWN_WAR_LIMIT ->
+                lang.msg("menu.war_declaration.feedback.blocked.own_war_limit")
+            WarDeclarationBlock.Reason.TARGET_WAR_LIMIT ->
+                lang.msg("menu.war_declaration.feedback.blocked.target_war_limit", "guild" to targetName)
         }
     }
 

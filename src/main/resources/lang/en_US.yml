@@ -3867,6 +3867,12 @@ menu:
       duration: '<gray>Duration: <white><days> days'
       must_accept: '<gray>They must accept your declaration for war to begin.'
       send_failed: '<red>❌ Failed to send war declaration!'
+      blocked:
+        declaration_cooldown: '<red>⏳ Your guild declared a war recently. You can declare again in <white><time><red>.'
+        own_farming_cooldown: '<red>⏳ Your guild just won a war. You can declare again in <white><time><red>.'
+        target_farming_cooldown: '<red>⏳ <white><guild><red> just won a war and can''t be challenged for <white><time><red>.'
+        own_war_limit: '<red>Your guild is already in as many wars as it can fight at once.'
+        target_war_limit: '<red><white><guild><red> is already in as many wars as it can fight at once.'
       sent: '<gold>⚔ WAR DECLARATION SENT to <guild>!'
       terms_cancelled: '<gray>War terms input cancelled'
       terms_prompt: '<yellow>Type your war terms in chat (or ''cancel'' to skip):'
@@ -5119,6 +5125,9 @@ menu:
       unknown_player: "Unknown Player"
       member: "Member"
     overview:
+      prestige: '<light_purple>Prestige <tier> <dark_gray>· <gray>Level <white><level>'
+      level_only: '<gray>Level <white><level>'
+      active_wars: '<gray>Active wars'
       mode: "<gray>Mode: <white><mode>"
       emoji: "<gray>Emoji: <white><emoji>"
       tag: "<gray>Tag: <white><tag>"
@@ -7229,6 +7238,31 @@ party:
     return_global: '<gray>Use <white>/pc switch GLOBAL <gray>to return to global chat'
     send_failed: '<red>❌ Failed to send party message!'
 notification:
+  moments:
+    declared:
+      title: '<dark_red><bold>WAR DECLARED'
+      subtitle: '<gold><declarer> <white>has declared war on <gold><defender>'
+      chat: '<red>⚔ WAR DECLARED <dark_gray>» <gold><declarer> <white>has declared war on <gold><defender><white>!'
+    begins:
+      title: '<red><bold>WAR BEGINS'
+      subtitle: '<gold><first> <white>and <gold><second>'
+      chat: '<red>⚔ WAR BEGINS <dark_gray>» <white>War between <gold><first> <white>and <gold><second> <white>has begun.'
+    victory:
+      title: '<gold><bold>VICTORY'
+      subtitle: '<white>Your guild defeated <gold><guild>'
+      chat: '<gold>⚔ VICTORY <dark_gray>» <white>Your guild defeated <gold><guild><white>.'
+    defeat:
+      title: '<dark_red><bold>DEFEAT'
+      subtitle: '<gold><guild> <white>defeated your guild'
+      chat: '<red>⚔ DEFEAT <dark_gray>» <gold><guild> <white>defeated your guild.'
+    peace:
+      title: '<green><bold>PEACE AGREED'
+      subtitle: '<white>Peace between <gold><first> <white>and <gold><second>'
+      chat: '<green>☮ PEACE AGREED <dark_gray>» <white>Peace agreement accepted.'
+    alliance:
+      title: '<aqua><bold>ALLIANCE FORMED'
+      subtitle: '<gold><first> <white>and <gold><second> <white>are now allies'
+      chat: '<aqua>❖ ALLIANCE FORMED <dark_gray>» <gold><first> <white>and <gold><second> <white>are now allies.'
   war:
     kill:
       killer: '<gold>⚔ WAR KILL! <gray>You killed <red><victim><gray>!'
@@ -7649,6 +7683,9 @@ recruitment:
   discord_setup: "<yellow>Add a Guild Discord Invite and application instructions in Recruitment Settings before choosing Discord.</yellow>"
   title: Guild Recruitment
   browse: Find a Guild
+  browse_card:
+    title: "Browse Recruiting Guilds"
+    hint: "See every guild recruiting right now"
   mine: My Applications
   search: Search by Name or Interest
   filter: "Guild Mode Filter (Any / Peaceful / Hostile)"
@@ -7748,7 +7785,6 @@ dialog_v2:
   guild_settings: "Guild Settings"
   guild_frame: "Guild frame"
   more_settings: "More guild settings"
-  more_listing_options: "More listing options"
   more_filters: "More filters and preferences"
   filters: "Filters"
   open_recruitment: "Open recruitment"
