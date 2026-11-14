@@ -42,7 +42,7 @@ internal class RecruitmentDialogMenu(
         return present(
             GuildDialogPage(
                 Component.text("${pageTitle(view)} ${controller.page + 1}/$pages"),
-                bodies(entries) + listOfNotNull(browseCard(rawView)),
+                bodies(entries),
                 pageActions(view, pages),
                 GuildDialogAction(
                     guildDialogIconLabel(
@@ -80,6 +80,7 @@ internal class RecruitmentDialogMenu(
                     },
                 bodyActionGroupSize = if (controller.screen == RecruitmentScreen.FILTER) 3 else null,
                 showCategoryInput = false,
+                featureAction = browseAction(rawView),
             ),
         )
     }
@@ -94,20 +95,14 @@ internal class RecruitmentDialogMenu(
             else -> view.title
         }
 
-    /** REQ-236: a framed, clickable card under the status so players find the board of recruiting guilds. */
-    private fun browseCard(view: RecruitmentView): GuildDialogItem? {
+    /** REQ-236: one gold button under the status so players find the board of recruiting guilds. */
+    private fun browseAction(view: RecruitmentView): GuildDialogAction? {
         if (controller.screen != RecruitmentScreen.MANAGE) return null
         val browse = view.items.firstOrNull { it.label == controller.lang.raw("recruitment.browse") && it.isInteractive() } ?: return null
-        val title = Component.text(controller.lang.raw("recruitment.browse_card.title"), NamedTextColor.GOLD)
-            .decoration(net.kyori.adventure.text.format.TextDecoration.BOLD, true)
-        val hint = Component.text(controller.lang.raw("recruitment.browse_card.hint"), NamedTextColor.YELLOW)
-        val icon = NexoItemProvider.getItemStackOrFallback(RecruitmentIcons.NAV_MEMBERS) { ItemStack.of(Material.SPYGLASS) }
-        return GuildDialogItem(
-            icon,
-            Component.text().append(title).append(Component.newline()).append(hint).build(),
-            cardLines = listOf(title, hint),
-            onClick = GuildDialogAction(title, hint) { controller.run(browse.action) },
-        )
+        return GuildDialogAction(
+            Component.text(controller.lang.raw("recruitment.browse_card.title")),
+            Component.text(controller.lang.raw("recruitment.browse_card.hint"), NamedTextColor.YELLOW),
+        ) { controller.run(browse.action) }
     }
 
     private fun advancedFilters(view: RecruitmentView) {

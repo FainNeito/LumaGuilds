@@ -221,17 +221,23 @@ class GuildInfoMenu(
     private fun prestigeLine(): net.kyori.adventure.text.Component? {
         val prestige = GuildInfoPrestige.of(prestigeHistory, guild.id) as? GuildInfoPrestige.Prestiged
             ?: return lang.gui("menu.guild_info.overview.level_only", "level" to guild.level)
+        val line = lang.gui("menu.guild_info.overview.prestige", "tier" to PrestigeNumeral.of(prestige.current), "level" to guild.level)
+        return withBadge(prestige.current, line)
+    }
+
+    /** The tier's prestige badge (the same glyph as the tab list), or null when none is configured. */
+    private fun badge(tier: Int): net.kyori.adventure.text.Component? {
         val badges = runCatching { configService.loadConfig().progression.prestige.badges }.getOrNull()
             ?: net.lumalyte.lg.config.DEFAULT_PRESTIGE_BADGES
-        val badge = net.lumalyte.lg.infrastructure.placeholders.PrestigePlaceholder.badge(prestige.current, badges)
-        val line = lang.gui("menu.guild_info.overview.prestige", "tier" to PrestigeNumeral.of(prestige.current), "level" to guild.level)
-        if (badge.isEmpty()) return line
+        val raw = net.lumalyte.lg.infrastructure.placeholders.PrestigePlaceholder.badge(tier, badges).takeIf { it.isNotEmpty() } ?: return null
         val mm = net.lumalyte.lg.infrastructure.placeholders.PrestigePlaceholder.withFonts(
-            net.lumalyte.lg.utils.ColorCodeUtils.toMiniMessage(badge)) { runCatching { nexoEmojiService.glyphFont(it) }.getOrNull() }
-        return net.kyori.adventure.text.Component.text()
-            .append(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize("<!italic><white>$mm</white> "))
-            .append(line).build()
+            net.lumalyte.lg.utils.ColorCodeUtils.toMiniMessage(raw)) { runCatching { nexoEmojiService.glyphFont(it) }.getOrNull() }
+        return net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize("<!italic><white>$mm</white>")
     }
+
+    /** REQ-237: the badge in front of a prestige line, so tiers line up like the mockup. */
+    private fun withBadge(tier: Int, line: net.kyori.adventure.text.Component): net.kyori.adventure.text.Component =
+        badge(tier)?.let { net.kyori.adventure.text.Component.text().append(it).append(net.kyori.adventure.text.Component.space()).append(line).build() } ?: line
 
     private fun cardFacts(): GuildCardFacts = GuildCardFacts(
         home = guild.homes.homeNames.isNotEmpty(),
@@ -265,14 +271,14 @@ class GuildInfoMenu(
             GuildInfoPrestige.None -> item.lore(lang.gui("menu.guild_info.prestige.none"))
             GuildInfoPrestige.Unavailable -> item.lore(lang.gui("menu.guild_info.prestige.unavailable"))
             is GuildInfoPrestige.Prestiged -> {
-                item.lore(lang.gui("menu.guild_info.prestige.current", "tier" to PrestigeNumeral.of(prestige.current)))
+                item.lore(withBadge(prestige.current, lang.gui("menu.guild_info.prestige.current", "tier" to PrestigeNumeral.of(prestige.current))))
                 prestige.entries.forEach { entry ->
                     val tier = PrestigeNumeral.of(entry.tier)
                     val at = date(entry.appliedAt)
-                    item.lore(
+                    item.lore(withBadge(entry.tier,
                         if (entry.serverFirst) lang.gui("menu.guild_info.prestige.entry_first", "tier" to tier, "date" to at)
                         else lang.gui("menu.guild_info.prestige.entry", "tier" to tier, "date" to at),
-                    )
+                    ))
                 }
             }
         }

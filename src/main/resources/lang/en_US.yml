@@ -7653,7 +7653,7 @@ recruitment:
   title: Guild Recruitment
   browse: Find a Guild
   browse_card:
-    title: "» Browse Recruiting Guilds «"
+    title: "Browse Recruiting Guilds"
     hint: "See every guild recruiting right now"
   mine: My Applications
   search: Search by Name or Interest
