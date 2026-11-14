@@ -800,6 +800,15 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-231
 **Ubiquitous.** THE SYSTEM SHALL show each war's own kill target wherever a war's target is displayed, including "Until a guild gets N kills" in the declare menu, the war list and details, and guild info.
 
+### REQ-233
+**Event-driven.** WHEN a war is declared, begins, ends in victory or defeat, or ends by accepted peace, THE SYSTEM SHALL show each online member of the guilds involved a centred title and subtitle naming the guilds, a one-line "⚔ <MOMENT> »" chat line, and a sound distinct to that moment (two bells and a low impact for a declaration), as in the approved war notification mockup; members who were offline SHALL get the same moment when they next join.
+
+### REQ-234
+**Event-driven.** WHEN two guilds become allies THE SYSTEM SHALL show online members of both guilds an "ALLIANCE FORMED" title, subtitle, chat line and sound in the same style.
+
+### REQ-235
+**Event-driven.** WHEN a player gets a war kill THE SYSTEM SHALL play the killer a war-kill sound (a slowed critical hit followed by a quick level-up chime) with the existing war-kill chat line.
+
 ### REQ-232
 **Ubiquitous.** THE SYSTEM SHALL fit every chest menu title inside the menu's title bar, shortening a title that would run past it with "..." while keeping its colors, so long guild names never draw outside the menu.
 

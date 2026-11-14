@@ -7235,6 +7235,31 @@ party:
     return_global: '<gray>Use <white>/pc switch GLOBAL <gray>to return to global chat'
     send_failed: '<red>❌ Failed to send party message!'
 notification:
+  moments:
+    declared:
+      title: '<dark_red><bold>WAR DECLARED'
+      subtitle: '<gold><declarer> <white>has declared war on <gold><defender>'
+      chat: '<red>⚔ WAR DECLARED <dark_gray>» <gold><declarer> <white>has declared war on <gold><defender><white>!'
+    begins:
+      title: '<red><bold>WAR BEGINS'
+      subtitle: '<gold><first> <white>and <gold><second>'
+      chat: '<red>⚔ WAR BEGINS <dark_gray>» <white>War between <gold><first> <white>and <gold><second> <white>has begun.'
+    victory:
+      title: '<gold><bold>VICTORY'
+      subtitle: '<white>Your guild defeated <gold><guild>'
+      chat: '<gold>⚔ VICTORY <dark_gray>» <white>Your guild defeated <gold><guild><white>.'
+    defeat:
+      title: '<dark_red><bold>DEFEAT'
+      subtitle: '<gold><guild> <white>defeated your guild'
+      chat: '<red>⚔ DEFEAT <dark_gray>» <gold><guild> <white>defeated your guild.'
+    peace:
+      title: '<green><bold>PEACE AGREED'
+      subtitle: '<white>Peace between <gold><first> <white>and <gold><second>'
+      chat: '<green>☮ PEACE AGREED <dark_gray>» <white>Peace agreement accepted.'
+    alliance:
+      title: '<aqua><bold>ALLIANCE FORMED'
+      subtitle: '<gold><first> <white>and <gold><second> <white>are now allies'
+      chat: '<aqua>❖ ALLIANCE FORMED <dark_gray>» <gold><first> <white>and <gold><second> <white>are now allies.'
   war:
     kill:
       killer: '<gold>⚔ WAR KILL! <gray>You killed <red><victim><gray>!'
