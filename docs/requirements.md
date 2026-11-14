@@ -823,6 +823,11 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
 CHR-005 in [the Chronicle specification](plans/2026-10-16-guild-chronicle.md).
 
+## Guild history layout
+
+### REQ-238
+**Event-driven.** WHEN a player runs `/guild history <player>`, THE SYSTEM SHALL show the player's name, the number of guilds joined, and one numbered line per guild with its name, join date and status, framed by rule lines instead of box-drawing characters.
+
 ## Steady dialog buttons
 
 ### REQ-240

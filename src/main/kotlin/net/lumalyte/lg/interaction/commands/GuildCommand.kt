@@ -1124,12 +1124,17 @@ class GuildCommand : BaseCommand(), KoinComponent {
             return
         }
 
-        val formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.ENGLISH)
             .withZone(java.time.ZoneId.systemDefault())
 
-        player.sendMessage(lang.msg("command.migrated.guild.history.guild_history", "display_name" to displayName))
-        player.sendMessage(lang.msg("command.migrated.guild.history.total_guilds_joined", "size" to history.size))
-        player.sendMessage(lang.msg("command.common.blank_line"))
+        player.sendMessage(lang.msg("command.migrated.guild.history.guild_history"))
+        player.sendMessage(
+            lang.msg(
+                "command.migrated.guild.history.total_guilds_joined",
+                "display_name" to displayName,
+                "size" to history.size,
+            ),
+        )
 
         history.forEachIndexed { index, entry ->
             val guildName = guildService.getGuild(entry.guildId)?.name
@@ -1158,7 +1163,7 @@ class GuildCommand : BaseCommand(), KoinComponent {
             player.sendMessage(row)
         }
 
-        player.sendMessage(lang.msg("command.migrated.guild.history.blank_line_2", "length" to "═".repeat(20 + displayName.length)))
+        player.sendMessage(lang.msg("command.migrated.guild.history.footer"))
     }
 
     @Subcommand("chatsettings")

@@ -1415,6 +1415,10 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **WAR-KILL-TARGET** Tag: TDD. REQ-230. Evidence: WarKillTargetsTest, WarRestartRecoveryTest.
 - [x] **WAR-KILL-DISPLAY** Tag: TDD. REQ-231. Evidence: WarKillTargetsTest.
 
+## Neater guild history (REQ-238)
+
+- [x] **GUILD-HISTORY-LAYOUT** Tag: TDD. REQ-238. Evidence: GuildHistoryStyleTest.
+
 ## Steady dialog buttons (REQ-240)
 
 - [x] **DIALOG-BUTTON-NO-SCROLL** Tag: TDD. REQ-240. Evidence: GuildDialogButtonsTest.
