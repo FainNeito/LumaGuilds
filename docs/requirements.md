@@ -827,3 +827,8 @@ CHR-005 in [the Chronicle specification](plans/2026-10-16-guild-chronicle.md).
 
 ### REQ-239
 **Unwanted behaviour.** IF a guild can't declare war because of its declaration cooldown, a farming cooldown on either guild, or either guild's war limit, THEN THE SYSTEM SHALL tell the player which one applies and, for cooldowns, how long is left, instead of a generic failure.
+
+## Steady dialog buttons
+
+### REQ-240
+**Ubiquitous.** THE SYSTEM SHALL keep every pack-art dialog button label no wider than the button's width minus 4 pixels, so the client never scrolls the label and its artwork side to side.

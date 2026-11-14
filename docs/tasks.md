@@ -1433,3 +1433,7 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## War declaration feedback (REQ-239)
 
 - [x] **WAR-DECLARE-BLOCK-REASON** Tag: TDD. REQ-239. Evidence: WarDeclarationBlockTest.
+
+## Steady dialog buttons (REQ-240)
+
+- [x] **DIALOG-BUTTON-NO-SCROLL** Tag: TDD. REQ-240. Evidence: GuildDialogButtonsTest.
