@@ -33,9 +33,10 @@ internal class GuildInfoPrestigeMenuTest : GuildRankMenuFixture() {
         GuildInfoMenu(MenuNavigator(player), player, guild).open()
         val lore = checkNotNull(player.openInventory.topInventory.getItem(5)?.lore())
             .map(PlainTextComponentSerializer.plainText()::serialize)
-        assertEquals("ᴄᴜʀʀᴇɴᴛ: ᴘʀᴇꜱᴛɪɢᴇ II", lore[0])
-        assertEquals("ᴘʀᴇꜱᴛɪɢᴇ I · 2026-11-01", lore[1])
-        assertEquals("ᴘʀᴇꜱᴛɪɢᴇ II · 2026-11-08 ✦ ꜰɪʀꜱᴛ ᴏɴ ᴛʜᴇ ꜱᴇʀᴠᴇʀ", lore[2])
+        // REQ-237: each line leads with that tier's badge glyph.
+        assertTrue(lore[0].endsWith("ᴄᴜʀʀᴇɴᴛ: ᴘʀᴇꜱᴛɪɢᴇ II") && lore[0].startsWith("✦"), lore[0])
+        assertTrue(lore[1].endsWith(" ᴘʀᴇꜱᴛɪɢᴇ I · 2026-11-01") && lore[1].startsWith("✦"), lore[1])
+        assertTrue(lore[2].endsWith("ᴘʀᴇꜱᴛɪɢᴇ II · 2026-11-08 ✦ ꜰɪʀꜱᴛ ᴏɴ ᴛʜᴇ ꜱᴇʀᴠᴇʀ"), lore[2])
     }
 
     @Test
