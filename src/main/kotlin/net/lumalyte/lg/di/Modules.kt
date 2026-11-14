@@ -963,9 +963,11 @@ fun progressionModule() = module {
     }
     single<net.lumalyte.lg.application.services.WarNotificationService> {
         net.lumalyte.lg.infrastructure.services.WarNotificationServiceBukkit(
-            get<LumaGuilds>(), get(), get(), get(), get(), get(), get()
+            get<LumaGuilds>(), get(), get(), get(), get(), get(), get(),
+            moments = get(),
         )
     }
+    single { net.lumalyte.lg.infrastructure.services.GuildMomentPresenter(get<LumaGuilds>(), get()) }
     single<net.lumalyte.lg.application.services.GuildLoginNotificationService> {
         net.lumalyte.lg.infrastructure.services.GuildLoginNotificationServiceBukkit(
             get(), get(), get(), get(),
