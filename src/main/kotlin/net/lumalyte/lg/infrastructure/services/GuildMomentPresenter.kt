@@ -28,6 +28,10 @@ class GuildMomentPresenter(private val plugin: Plugin, private val lang: LangSer
             val sound = net.kyori.adventure.sound.Sound.sound(Key.key(cue.sound), net.kyori.adventure.sound.Sound.Source.MASTER, cue.volume, cue.pitch)
             if (cue.delayTicks <= 0) player.playSound(sound)
             else plugin.server.scheduler.runTaskLater(plugin, Runnable { if (player.isOnline) player.playSound(sound) }, cue.delayTicks)
+            cue.stopAfterTicks?.let { after ->
+                val stop = net.kyori.adventure.sound.SoundStop.named(Key.key(cue.sound))
+                plugin.server.scheduler.runTaskLater(plugin, Runnable { if (player.isOnline) player.stopSound(stop) }, cue.delayTicks + after)
+            }
         }
     }
 

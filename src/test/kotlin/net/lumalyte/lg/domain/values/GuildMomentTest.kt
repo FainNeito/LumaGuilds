@@ -8,11 +8,25 @@ import kotlin.test.assertTrue
 
 /** REQ-233 to REQ-235: each moment has its own sound, matching the approved mockup. */
 internal class GuildMomentTest {
-    @Test fun `every moment has a sound and the big moments sound different`() {
+    @Test fun `every moment has a sound and each mockup moment sounds different`() {
         GuildMoment.entries.forEach { assertTrue(it.cues.isNotEmpty(), "$it has no sound") }
-        val signatures = listOf(GuildMoment.DECLARED, GuildMoment.BEGINS, GuildMoment.VICTORY, GuildMoment.DEFEAT,
-            GuildMoment.PEACE, GuildMoment.ALLIANCE).map { m -> m.cues.map { it.sound } }
+        val signatures = listOf(GuildMoment.DECLARED, GuildMoment.VICTORY, GuildMoment.DEFEAT,
+            GuildMoment.PEACE, GuildMoment.ALLIANCE).map { m -> m.cues.map { it.sound to it.pitch } }
         assertEquals(signatures.size, signatures.distinct().size, "Moments must not share the same sound")
+        // The mockup plays the same cue for a declaration and the war starting.
+        assertEquals(GuildMoment.DECLARED.cues, GuildMoment.BEGINS.cues)
+    }
+
+    @Test fun `cues follow the mockup recipe`() {
+        // war-redesign.js: impact .13 @.7, bell .51 @.85, bell .42 @.8 after 200 ms
+        assertEquals(listOf("entity.wither.spawn", "block.bell.use", "block.bell.use"), GuildMoment.DECLARED.cues.map { it.sound })
+        // victory: triumph, reward (harp D then A), amethyst chime @1.15 after 1050 ms
+        assertEquals("ui.toast.challenge_complete", GuildMoment.VICTORY.cues.first().sound)
+        assertTrue(GuildMoment.VICTORY.cues.any { it.sound == "block.amethyst_block.chime" && it.delayTicks == 21L })
+        assertEquals(listOf("entity.wither.spawn", "block.bell.use"), GuildMoment.DEFEAT.cues.map { it.sound })
+        assertEquals(listOf("block.note_block.harp", "block.note_block.harp", "block.amethyst_block.chime"), GuildMoment.PEACE.cues.map { it.sound })
+        // the low impact is cut short as the mockup fades it out
+        assertTrue(GuildMoment.DECLARED.cues.first().stopAfterTicks in 26L..28L)
     }
 
     @Test fun `a declaration rings two bells then lands a low impact`() {
