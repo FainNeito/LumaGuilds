@@ -75,6 +75,19 @@ class ProgressionServiceBukkitAwardTest {
         verify(exactly = 1) { progression.refreshGuildProgression(guildId) }
     }
 
+    /** REQ-229: callers can tell a first payout from a repeated one. */
+    @Test
+    fun systemAwardReportsPaidNowThenAlreadyPaid() {
+        val awards = RecordingRepository()
+        val service = serviceWith(awards, mockk<ProgressionRepository>(relaxed = true))
+        val guildId = UUID.randomUUID()
+        assertEquals(net.lumalyte.lg.domain.values.SystemAward.PAID_NOW,
+            service.awardSystemExperienceOnce(guildId, 500, ExperienceSource.GUILD_ADVANCEMENT, UUID.randomUUID()))
+        awards.duplicate = true
+        assertEquals(net.lumalyte.lg.domain.values.SystemAward.ALREADY_PAID,
+            service.awardSystemExperienceOnce(guildId, 500, ExperienceSource.GUILD_ADVANCEMENT, UUID.randomUUID()))
+    }
+
     /** REQ-227: advancement XP goes through the once-only ledger under its own source and payout ID. */
     @Test
     fun advancementXpUsesItsOwnSourceAndPayoutId() {

@@ -28,8 +28,11 @@ internal class GuildAchievementRuntime(
      * Pays guild XP at most once per payout ID (REQ-227). Returns true when paid now or already paid;
      * false leaves the payout to be retried on a later check.
      */
-    private val guildXp: (guildId: UUID, amount: Int, payoutId: UUID) -> Boolean = { _, _, _ -> true },
+    private val guildXp: (guildId: UUID, amount: Int, payoutId: UUID) -> net.lumalyte.lg.domain.values.SystemAward =
+        { _, _, _ -> net.lumalyte.lg.domain.values.SystemAward.PAID_NOW },
 ) {
+    /** True while a member is being caught up on join, so reward-free completions stay private (REQ-229). */
+    private var joining = false
     /** Guild-wide payouts confirmed this run, so the ledger is not asked again every minute. */
     private val paidGuildXp = mutableSetOf<UUID>()
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
@@ -54,12 +57,13 @@ internal class GuildAchievementRuntime(
                 if (guild != null) {
                     refreshStallOwnership(players.first(), guild)
                     val totals = totals(guild)
-                    payStanding(guild, totals)
                     players.forEach { player ->
                         signal(player, "ROOT")
                         signalTotals(player, totals)
                         read(player)?.let { projection.project(player, it) }
                     }
+                    // After members are signalled, so a goal reached this minute is announced by its first completer.
+                    payStanding(guild, totals)
                 }
             }
         }, 100L, 1200L)
@@ -83,15 +87,21 @@ internal class GuildAchievementRuntime(
 
     fun initialize(player: Player) {
         val guild = guild(player.uniqueId) ?: return
-        read(player)?.let { record ->
-            val pending = engine.pending(record)
-            if (pending.completed.isNotEmpty()) deliver(player, record, pending)
+        joining = true
+        try {
+            read(player)?.let { record ->
+                val pending = engine.pending(record)
+                if (pending.completed.isNotEmpty()) deliver(player, record, pending)
+            }
+            signal(player, "ROOT")
+            val totals = totals(guild)
+            // Pay what the guild already qualifies for first, so this member's catch-up reads as earned earlier.
+            payStanding(guild, totals)
+            signalTotals(player, totals)
+            read(player)?.let { projection.project(player, it) }
+        } finally {
+            joining = false
         }
-        signal(player, "ROOT")
-        val totals = totals(guild)
-        signalTotals(player, totals)
-        payStanding(guild, totals)
-        read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
     }
 
@@ -163,10 +173,11 @@ internal class GuildAchievementRuntime(
             // Claimed IDs and experience are saved together in player.dat; no guild XP or bank calls here.
             write(player, change.record)
             if (xp > 0) player.giveExp(xp)
-            guild(player.uniqueId)?.let { guildId -> change.completed.forEach { payGuild(guildId, it) } }
+            val guildId = guild(player.uniqueId)
+            val payouts = change.completed.associateWith { node -> guildId?.let { payGuild(it, node) } }
             if (change.completed.isNotEmpty()) flush(player)
             if (change.completed.isNotEmpty()) projection.project(player, change.record)
-            change.completed.forEach { announce(player, it) }
+            change.completed.forEach { announce(player, it, broadcasts(payouts[it], joining)) }
         } catch (error: Exception) {
             // Only a verified unchanged XP outcome is retryable. Ambiguous outcomes retain claimed IDs.
             if (Triple(player.totalExperience, player.level, player.exp) == oldXp) {
@@ -181,10 +192,12 @@ internal class GuildAchievementRuntime(
         }
     }
 
-    private fun announce(player: Player, node: GuildAchievement) {
-        projection.celebrate(player, node.id)
+    /** [public] celebrates to the server (toast, chat, Discord); otherwise only this member is told. */
+    private fun announce(player: Player, node: GuildAchievement, public: Boolean) {
+        if (public) projection.celebrate(player, node.id)
         player.sendMessage(net.kyori.adventure.text.Component.text(
-            "Guild achievement: ${node.title}", net.kyori.adventure.text.format.NamedTextColor.GOLD,
+            if (public) "Guild achievement: ${node.title}" else "Guild achievement: ${node.title} (your guild earned this earlier)",
+            net.kyori.adventure.text.format.NamedTextColor.GOLD,
         ))
         node.messages.forEach {
             player.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(it))
@@ -224,14 +237,16 @@ internal class GuildAchievementRuntime(
     }
 
     /** Each guild is paid once per advancement; the XP ledger rejects a repeated payout ID. */
-    private fun payGuild(guildId: UUID, node: GuildAchievement) {
-        if (node.guildXp <= 0) return
+    /** Null when [node] pays no guild XP, so there is no ledger entry to tell a first from a repeat. */
+    private fun payGuild(guildId: UUID, node: GuildAchievement): net.lumalyte.lg.domain.values.SystemAward? {
+        if (node.guildXp <= 0) return null
         val id = payoutId(guildId, node.id)
-        if (id in paidGuildXp) return
-        val paid = runCatching { guildXp(guildId, node.guildXp, id) }
+        if (id in paidGuildXp) return net.lumalyte.lg.domain.values.SystemAward.ALREADY_PAID
+        val result = runCatching { guildXp(guildId, node.guildXp, id) }
             .onFailure { plugin.logger.warning("Guild XP for advancement ${node.id} will be retried: ${it.javaClass.simpleName}") }
-            .getOrDefault(false)
-        if (paid) paidGuildXp += id
+            .getOrDefault(net.lumalyte.lg.domain.values.SystemAward.FAILED)
+        if (result != net.lumalyte.lg.domain.values.SystemAward.FAILED) paidGuildXp += id
+        return result
     }
 
     /** REQ-228: guild-wide goals pay the guild once it qualifies, even if members completed them earlier. */
@@ -288,6 +303,13 @@ internal class GuildAchievementRuntime(
 
     companion object {
         /** Stable per guild and advancement, so every member's completion maps to one ledger entry. */
+        /** REQ-229: the guild's first completion is public; catch-ups and repeats are private. */
+        fun broadcasts(payout: net.lumalyte.lg.domain.values.SystemAward?, joining: Boolean): Boolean = when (payout) {
+            net.lumalyte.lg.domain.values.SystemAward.PAID_NOW -> true
+            net.lumalyte.lg.domain.values.SystemAward.ALREADY_PAID -> false
+            else -> !joining
+        }
+
         fun payoutId(guildId: UUID, nodeId: String): UUID =
             UUID.nameUUIDFromBytes("lumaguilds:advancement-xp:$guildId:$nodeId".toByteArray(Charsets.UTF_8))
 

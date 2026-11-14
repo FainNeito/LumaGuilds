@@ -114,12 +114,20 @@ class ProgressionServiceBukkit(
         experience: Int,
         source: ExperienceSource,
         transactionId: UUID,
-    ): Boolean {
+    ): Boolean = awardSystemExperienceOnce(guildId, experience, source, transactionId) !=
+        net.lumalyte.lg.domain.values.SystemAward.FAILED
+
+    override fun awardSystemExperienceOnce(
+        guildId: UUID,
+        experience: Int,
+        source: ExperienceSource,
+        transactionId: UUID,
+    ): net.lumalyte.lg.domain.values.SystemAward {
         require(source == ExperienceSource.WEEKLY_ACTIVITY || source == ExperienceSource.ADMIN_BONUS ||
             source == ExperienceSource.GUILD_ADVANCEMENT) {
             "Only trusted system sources may bypass caps"
         }
-        if (experience <= 0) return true
+        if (experience <= 0) return net.lumalyte.lg.domain.values.SystemAward.ALREADY_PAID
         val policy = ExperiencePolicy(source, source.defaultPool, 1, 0, CapPeriod.UNLIMITED, true)
         return when (val result = permanentExperienceService.award(
             ExperienceAwardRequest(
@@ -134,13 +142,13 @@ class ProgressionServiceBukkit(
         )) {
             is ExperienceAwardResult.Awarded -> {
                 publishAwardedExperience(guildId, result.leveledUpTo)
-                true
+                net.lumalyte.lg.domain.values.SystemAward.PAID_NOW
             }
             ExperienceAwardResult.Duplicate -> {
                 publishAwardedExperience(guildId, null)
-                true
+                net.lumalyte.lg.domain.values.SystemAward.ALREADY_PAID
             }
-            is ExperienceAwardResult.NoAllowance, is ExperienceAwardResult.Rejected -> false
+            is ExperienceAwardResult.NoAllowance, is ExperienceAwardResult.Rejected -> net.lumalyte.lg.domain.values.SystemAward.FAILED
         }
     }
 
