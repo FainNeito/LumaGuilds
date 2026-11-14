@@ -183,12 +183,11 @@ internal class GuildMenuDialog : GuildDialogPresenter {
             )
         }
         val feature = page.featureAction?.let { action ->
-            val text = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(action.label)
-            val art = if (GuildDialogFeatureButton.available(page.theme)) GuildDialogFeatureButton.label(text) else null
-            val content = clickableGuildDialogCard(art ?: GuildDialogFeatureButton.fallback(text), action) {
+            val art = if (GuildDialogFeatureButton.available(page.theme)) GuildDialogFeatureButton.label(action.label) else null
+            val content = clickableGuildDialogCard(art ?: GuildDialogFeatureButton.fallback(action.label), action) {
                 ClickEvent.callback({ audience -> callbacks.submit(audience, it.action) }, callbackOptions())
             }
-            DialogBody.plainMessage(content, GuildDialogFeatureButton.WIDTH)
+            DialogBody.plainMessage(content, GuildDialogFeatureButton.BODY_WIDTH)
         }
         val bodies = links + diagram + page.items.flatMap { itemBodies(it, callbacks, skin) } + listOfNotNull(feature)
         val frame = if (page.framedHeading) skin?.referenceFrame(page.title, page.subtitle) else null
