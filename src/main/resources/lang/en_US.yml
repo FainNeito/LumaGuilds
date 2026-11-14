@@ -7912,7 +7912,18 @@ achievements:
 
 war_duration:
   objective: "<gold>Duration: Until the kill target is reached"
-  selection_help: "<gray>Click to cycle available durations or the kill target option."
+  current_kills: "<gray>Current: <white>Until a guild gets <kills> kills"
+  declare_kills: "<gray>Duration: <white>Until a guild gets <kills> kills"
+  option: "<dark_gray>• <gray><label>"
+  option_selected: "<white>▶ <label>"
+  option_days: "<days> days (<name>)"
+  until_kills: "Until a guild gets <kills> kills"
+  names:
+    quick: "Quick skirmish"
+    standard: "Standard war"
+    extended: "Extended campaign"
+    season: "Season-long war"
+  bedrock_until_kills: "Until a guild gets <kills> kills"
   bedrock_objective: "Until the kill target is reached"
   bedrock_hours: "<hours> hours"
 discord:

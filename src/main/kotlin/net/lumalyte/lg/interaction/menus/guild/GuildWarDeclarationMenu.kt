@@ -1,5 +1,6 @@
 package net.lumalyte.lg.interaction.menus.guild
 
+import net.lumalyte.lg.infrastructure.i18n.plain
 import net.lumalyte.lg.utils.inventoryframework.addPane
 
 import net.lumalyte.lg.utils.NexoItemProvider
@@ -240,12 +241,23 @@ class GuildWarDeclarationMenu(
     }
 
     private fun addDurationSelection(pane: StaticPane) {
+        val kills = killTarget()
         val durationItem = ItemStack.of(Material.CLOCK)
             .name(lang.gui("menu.war_declaration.item.duration.name"))
-            .lore(if (objectiveBased) lang.gui("war_duration.objective") else lang.gui("menu.war_declaration.item.duration.lore.current", "days" to selectedDuration.toDays()))
+            .lore(if (objectiveBased) lang.gui("war_duration.current_kills", "kills" to kills)
+                else lang.gui("menu.war_declaration.item.duration.lore.current", "days" to selectedDuration.toDays()))
             .lore(lang.gui("menu.common.blank"))
             .lore(lang.gui("menu.war_declaration.item.duration.lore.available"))
-            .lore(lang.gui("war_duration.selection_help"))
+        // Every choice is listed with the current one marked (approved #40 mockup).
+        offeredDurations().forEach { option ->
+            val label = lang.plain("war_duration.option_days", "days" to option.toDays(), "name" to durationName(option.toDays()))
+            durationItem.lore(if (!objectiveBased && option == selectedDuration) lang.gui("war_duration.option_selected", "label" to label)
+                else lang.gui("war_duration.option", "label" to label))
+        }
+        val killLabel = lang.plain("war_duration.until_kills", "kills" to kills)
+        durationItem.lore(if (objectiveBased) lang.gui("war_duration.option_selected", "label" to killLabel)
+            else lang.gui("war_duration.option", "label" to killLabel))
+        durationItem
             .lore(lang.gui("menu.common.blank"))
             .lore(lang.gui("menu.war_declaration.item.duration.lore.action"))
 
@@ -516,7 +528,7 @@ class GuildWarDeclarationMenu(
             ItemStack.of(Material.DIAMOND_SWORD)
                 .name(lang.gui("menu.war_declaration.item.declare.name"))
                 .lore(lang.gui("menu.war_declaration.item.declare.lore.target", "guild" to target.name))
-                .lore(if (objectiveBased) lang.gui("war_duration.objective") else lang.gui("menu.war_declaration.item.declare.lore.duration", "days" to selectedDuration.toDays()))
+                .lore(if (objectiveBased) lang.gui("war_duration.declare_kills", "kills" to killTarget()) else lang.gui("menu.war_declaration.item.declare.lore.duration", "days" to selectedDuration.toDays()))
                 .lore(lang.gui("menu.war_declaration.item.declare.lore.objectives", "count" to selectedObjectives.size))
                 .lore(if (wagerAmount > 0) {
                     lang.gui("menu.war_declaration.item.declare.lore.wager", "amount" to wagerAmount)
@@ -641,10 +653,24 @@ class GuildWarDeclarationMenu(
         open() // Refresh to show configuration
     }
 
+    private fun killTarget(): Int = configService.loadConfig().combat.warKillWinTarget
+
+    /** Lengths up to the server cap, so prod offers 3 and 7 days until `war_duration_hours` is raised. */
+    private fun offeredDurations(): List<Duration> {
+        val maxHours = configService.loadConfig().combat.warDurationHours.coerceAtLeast(1)
+        return listOf(3L, 7L, 14L, 30L).map(Duration::ofDays).filter { it <= Duration.ofHours(maxHours.toLong()) }
+    }
+
+    private fun durationName(days: Long): String = when (days) {
+        3L -> lang.plain("war_duration.names.quick")
+        7L -> lang.plain("war_duration.names.standard")
+        14L -> lang.plain("war_duration.names.extended")
+        else -> lang.plain("war_duration.names.season")
+    }
+
     private fun cycleDuration() {
         val maxHours = configService.loadConfig().combat.warDurationHours.coerceAtLeast(1)
-        val durations = listOf(3L, 7L, 14L, 30L).map(Duration::ofDays)
-            .filter { it <= Duration.ofHours(maxHours.toLong()) }
+        val durations = offeredDurations()
         if (objectiveBased) {
             objectiveBased = false
             selectedDuration = durations.firstOrNull() ?: Duration.ofHours(maxHours.toLong())
