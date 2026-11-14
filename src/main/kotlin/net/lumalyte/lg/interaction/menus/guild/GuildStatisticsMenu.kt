@@ -212,7 +212,9 @@ class GuildStatisticsMenu(private val menuNavigator: MenuNavigator, private val 
                 val remainingTime = war.remainingDuration
 
                 activeWarsItem.lore(lang.gui("menu.statistics.detail.wars.active.opponent", "guild" to enemyName, "status" to status))
-                if (remainingTime != null) {
+                if (war.objectiveBased) {
+                    activeWarsItem.lore(lang.gui("war_duration.objective"))
+                } else if (remainingTime != null) {
                     val days = remainingTime.toDays()
                     val hours = remainingTime.toHours() % 24
                     activeWarsItem.lore(lang.gui("menu.statistics.detail.wars.active.remaining", "days" to days, "hours" to hours))

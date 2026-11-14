@@ -472,10 +472,11 @@ combat:
   # War System
   war_declaration_cooldown_hours: 24     # Cooldown between war declarations
   war_farming_cooldown_hours: 1          # Cooldown to prevent war farming after winning
-  war_duration_hours: 168                # 1 week war duration
+  war_duration_hours: 720                # Maximum timed war duration: 30 days
   war_end_grace_period_minutes: 30       # Grace period after war ends
   max_simultaneous_wars: 3               # Max wars a guild can be in
-  war_kill_win_target: 25                 # Opposing-guild kills required to automatically win
+  war_kill_win_target: 25                 # Kills that win a war with no kill objective
+  war_kill_target_max: 50                 # Largest kill objective a guild may choose (5, 10, 25, 50, 100)
 
   # Experience and Rewards
   kill_experience: 10           # XP gained for kills

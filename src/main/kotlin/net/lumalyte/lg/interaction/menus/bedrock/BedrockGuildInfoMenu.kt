@@ -219,8 +219,8 @@ class BedrockGuildInfoMenu(
     private fun createWarSection(): String {
         val activeWars = warService.getWarsForGuild(guild.id).filter { it.isActive }
         if (activeWars.isEmpty()) return lang.bedrock("bedrock.info.wars.none")
-        val target = warService.getWarKillWinTarget()
         return activeWars.joinToString("\n") { war ->
+            val target = warService.killTargetFor(war)
             val opponentId = if (war.declaringGuildId == guild.id) war.defendingGuildId else war.declaringGuildId
             val opponent = guildService.getGuild(opponentId)?.name ?: opponentId.toString().take(8)
             val stats = warService.getWarStats(war.id)

@@ -53,7 +53,7 @@ class WarNotificationServiceBukkit(
             ownGuild = defending,
             opponent = declaring,
             recipientIds = recipients?.declarationReceived,
-            durationSeconds = declaration.proposedDuration.seconds,
+            durationSeconds = if (declaration.objectiveBased) 0 else declaration.proposedDuration.seconds,
             objectiveCount = declaration.objectives.size,
             objectiveDescription = objective,
             wagerAmount = declaration.wagerAmount,
@@ -67,7 +67,7 @@ class WarNotificationServiceBukkit(
             ownGuild = declaring,
             opponent = defending,
             recipientIds = recipients?.declarationSent,
-            durationSeconds = declaration.proposedDuration.seconds,
+            durationSeconds = if (declaration.objectiveBased) 0 else declaration.proposedDuration.seconds,
             objectiveCount = declaration.objectives.size,
             objectiveDescription = objective,
             wagerAmount = declaration.wagerAmount,
@@ -92,7 +92,7 @@ class WarNotificationServiceBukkit(
             ownGuild = declaring,
             opponent = defending,
             recipientIds = recipients?.acceptanceDeclaring,
-            durationSeconds = war.duration.seconds,
+            durationSeconds = if (war.objectiveBased) 0 else war.duration.seconds,
             objectiveCount = war.objectives.size,
             objectiveDescription = objective,
             createdAt = createdAt,
@@ -103,7 +103,7 @@ class WarNotificationServiceBukkit(
             ownGuild = defending,
             opponent = declaring,
             recipientIds = recipients?.acceptanceDefending,
-            durationSeconds = war.duration.seconds,
+            durationSeconds = if (war.objectiveBased) 0 else war.duration.seconds,
             objectiveCount = war.objectives.size,
             objectiveDescription = objective,
             createdAt = createdAt,
@@ -307,7 +307,7 @@ class WarNotificationServiceBukkit(
                     ownGuildId = declaration.defendingGuildId,
                     opponentGuildId = declaration.declaringGuildId,
                     recipientIds = record.notificationRecipients.declarationReceived,
-                    durationSeconds = declaration.proposedDuration.seconds,
+                    durationSeconds = if (declaration.objectiveBased) 0 else declaration.proposedDuration.seconds,
                     objectiveCount = declaration.objectives.size,
                     objectiveDescription = objective,
                     wagerAmount = declaration.wagerAmount,
@@ -321,7 +321,7 @@ class WarNotificationServiceBukkit(
                     ownGuildId = declaration.declaringGuildId,
                     opponentGuildId = declaration.defendingGuildId,
                     recipientIds = record.notificationRecipients.declarationSent,
-                    durationSeconds = declaration.proposedDuration.seconds,
+                    durationSeconds = if (declaration.objectiveBased) 0 else declaration.proposedDuration.seconds,
                     objectiveCount = declaration.objectives.size,
                     objectiveDescription = objective,
                     wagerAmount = declaration.wagerAmount,
@@ -342,7 +342,7 @@ class WarNotificationServiceBukkit(
                     ownGuildId = war.declaringGuildId,
                     opponentGuildId = war.defendingGuildId,
                     recipientIds = record.notificationRecipients.acceptanceDeclaring,
-                    durationSeconds = war.duration.seconds,
+                    durationSeconds = if (war.objectiveBased) 0 else war.duration.seconds,
                     objectiveCount = war.objectives.size,
                     objectiveDescription = objective,
                     createdAt = startedAt,
@@ -353,7 +353,7 @@ class WarNotificationServiceBukkit(
                     ownGuildId = war.defendingGuildId,
                     opponentGuildId = war.declaringGuildId,
                     recipientIds = record.notificationRecipients.acceptanceDefending,
-                    durationSeconds = war.duration.seconds,
+                    durationSeconds = if (war.objectiveBased) 0 else war.duration.seconds,
                     objectiveCount = war.objectives.size,
                     objectiveDescription = objective,
                     createdAt = startedAt,
@@ -483,7 +483,15 @@ class WarNotificationServiceBukkit(
             )
         )
 
-        if (notification.durationSeconds > 0) {
+        val objectiveBased = if (notification.durationSeconds == 0L) {
+            runCatching {
+                val record = warRepository.get(notification.eventId)
+                record?.war?.objectiveBased ?: record?.declaration?.objectiveBased ?: false
+            }.getOrDefault(false)
+        } else false
+        if (objectiveBased) {
+            player.sendMessage(lang.msg("war_duration.objective"))
+        } else if (notification.durationSeconds > 0) {
             player.sendMessage(
                 lang.msg(
                     "notification.war.lifecycle.chat.duration",

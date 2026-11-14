@@ -221,8 +221,8 @@ class GuildInfoMenu(
         runCatching { Bukkit.getServicesManager().load(GuildShopLookup::class.java) }.getOrNull()
 
     private fun activeWarLines(): List<Component> {
-        val target = warService.getWarKillWinTarget()
         return warService.getWarsForGuild(guild.id).filter { it.isActive }.map { war ->
+            val target = warService.killTargetFor(war)
             val declaring = war.declaringGuildId == guild.id
             val opponentId = if (declaring) war.defendingGuildId else war.declaringGuildId
             val stats = warService.getWarStats(war.id)

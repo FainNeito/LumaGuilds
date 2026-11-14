@@ -794,6 +794,12 @@ Design, decisions and evidence: [the prestige advancements plan](plans/2026-11-0
 ### REQ-229
 **Event-driven.** WHEN a member completes a guild advancement THE SYSTEM SHALL announce it to the server (chat, toast and Discord) only when that completion is the guild's first, which for advancements with a guild XP reward is the completion that pays it; WHEN the guild had already earned it, or a reward-free advancement completes while the member is joining, THE SYSTEM SHALL tell only that member, privately, in chat.
 
+### REQ-230
+**Ubiquitous.** THE SYSTEM SHALL end a war when either guild reaches that war's own kill target: the kill objective the declaring guild chose, or `combat.war_kill_win_target` when the war has no kill objective; guilds SHALL be able to choose kill targets of 5, 10, 25 and 50 (and the configured default) up to `combat.war_kill_target_max`.
+
+### REQ-231
+**Ubiquitous.** THE SYSTEM SHALL show each war's own kill target wherever a war's target is displayed, including "Until a guild gets N kills" in the declare menu, the war list and details, and guild info.
+
 ## Guild Chronicle
 
 The catalog-backed Chronicle and durable guild goal follow CHR-001 through
