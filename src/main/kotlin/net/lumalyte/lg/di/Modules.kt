@@ -445,6 +445,7 @@ fun guildsModule() = module {
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
             allyHomeAccess = get(),
             prestigePerks = getOrNull(),
+            guildBans = get(),
         )
     }
     single<RankService> {
@@ -470,13 +471,47 @@ fun guildsModule() = module {
                     .getOrNull<net.lumalyte.lg.application.services.GuildRolePermissionResolver>()
                     ?.invalidatePlayerCache(playerId)
             },
+            // REQ-190: level-based member capacity.
+            memberCapacity = { get<ConfigService>().loadConfig() },
+            prestigeCount = { guildId ->
+                org.koin.core.context.GlobalContext.get()
+                    .getOrNull<net.lumalyte.lg.application.services.GuildPrestigeStandings>()
+                    ?.standing(guildId)?.tier
+            },
+            capacityFloors = get(),
+            guildBans = get(),
         )
     }
-    single<RelationService> { RelationServiceBukkit(get(), get(), get()) }
+    // REQ-194: guild bans.
+    single<net.lumalyte.lg.application.persistence.GuildBanRepository> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.GuildBanRepositorySQL(get())
+    }
+    single<net.lumalyte.lg.application.services.GuildBanService> {
+        val members = get<MemberService>()
+        val ranks = get<net.lumalyte.lg.application.persistence.RankRepository>()
+        net.lumalyte.lg.application.services.GuildBanServiceImpl(
+            get(), members,
+            rankPriority = { player, guild -> members.getPlayerRankId(player, guild)?.let { ranks.getById(it)?.priority } },
+            removeInvites = { player, guild -> net.lumalyte.lg.infrastructure.services.GuildInvitationManager.removeInvite(player, guild) },
+        )
+    }
+    single<net.lumalyte.lg.application.persistence.MemberCapacityFloors> {
+        // The first start with REQ-190 records every existing guild's member count.
+        net.lumalyte.lg.infrastructure.persistence.guilds.MemberCapacityFloorsSQL(get()).also { it.snapshotOnce() }
+    }
+    // REQ-203: diplomacy history.
+    single<net.lumalyte.lg.application.persistence.DiplomacyHistory> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.DiplomacyHistorySQL(get())
+    }
+    single { net.lumalyte.lg.application.services.DiplomacyLog(get()) }
+    single<RelationService> { RelationServiceBukkit(get(), get(), get(), get()) }
     single<LfgService> { LfgServiceBukkit(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single<GuildBannerService> { GuildBannerServiceBukkit() }
     single<AuditService> { AuditServiceBukkit() }
-    single<NexoEmojiService> { NexoEmojiService(get(), guildCosmetics = get()) }
+    single<NexoEmojiService> {
+        val guilds = get<net.lumalyte.lg.application.persistence.GuildRepository>()
+        NexoEmojiService(get(), get<net.lumalyte.lg.application.services.GuildCosmeticUnlockService>()) { guilds.getById(it) }
+    }
     single<net.lumalyte.lg.application.services.AdminOverrideService> {
         net.lumalyte.lg.infrastructure.services.AdminOverrideServiceImpl()
     }
@@ -547,7 +582,8 @@ fun socialModule() = module {
         net.lumalyte.lg.infrastructure.persistence.guilds.RecruitmentDirectoryRepositorySQL(get(), get())
     }
     single<net.lumalyte.lg.application.services.GuildRecruitmentEligibility> {
-        net.lumalyte.lg.infrastructure.services.GuildRecruitmentEligibilityBukkit(get(), get())
+        val bans = get<net.lumalyte.lg.application.services.GuildBanService>()
+        net.lumalyte.lg.infrastructure.services.GuildRecruitmentEligibilityBukkit(get(), get(), guildBanned = bans::isBanned)
     }
     single {
         val config = get<ConfigService>()
@@ -594,9 +630,7 @@ fun socialModule() = module {
     single<net.lumalyte.lg.interaction.listeners.GuildChatListener> {
         net.lumalyte.lg.interaction.listeners.GuildChatListener()
     }
-    single<net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener> {
-        net.lumalyte.lg.infrastructure.listeners.GuildChannelCreationListener(get(), get())
-    }
+    single { net.lumalyte.lg.application.services.PrivatePartyRetirement(get(), get()) }
     single<net.lumalyte.lg.infrastructure.listeners.GuildDisbandedListener> {
         net.lumalyte.lg.infrastructure.listeners.GuildDisbandedListener(get(), get(), get(), get())
     }
@@ -675,7 +709,10 @@ fun socialModule() = module {
  * Progression module - Combat, kills, wars, and guild progression
  */
 fun progressionModule() = module {
-    single { net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime(get<JavaPlugin>(), get(), get()) }
+    single { net.lumalyte.lg.infrastructure.services.GuildAchievementRuntime(get<JavaPlugin>(), get(), get(),
+        createdAt = { id -> get<net.lumalyte.lg.application.persistence.GuildRepository>().getById(id)?.createdAt },
+        guildXp = { guild, amount, payout -> get<net.lumalyte.lg.application.services.ProgressionService>()
+            .awardSystemExperienceOnce(guild, amount, net.lumalyte.lg.domain.values.ExperienceSource.GUILD_ADVANCEMENT, payout) }) }
     single { net.lumalyte.lg.application.services.GuildActionCoordinator() }
     single { net.lumalyte.lg.domain.rewards.RewardCatalog.chapterTwo() }
     single<net.lumalyte.lg.application.persistence.ChronicleGoalRepository> {
@@ -859,7 +896,14 @@ fun progressionModule() = module {
     }
 
     // Services
-    single<KillService> { KillServiceBukkit(get()) }
+    // REQ-199: kill stats come from the kill log; the old kill tables were never written.
+    single<net.lumalyte.lg.application.persistence.GuildKillLog> {
+        net.lumalyte.lg.infrastructure.persistence.guilds.GuildKillLogSQL(get())
+    }
+    single<KillService> {
+        val members = get<MemberService>()
+        net.lumalyte.lg.infrastructure.services.KillServiceLog(get(), guildOf = { members.getPlayerGuilds(it).singleOrNull() })
+    }
     single<CombatService> { CombatServiceBukkit(get(), get(), get(), get()) }
     single<PlaytimeActivityService> { PlaytimeActivityServiceBukkit() }
     single {

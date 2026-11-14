@@ -152,7 +152,18 @@ guild:
   # Ranks and Members
   max_custom_ranks: 10
   max_rank_name_length: 16
-  max_members_per_guild: 50
+  # Absolute ceiling for any guild, including grandfathered ones.
+  max_members_per_guild: 100
+  # REQ-190: member cap grows with level: base + per_step for every step_levels
+  # levels, up to max. Guilds that have prestiged keep the level 100 cap. Guilds
+  # that existed when this shipped keep at least the member count they had then.
+  # enabled: false goes back to the old flat max_members_per_guild cap.
+  member_capacity:
+    enabled: true
+    base: 10
+    per_step: 5
+    step_levels: 5
+    max: 100
   
   # Home System
   home_teleport_cooldown_seconds: 5
@@ -191,6 +202,21 @@ guild:
   #     MyGuild: lumaguilds.emoji.crown
   #     AwesomeGuild: lumaguilds.emoji.star
   emoji_grants: {}
+
+  # Guild emoji picker. Only these emojis can be picked for a guild, by any
+  # guild and with no emoji permission needed; donor heads and other chat
+  # emojis are left out. Leave the key out to use the 34 Redstone Labs chat
+  # emojis. A guild keeps an emoji that is removed here until it picks another.
+  # guild_only gives a guild its own logo: only that guild sees it, first in
+  # the picker. Pair it with emoji_grants above so its members can use the
+  # logo in chat.
+  # Example:
+  #   emoji_choices:
+  #     allowed: [sheesh, skull, heart]
+  #     guild_only:
+  #       Vibe: vibe_logo
+  emoji_choices:
+    guild_only: {}
 
 # Guild directory / leaderboard browser
 guild_list:
@@ -495,17 +521,10 @@ party:
   min_party_name_length: 1
   default_party_duration_hours: 24
   max_simultaneous_parties_per_guild: 3
-  allow_private_parties: true  # Allow creation of private guild-only parties
 
   # Party Chat
   party_chat_enabled: true
   party_chat_priority: 100
-  use_minimessage: true  # Enable MiniMessage formatting support (allows tags like <gradient>, <rainbow>, <bold>, etc.)
-  party_chat_format: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}"
-  use_simplified_guild_party_format: true  # Use simplified format for guild-internal parties (Guild_Chat, Officer_Chat, etc.)
-  guild_party_chat_format: "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}"  # Simplified format for guild-internal parties - no guild tag/emoji spam
-  party_chat_prefix: "[PARTY]"
-  party_chat_suffix: ""
   chat_input_listener_priority: "HIGHEST"  # HIGHEST, HIGH, NORMAL, LOW, LOWEST
 
   # Party chat auto-routing listener priority (for /pc switch auto-routing)
@@ -686,6 +705,8 @@ progression:
     elder_guardian_kill: { enabled: true, award_xp: 500, cap_xp: 7500, period: WEEKLY, pool: ELDER_GUARDIAN_KILL }
     warden_kill: { enabled: true, award_xp: 600, cap_xp: 6000, period: WEEKLY, pool: WARDEN_KILL }
     weekly_activity: { enabled: true, award_xp: 1, cap_xp: 0, period: UNLIMITED, pool: WEEKLY_ACTIVITY }
+    # Paid once per guild per advancement; amounts live in guild-achievements.json.
+    guild_advancement: { enabled: true, award_xp: 1, cap_xp: 0, period: UNLIMITED, pool: GUILD_ADVANCEMENT }
     admin_bonus: { enabled: true, award_xp: 1, cap_xp: 0, period: UNLIMITED, pool: ADMIN_BONUS }
 
   # Any valid vanilla material/entity identifier may be configured here.

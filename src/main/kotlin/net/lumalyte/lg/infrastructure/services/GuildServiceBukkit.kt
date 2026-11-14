@@ -51,6 +51,8 @@ class GuildServiceBukkit(
     private val prestigePerks: net.lumalyte.lg.application.services.GuildPrestigePerks? = null,
     // Whether a guild owns Allied Waypoints. Null: ask the progression service.
     private val allyHomesUnlocked: ((UUID) -> Boolean)? = null,
+    // REQ-194: a disbanded guild's bans are dropped.
+    private val guildBans: net.lumalyte.lg.application.persistence.GuildBanRepository? = null,
 ) : GuildService, KoinComponent {
     /**
      * Allied homes need the Allied Waypoints reward. The menus always required it;
@@ -195,6 +197,7 @@ class GuildServiceBukkit(
             rankRepository.evictGuild(guildId)
             relationRepository.evictGuild(guildId)
             runCatching { allyHomeAccess?.deleteGuild(guildId) } // REQ-180/182: best effort; rules are inert once the guild is gone
+            runCatching { guildBans?.removeGuild(guildId) } // REQ-194: best effort; bans of a gone guild block nothing
             // Clean up vault chest and hologram if exists
             if (vaultLocation != null && vaultCleanup != null) {
                 // Remove hologram first

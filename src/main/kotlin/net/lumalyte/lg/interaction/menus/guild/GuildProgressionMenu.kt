@@ -460,7 +460,7 @@ class GuildProgressionMenu(
             meta.displayName(lang.gui("chapter_two_rewards.title"))
             meta.lore(listOf(
                 lang.gui("chapter_two_rewards.capacity_bank", "capacity" to benefits.bankCapacity),
-                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to benefits.memberCapacity),
+                lang.gui("chapter_two_rewards.capacity_home_member", "homes" to benefits.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, benefits.memberCapacity)),
                 lang.gui("chapter_two_rewards.multipliers", "cooldown" to benefits.homeCooldownMultiplier, "fee" to benefits.withdrawalFeeMultiplier)))
         } }
         pane.addItem(GuiItem(summary) { it.isCancelled = true }, 4, 5)
@@ -709,6 +709,7 @@ class GuildProgressionMenu(
         ExperienceSource.CLAIM_DESTROYED -> "lg_claim_removed"
         ExperienceSource.WEEKLY_ACTIVITY -> "lg_weekly_activity"
         ExperienceSource.ADMIN_BONUS -> "lg_admin_bonus"
+        ExperienceSource.GUILD_ADVANCEMENT -> "lg_prestige"
     }
 
     private fun sourceToVanillaMaterial(source: ExperienceSource, pool: String): Material = when (pool) {
@@ -754,6 +755,7 @@ class GuildProgressionMenu(
         ExperienceSource.WARDEN_KILL -> Material.ECHO_SHARD
         ExperienceSource.CLAIM_CREATED, ExperienceSource.CLAIM_DESTROYED -> Material.GOLDEN_SHOVEL
         ExperienceSource.WEEKLY_ACTIVITY, ExperienceSource.ADMIN_BONUS -> Material.NETHER_STAR
+        ExperienceSource.GUILD_ADVANCEMENT -> Material.KNOWLEDGE_BOOK
     }
 
     private fun sourceToDisplayName(source: ExperienceSource): Component = when (source) {
@@ -775,6 +777,7 @@ class GuildProgressionMenu(
         ExperienceSource.CLAIM_DESTROYED -> lang.gui("menu.guild_progression.source.names.claim_destroyed")
         ExperienceSource.WEEKLY_ACTIVITY -> lang.gui("menu.guild_progression.source.names.weekly_activity")
         ExperienceSource.ADMIN_BONUS -> lang.gui("menu.guild_progression.source.names.admin_bonus")
+        ExperienceSource.GUILD_ADVANCEMENT -> lang.gui("menu.guild_progression.source.names.guild_advancement")
         else -> Component.text(source.name.lowercase().replace('_', ' '))
     }
 

@@ -31,7 +31,7 @@ internal class GuildInfoPrestigeMenuTest : GuildRankMenuFixture() {
     fun `java info menu lists each prestige with its date and server-first mark`() {
         stubHistory()
         GuildInfoMenu(MenuNavigator(player), player, guild).open()
-        val lore = checkNotNull(player.openInventory.topInventory.getItem(8)?.lore())
+        val lore = checkNotNull(player.openInventory.topInventory.getItem(5)?.lore())
             .map(PlainTextComponentSerializer.plainText()::serialize)
         assertEquals("ᴄᴜʀʀᴇɴᴛ: ᴘʀᴇꜱᴛɪɢᴇ II", lore[0])
         assertEquals("ᴘʀᴇꜱᴛɪɢᴇ I · 2026-11-01", lore[1])

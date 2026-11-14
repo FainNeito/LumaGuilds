@@ -68,6 +68,8 @@ class BedrockGuildInfoMenu(
             createRelationsSection(allies.map { it.guild.name }, enemies.map { it.guild.name }),
             createSectionHeader(lang.bedrock("bedrock.info.header.wars")),
             createWarSection(),
+            createSectionHeader(lang.bedrock("guild_page.card.facts_header")),
+            createFactsSection(),
         ).joinToString("\n\n")
 
         return SimpleForm.builder()
@@ -169,6 +171,23 @@ class BedrockGuildInfoMenu(
                 "tag" to tag,
                 "founded" to foundedDate
             )
+        }
+    }
+
+    /** REQ-195: the same Yes/No lines as the Java guild card. */
+    private fun createFactsSection(): String {
+        val shop = runCatching {
+            org.bukkit.Bukkit.getServicesManager().load(net.lumalyte.lg.api.GuildShopLookup::class.java)?.ownsShop(guild.id)
+        }.getOrNull()
+        val facts = net.lumalyte.lg.domain.values.GuildCardFacts(
+            home = guild.homes.homeNames.isNotEmpty(),
+            banner = guild.banner != null,
+            vault = guild.vaultChestLocation != null && guild.vaultStatus == net.lumalyte.lg.domain.entities.VaultStatus.AVAILABLE,
+            shop = shop,
+        )
+        return facts.lines().joinToString("\n") { (fact, value) ->
+            net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+                .serialize(net.lumalyte.lg.interaction.menus.guild.GuildPageText.fact(lang, fact, value))
         }
     }
 

@@ -166,7 +166,9 @@ data class GuildConfig(
     // Ranks and Members
     var maxCustomRanks: Int = 10,
     var maxRankNameLength: Int = 16,
-    var maxMembersPerGuild: Int = 50,
+    var maxMembersPerGuild: Int = 100,
+    /** REQ-190: member cap by level. */
+    var memberCapacity: MemberCapacityConfig = MemberCapacityConfig(),
     
     // Home System
     var homeTeleportCooldownSeconds: Int = 5,
@@ -199,6 +201,8 @@ data class GuildConfig(
 
     // Emoji Grants — map guild names to emoji permission nodes
     var emojiGrants: Map<String, String> = emptyMap(),
+    // REQ-216/217: the emojis a guild may pick, and guild-only logos
+    var emojiChoices: net.lumalyte.lg.domain.values.GuildEmojiRules = net.lumalyte.lg.domain.values.GuildEmojiRules(),
     val creationCooldown: net.lumalyte.lg.domain.values.GuildCreationCooldown =
         net.lumalyte.lg.domain.values.GuildCreationCooldown()
 )
@@ -414,17 +418,10 @@ data class PartyConfig(
     var minPartyNameLength: Int = 1,
     var defaultPartyDurationHours: Int = 24,
     var maxSimultaneousPartiesPerGuild: Int = 3,
-    var allowPrivateParties: Boolean = true, // Allow creation of private guild-only parties
 
     // Party Chat
     var partyChatEnabled: Boolean = true,
     var partyChatPriority: Int = 100,
-    var useMiniMessage: Boolean = true, // Enable MiniMessage formatting support (allows tags like <gradient>, <rainbow>, etc.)
-    var partyChatFormat: String = "[{lumaguilds_party_name}] %lumaguilds_guild_rank% %lumaguilds_guild_emoji%%lumaguilds_guild_tag% %luckperms-suffix% {player_name} ⋙ {message}",
-    var useSimplifiedGuildPartyFormat: Boolean = true, // Use simplified format for guild-internal parties (Guild_Chat, Officer_Chat, etc.)
-    var guildPartyChatFormat: String = "[{lumaguilds_party_name}] %lumaguilds_guild_rank% {player_name} ⋙ {message}", // Simplified format for guild-internal parties (no guild tag/emoji spam)
-    var partyChatPrefix: String = "[PARTY]",
-    var partyChatSuffix: String = "",
     var chatInputListenerPriority: String = "HIGHEST", // HIGHEST, HIGH, NORMAL, LOW, LOWEST
     var partyChatListenerPriority: String = "LOWEST", // Event priority for party chat auto-routing after /pc switch (LOWEST = runs first, before ChatControl)
 
@@ -594,6 +591,7 @@ object ChapterTwoExperiencePolicies {
         enabled(ExperienceSource.WARDEN_KILL, 600, 6_000, CapPeriod.WEEKLY)
 
         enabled(ExperienceSource.WEEKLY_ACTIVITY, 1, 0, CapPeriod.UNLIMITED)
+        enabled(ExperienceSource.GUILD_ADVANCEMENT, 1, 0, CapPeriod.UNLIMITED)
         enabled(ExperienceSource.ADMIN_BONUS, 1, 0, CapPeriod.UNLIMITED)
         return policies.toMap()
     }
@@ -805,3 +803,16 @@ data class NameFilterNormalization(
     // Collapse repeated characters: "heeelllooo" → "hello"
     var collapseRepeats: Boolean = true
 )
+
+/** REQ-190: `base + per_step x floor(level / step_levels)`, at most [max]. */
+data class MemberCapacityConfig(
+    val enabled: Boolean = true,
+    val base: Int = 10,
+    val perStep: Int = 5,
+    val stepLevels: Int = 5,
+    val max: Int = 100,
+) {
+    init {
+        require(base >= 1 && perStep >= 0 && stepLevels >= 1 && max >= base) { "Invalid member capacity settings" }
+    }
+}

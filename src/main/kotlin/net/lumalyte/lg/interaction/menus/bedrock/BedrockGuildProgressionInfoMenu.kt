@@ -105,7 +105,7 @@ class BedrockGuildProgressionInfoMenu(
             .content(listOf(createLevelAndExperienceSection(), createSourceUsageSection(),
                 lang.bedrock("chapter_two_rewards.explanation"),
                 lang.bedrock("chapter_two_rewards.capacity_bank", "capacity" to rewards.entitlements.bankCapacity),
-                lang.bedrock("chapter_two_rewards.capacity_home_member", "homes" to rewards.entitlements.homeCapacity, "members" to rewards.entitlements.memberCapacity),
+                lang.bedrock("chapter_two_rewards.capacity_home_member", "homes" to rewards.entitlements.homeCapacity, "members" to net.lumalyte.lg.interaction.menus.memberCapacityShown(guild.id, rewards.entitlements.memberCapacity)),
                 lang.bedrock("chapter_two_rewards.multipliers", "cooldown" to rewards.entitlements.homeCooldownMultiplier, "fee" to rewards.entitlements.withdrawalFeeMultiplier)
             ).joinToString("\n"))
             .apply { offers.forEach { offer -> button((listOf(

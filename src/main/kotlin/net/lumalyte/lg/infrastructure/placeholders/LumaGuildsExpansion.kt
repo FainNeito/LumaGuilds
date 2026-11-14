@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap
  * - %lumaguilds_guild_name% - Player's guild name
  * - %lumaguilds_guild_tag% - Player's guild tag, MiniMessage rendered to legacy §-codes (chat-safe)
  * - %lumaguilds_guild_tag_minimessage% - Player's guild tag normalized to MiniMessage (proxy/MiniMessage-safe, e.g. Velocitab)
+ * - %lumaguilds_guild_prestige_badge_minimessage% - Prestige badge as MiniMessage (Velocitab-safe)
  * - %lumaguilds_guild_tag_raw% - Raw tag string as stored (may contain MiniMessage tags)
  * - %lumaguilds_guild_tag_plain% - Tag with all formatting stripped
  * - %lumaguilds_guild_emoji% - Player's guild emoji (converted to %nexo_<emoji>% format for backend tab/scoreboard/chat)
@@ -172,11 +173,15 @@ class LumaGuildsExpansion : PlaceholderExpansion(), KoinComponent {
 
         // Get guild information
         val guild = guildService.getGuild(guildId) ?: return ""
+        // REQ-190: the member cap comes from the member service, not the flat reward number.
+        if (ident == "guild_reward_member_capacity") {
+            return runCatching { memberService.getMemberLimit(guildId).toString() }.getOrDefault("")
+        }
         if (ident.startsWith("guild_reward_")) return RewardPlaceholder.value(ident, progressionService.getRewardState(guildId))
         if (ident.startsWith("source_")) return sourceUsagePlaceholder(guildId, ident)
         if (ident.startsWith("guild_prestige")) {
             val settings = prestigeSettings()
-            return PrestigePlaceholder.value(ident, safePrestigeStanding(guildId), settings.badges, settings.maxCount)
+            return PrestigePlaceholder.value(ident, safePrestigeStanding(guildId), settings.badges, settings.maxCount) { nexoEmojiService.glyphFont(it) }
         }
 
         return when (identifier.lowercase()) {

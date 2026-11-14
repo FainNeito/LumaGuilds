@@ -1030,7 +1030,9 @@ Menu audit follow-up (REQ-063):
 - [x] Refine PR #232 persistence, filtered lookup/counts, routing and viewer filtering; run focused/full checks and publish source fixes.
 - [x] Address all three manual CodeRabbit findings; prove native MariaDB repair and verify the installed TEST Friends connector against the current Guilds API. Cross-server caches remain startup snapshots; real-client acceptance is deferred.
 - [ ] Complete exact-head hosted quality/review gates and maintainer review; merge and real-client acceptance remain separate. Current main inspected at283d75f1; existing fork head db53a274. Project EARS/state helpers absent; manual evidence in docs/plans/2026-10-13-invite-block-review.md. No merge or production authorization.
+
 ## Local quest discovery - no PR requested
+
 - [x] **QUEST-STALL-REFINEMENT** Verify all short/menu quest routes, add progression quest navigation and semantic stall icons (REQ-QUEST-DISCOVERY-4, REQ-STALL-ICONS-1). Local Java 25 full test/shadowJar passed 1,789 cases with zero failures/errors and 16 optional environment skips. Real ACF routing and Java/Bedrock permission checks execute without skips. Private artwork and local preview remain outside the public repository; no deployment or PR. Evidence: docs/plans/2026-10-13-quest-stall-refinement.md.
 - [x] **QUEST-DISCOVERY** Member command, availability reminders and spawn leaderboard placeholders.
   - Tag: `TDD`
@@ -1306,6 +1308,11 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **ALLY-HOME-OUTBOUND** Tag: TDD. REQ-183. Evidence: AllyHomeAccessTest, GuildServiceAllyHomeAccessTest, AllyHomeVisitorMenuTest, AllyHomeAccessSQLTest (SQLite + MariaDB).
   - References: `docs/plans/2026-11-09-prestige-tier-perks.md`.
 
+## Member capacity by level (REQ-190)
+
+- [x] **MEMBER-CAPACITY** Tag: TDD. REQ-190. Evidence: GuildMemberCapacityTest, MemberCapacityServiceTest, MemberCapacityFloorSQLTest (SQLite + MariaDB).
+  - References: `docs/plans/2026-11-10-member-capacity.md`.
+
 ## Prestige staff tools and Discord post (REQ-184 to REQ-188)
 
 - [x] **PRESTIGE-STAFF-INFO** Tag: TDD. REQ-184. Evidence: PrestigeStaffCommandTest.
@@ -1318,3 +1325,87 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 ## Command completions (REQ-189)
 
 - [x] **COMMAND-COMPLETIONS** Tag: TDD. REQ-189. Evidence: LumaGuildsCompletionsTest, GuildCommandCompletionContractTest, LumaGuildsCommandTest. Every `/g` and `/lumaguilds` argument suggests values or a `<hint>`.
+
+## Combined guild page and guild bans (REQ-191 to REQ-197)
+
+- [x] **GUILD-INFO-LAYOUT** Tag: TDD. REQ-191. Evidence: GuildRosterTest, GuildInfoPrestigeMenuTest, GuildMemberRankTooltipTest.
+- [x] **GUILD-INFO-VIEWERS** Tag: TDD. REQ-192. Evidence: LastSeenTest, GuildInfoSeason2ContractTest.
+- [x] **GUILD-MEMBER-PAGE** Tag: TDD. REQ-193. Evidence: MemberActionsTest.
+- [x] **GUILD-BAN** Tag: TDD. REQ-194. Evidence: GuildBanServiceTest, GuildBanRepositorySQLTest (SQLite + MariaDB), GuildBanMembershipTest, GuildInvitationManagerBanTest, GuildRecruitmentBanEligibilityTest.
+- [x] **GUILD-CARD-YES-NO** Tag: TDD. REQ-195. Evidence: GuildCardFactsTest. The shop line waits for EnthusiaMarket to register `GuildShopLookup`.
+- [x] **GUILD-RELATIONS-PAGE** Tag: TDD. REQ-196. Evidence: GuildCardFactsTest (rows), GuildInfoExpandableRelationsWiringTest.
+- [x] **KICK-HIERARCHY** Tag: TDD. REQ-197. Evidence: GuildBanMembershipTest.
+- [x] **GUILD-MENU-SIMPLIFIED** Tag: TDD. REQ-198. Evidence: GuildDashboardLayoutContractTest, GuildDashboardFillerItemTest.
+  - References: `docs/plans/2026-11-10-guild-info-redesign.md`.
+
+## Simplified guild statistics (REQ-199 to REQ-202)
+
+- [x] **KILL-LOG** Tag: TDD. REQ-199, REQ-200. Evidence: KillRecordingTest, GuildKillLogSQLTest (SQLite + MariaDB), KillServiceLogTest.
+- [x] **STATS-MENU** Tag: TDD. REQ-201, REQ-202. Evidence: GuildStatisticsLayoutContractTest, GuildStatisticsSeason2ContractTest, BedrockGuildStatisticsTruthfulnessContractTest.
+  - References: `docs/plans/2026-11-10-statistics-simplified.md`.
+
+## Prestige badge for proxy tab lists (REQ-219)
+
+- [x] **PRESTIGE-BADGE-MINIMESSAGE** Tag: TDD. REQ-219. Evidence: PrestigePlaceholderTest.
+
+## Approved guild emojis (REQ-216 to REQ-218)
+
+- [x] **EMOJI-APPROVED-LIST** Tag: TDD. REQ-216, REQ-217, REQ-218. Evidence: GuildEmojiRulesTest, GuildEmojiChoicesServiceTest.
+  - References: `docs/plans/2026-11-10-approved-guild-emojis.md`.
+
+## Diplomacy history (REQ-203, REQ-204)
+
+- [x] **DIPLOMACY-LOG** Tag: TDD. REQ-203. Evidence: DiplomacyLogTest, DiplomacyHistorySQLTest (SQLite + MariaDB), RelationServiceHistoryTest.
+- [x] **DIPLOMACY-PAGE** Tag: TDD. REQ-204. Evidence: MenuLocalizationTest, LocaleContractTest.
+  - References: `docs/plans/2026-11-10-diplomacy-history.md`.
+
+## Party menu and party pages (REQ-205, REQ-206)
+
+- [x] **PARTY-MENU** Tag: TDD. REQ-205. Evidence: CenteredRowTest, PartyMenuContractTest.
+- [x] **PARTY-PAGE** Tag: TDD. REQ-206. Evidence: PartyMenuContractTest.
+  - References: `docs/plans/2026-11-10-party-pages.md`.
+
+## Parties are only for talking between guilds (REQ-207 to REQ-209)
+
+- [x] **NO-PRIVATE-PARTIES** Tag: TDD. REQ-207. Evidence: PrivatePartyRetirementTest, PartyServicePrivatePartyTest, GuildPartyReturnTest.
+- [x] **RETIRE-PRIVATE-PARTIES** Tag: TDD. REQ-208. Evidence: PrivatePartyRetirementTest.
+- [x] **ONE-CHAT-AT-A-TIME** Tag: TDD. REQ-209. Evidence: GuildChatListenerTest.
+  - References: `docs/plans/2026-11-10-party-chat-only-between-guilds.md`.
+
+## /party commands (REQ-210 to REQ-215)
+
+- [x] **PARTY-COMMAND-MENUS** Tag: TDD. REQ-210. Evidence: PartyCommandContractTest.
+- [x] **PARTY-ACTIONS** Tag: TDD. REQ-211, REQ-212, REQ-214, REQ-215. Evidence: PartyActionsTest, ConfirmWindowTest.
+- [x] **PARTY-INFO** Tag: TDD. REQ-213. Evidence: PartyActionsTest.
+  - References: `docs/plans/2026-11-10-party-commands.md`.
+
+## Expired party invites (REQ-220)
+
+- [x] **EXPIRED-PARTY-REQUESTS** Tag: TDD. REQ-220. Evidence: PartyServiceExpiredRequestTest.
+
+## Simpler party chat command (REQ-221)
+
+- [x] **SIMPLE-PC** Tag: TDD. REQ-221. Evidence: PartyChatIntentTest, PartyChatCommandContractTest.
+
+## Party chat stays out of normal chat (REQ-222)
+
+- [x] **PARTY-CHAT-NO-LEAK** Tag: TDD. REQ-222. Evidence: PartyRecipientsTest, PartyChatLegacyEventContractTest.
+
+## Party chat line (REQ-223)
+
+- [x] **PARTY-CHAT-LINE** Tag: TDD. REQ-223. Evidence: PartyChatLineContractTest.
+
+## Long-term advancements (REQ-224 to REQ-226)
+
+- [x] **ADV-LONG-TIERS** Tag: TDD. REQ-224. Evidence: GuildAchievementCatalogTest.
+- [x] **ADV-MEMBERS-AGE** Tag: TDD. REQ-225. Evidence: GuildAchievementRuntimeTest.
+- [x] **ADV-PLAYTIME-CAP** Tag: TDD. REQ-226. Evidence: GuildAchievementRuntimeTest, GuildAchievementsMenuTest.
+
+## Advancement guild XP (REQ-227, REQ-228)
+
+- [x] **ADV-GUILD-XP-ONCE** Tag: TDD. REQ-227. Evidence: GuildAchievementRuntimeTest, ActiveExperienceBoostTest.
+- [x] **ADV-GUILD-XP-STANDING** Tag: TDD. REQ-228. Evidence: GuildAchievementRuntimeTest, GuildAchievementCatalogTest.
+
+## Quiet advancement catch-up (REQ-229)
+
+- [x] **ADV-QUIET-CATCHUP** Tag: TDD. REQ-229. Evidence: GuildAchievementRuntimeTest, ProgressionServiceBukkitAwardTest.
