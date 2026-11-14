@@ -135,7 +135,6 @@ class LocaleContractTest {
             "dialog_v2.guild_settings",
             "dialog_v2.guild_frame",
             "dialog_v2.more_settings",
-            "dialog_v2.more_listing_options",
             "dialog_v2.more_filters",
             "dialog_v2.open_recruitment",
             "dialog_v2.close_recruitment",

@@ -1415,6 +1415,11 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **WAR-KILL-TARGET** Tag: TDD. REQ-230. Evidence: WarKillTargetsTest, WarRestartRecoveryTest.
 - [x] **WAR-KILL-DISPLAY** Tag: TDD. REQ-231. Evidence: WarKillTargetsTest.
 
+## Recruitment browse card and guild info card (REQ-236, REQ-237)
+
+- [x] **RECRUIT-BROWSE-CARD** Tag: TDD. REQ-236. Evidence: RecruitmentDialogMenuTest.
+- [x] **INFO-CARD-PRESTIGE** Tag: TDD. REQ-237. Evidence: GuildInfoCardOrderTest.
+
 ## War and diplomacy moments (REQ-233 to REQ-235)
 
 - [x] **MOMENTS-WAR** Tag: TDD. REQ-233. Evidence: GuildMomentTest, WarNotificationRecoveryTest.
