@@ -305,7 +305,7 @@ class GuildWarManagementMenu(private val menuNavigator: MenuNavigator, private v
         val yourKdr = if (isDeclaring) stats.declaringKillRatio else stats.defendingKillRatio
         val enemyKdr = if (isDeclaring) stats.defendingKillRatio else stats.declaringKillRatio
 
-        val killTarget = warService.getWarKillWinTarget()
+        val killTarget = warService.killTargetFor(war)
         val yourStatsItem = ItemStack.of(Material.DIAMOND_CHESTPLATE)
             .name(lang.gui(
                 "menu.guild_war_management.war_details.stats.your_kills",
@@ -420,7 +420,7 @@ class GuildWarManagementMenu(private val menuNavigator: MenuNavigator, private v
                     .lore(lang.gui(
                         "menu.guild_war_management.war_list.item.lore.kills",
                         "kills" to kills,
-                        "target" to warService.getWarKillWinTarget(),
+                        "target" to warService.killTargetFor(war),
                     ))
                     .lore(lang.gui("menu.guild_war_management.war_list.item.lore.deaths", "deaths" to deaths))
                     .lore(lang.gui("menu.guild_war_management.war_list.item.lore.click"))

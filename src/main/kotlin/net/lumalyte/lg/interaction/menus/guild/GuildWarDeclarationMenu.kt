@@ -653,7 +653,8 @@ class GuildWarDeclarationMenu(
         open() // Refresh to show configuration
     }
 
-    private fun killTarget(): Int = configService.loadConfig().combat.warKillWinTarget
+    /** REQ-231: the chosen kill objective, else the server default. */
+    private fun killTarget(): Int = net.lumalyte.lg.domain.values.WarKillTargets.forWar(selectedObjectives, warService.getWarKillWinTarget())
 
     /** Lengths up to the server cap, so prod offers 3 and 7 days until `war_duration_hours` is raised. */
     private fun offeredDurations(): List<Duration> {
@@ -691,11 +692,7 @@ class GuildWarDeclarationMenu(
     }
 
     private fun cycleKillTarget() {
-        val killCap = warService.getWarKillWinTarget()
-        val killTargets = (listOf(5, 10, 25, 50).filter { it <= killCap } + killCap)
-            .filter { it > 0 }
-            .distinct()
-            .sorted()
+        val killTargets = warService.killTargetOptions()
         val currentKills = selectedObjectives.firstOrNull()?.targetValue ?: killTargets.first()
         val currentIndex = killTargets.indexOf(currentKills)
         val nextIndex = if (currentIndex == -1 || currentIndex >= killTargets.size - 1) 0 else currentIndex + 1

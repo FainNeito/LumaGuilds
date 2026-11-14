@@ -253,7 +253,7 @@ class WarServiceBukkit(
                 return null
             }
 
-            if (!objectivesFitKillTarget(objectives, config.combat.warKillWinTarget)) {
+            if (!objectivesFitKillTarget(objectives, maxKillTarget())) {
                 logger.warn("Cannot create war declaration - objective target is invalid or exceeds global kill target")
                 return null
             }
@@ -341,7 +341,7 @@ class WarServiceBukkit(
                 val snapshot = warRepository.getAll()
                 val knownWars = snapshot.mapNotNull { it.war }
                 val combat = configService.loadConfig().combat
-                if (!objectivesFitKillTarget(declaration.objectives, combat.warKillWinTarget)) {
+                if (!objectivesFitKillTarget(declaration.objectives, maxKillTarget())) {
                     logger.warn("Cannot accept war declaration $declarationId - objective target is no longer valid")
                     return null
                 }
@@ -571,6 +571,14 @@ class WarServiceBukkit(
         return warRepository.get(warId)?.stats ?: WarStats(warId)
     }
 
+    private fun maxKillTarget(): Int = configService.loadConfig().combat.let {
+        net.lumalyte.lg.domain.values.WarKillTargets.maximum(it.warKillWinTarget, it.warKillTargetMax)
+    }
+
+    override fun killTargetOptions(): List<Int> = configService.loadConfig().combat.let {
+        net.lumalyte.lg.domain.values.WarKillTargets.options(it.warKillWinTarget, it.warKillTargetMax)
+    }
+
     override fun getWarKillWinTarget(): Int =
         configService.loadConfig().combat.warKillWinTarget.also {
             check(it > 0) { "combat.war_kill_win_target must be positive" }
@@ -635,7 +643,7 @@ class WarServiceBukkit(
         }
         persist(record.copy(stats = updated))
 
-        val target = getWarKillWinTarget()
+        val target = killTargetFor(war)
         val winner = killerGuildId.takeIf { killVictoryTerms(war, updated, killerGuildId) != null }
         return net.lumalyte.lg.application.services.WarKillCounterUpdate(updated, target, winner)
     }
@@ -688,19 +696,12 @@ class WarServiceBukkit(
             war.defendingGuildId -> stats.defendingGuildKills
             else -> return null
         }
-        val target = getWarKillWinTarget()
-        if (killerKills >= target) {
-            return "Victory achieved by reaching the global war kill target ($killerKills/$target)"
-        }
-
-        val objectiveTarget = war.objectives
-            .asSequence()
-            .filter { it.type == ObjectiveType.KILLS && it.targetValue > 0 }
-            .map { it.targetValue }
-            .minOrNull()
-        return objectiveTarget
-            ?.takeIf { killerKills >= it }
-            ?.let { "Victory achieved through kill objective ($killerKills/$it)" }
+        // REQ-230: the war's own kill objective decides it; wars without one use the configured default.
+        val target = killTargetFor(war)
+        if (killerKills < target) return null
+        val chosen = war.objectives.any { it.type == ObjectiveType.KILLS && it.targetValue > 0 }
+        return if (chosen) "Victory achieved through kill objective ($killerKills/$target)"
+        else "Victory achieved by reaching the war kill target ($killerKills/$target)"
     }
 
     @Synchronized
@@ -1028,7 +1029,7 @@ class WarServiceBukkit(
     override fun validateObjectives(objectives: Set<WarObjective>): Boolean =
         objectives.isNotEmpty() &&
             objectives.size <= 5 &&
-            objectivesFitKillTarget(objectives, getWarKillWinTarget())
+            objectivesFitKillTarget(objectives, maxKillTarget())
 
     override fun getWarHistory(guildId: UUID, limit: Int): List<War> {
         return wars.values

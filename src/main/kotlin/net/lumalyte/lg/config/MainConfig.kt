@@ -323,6 +323,8 @@ data class CombatConfig(
     var warEndGracePeriodMinutes: Int = 30,
     var maxSimultaneousWars: Int = 3,
     var warKillWinTarget: Int = 25,
+    /** Largest kill objective a guild may choose for a war (REQ-230). */
+    var warKillTargetMax: Int = 50,
 
     // Experience and Rewards
     var killExperience: Int = 10,

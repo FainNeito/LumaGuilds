@@ -358,7 +358,7 @@ class BedrockGuildWarManagementMenu(
         val stats = warService.getWarStats(war.id)
         val kills = if (war.declaringGuildId == guild.id) stats.declaringGuildKills else stats.defendingGuildKills
         val enemyKills = if (war.declaringGuildId == guild.id) stats.defendingGuildKills else stats.declaringGuildKills
-        val killTarget = warService.getWarKillWinTarget()
+        val killTarget = warService.killTargetFor(war)
 
         val status = when {
             war.winner != null -> if (isWinner) lang.bedrock("bedrock.war_management.management_won") else lang.bedrock("bedrock.war_management.management_lost")

@@ -5373,6 +5373,7 @@ menu:
       target_10: "  <dark_gray>▪ <white>10 kills <gray>- Standard battle"
       target_25: "  <dark_gray>▪ <white>25 kills <gray>- Extended war"
       target_50: "  <dark_gray>▪ <white>50 kills <gray>- Epic campaign"
+      target_other: "  <dark_gray>▪ <white><count> kills"
       objective_description: '<gray>Kill <count> enemy players'
     survival:
       name: "<gray>Time Survival"
@@ -7923,7 +7924,7 @@ war_duration:
     standard: "Standard war"
     extended: "Extended campaign"
     season: "Season-long war"
-  bedrock_until_kills: "Until a guild gets <kills> kills"
+  bedrock_until_target: "Until a guild reaches the kill target below"
   bedrock_objective: "Until the kill target is reached"
   bedrock_hours: "<hours> hours"
 discord:

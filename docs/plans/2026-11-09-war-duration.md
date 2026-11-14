@@ -21,3 +21,11 @@ Unit and serialization tests for legacy records, new timed and unlimited records
 ## Current state
 
 Implemented in the draft branch: explicitly persisted no-expiry mode, backward decoding for older records, longer timed choices, Java and Bedrock displays, and existing kill-target settlement. The complete local test suite passed after incorporating main at 175e9a2d. Scheduled expiration now excludes no-expiry wars; a regression verifies an aged persisted war survives cleanup and still settles on victory. Updated-head hosted CI, review, an existing TEST configuration cap adjustment, and live client verification remain outstanding. The interactive preview is a simulation; other objective types have no verified gameplay victory path.
+
+## Per-war kill targets (REQ-230, REQ-231)
+
+Feedback from TEST: 50 kills was listed but could not be picked, and every war ended at the global 25.
+
+- `WarKillTargets.forWar(objectives, default)` gives a war's target: its kill objective, else `war_kill_win_target`.
+- `WarKillTargets.options(default, max)` gives 5, 10, 25, 50 and the default, up to the new `war_kill_target_max` (default 50).
+- Victory, the kill counter and every menu read the war's own target.

@@ -162,6 +162,13 @@ interface WarService {
     /** Configured opposing-guild kill count that automatically wins an active war. */
     fun getWarKillWinTarget(): Int
 
+    /** REQ-230: the kill count that ends [war]: its kill objective, else [getWarKillWinTarget]. */
+    fun killTargetFor(war: War): Int =
+        net.lumalyte.lg.domain.values.WarKillTargets.forWar(war.objectives, getWarKillWinTarget())
+
+    /** REQ-230: kill targets a guild may choose when declaring. */
+    fun killTargetOptions(): List<Int> = listOf(5, 10, getWarKillWinTarget()).distinct().sorted()
+
     /**
      * Updates war statistics.
      *

@@ -381,6 +381,9 @@ class ConfigServiceBukkit(private val configProvider: () -> FileConfiguration): 
             warKillWinTarget = config.getInt("combat.war_kill_win_target", 25).also {
                 require(it > 0) { "combat.war_kill_win_target must be positive" }
             },
+            warKillTargetMax = config.getInt("combat.war_kill_target_max", 50).also {
+                require(it > 0) { "combat.war_kill_target_max must be positive" }
+            },
             killExperience = config.getInt("combat.kill_experience", 10),
             warWinExperience = config.getInt("combat.war_win_experience", 500),
             warLoseExperience = config.getInt("combat.war_lose_experience", 100)

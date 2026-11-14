@@ -76,13 +76,10 @@ class BedrockGuildWarDeclarationMenu(
             listOf(maximumDuration to lang.bedrock("war_duration.bedrock_hours", "hours" to maximumDuration.toHours()))
         }
         val durationChoices = availableDurations.map { it.first }
-        val durationOptions = availableDurations.map { it.second } + lang.bedrock("war_duration.bedrock_until_kills", "kills" to mainConfig.combat.warKillWinTarget)
+        val durationOptions = availableDurations.map { it.second } + lang.bedrock("war_duration.bedrock_until_target")
         val guildBalance = bankService.getBalance(guild.id)
         val killCap = warService.getWarKillWinTarget().coerceAtLeast(1)
-        val killTargets = (listOf(5, 10, 25, 50).filter { it <= killCap } + killCap)
-            .filter { it > 0 }
-            .distinct()
-            .sorted()
+        val killTargets = warService.killTargetOptions()
         val survivalTargets = listOf(12, 24, 48, 72)
         val claimTargets = listOf(1, 3, 5, 10)
 
