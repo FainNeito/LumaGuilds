@@ -832,3 +832,8 @@ CHR-005 in [the Chronicle specification](plans/2026-10-16-guild-chronicle.md).
 
 ### REQ-240
 **Ubiquitous.** THE SYSTEM SHALL keep every pack-art dialog button label no wider than the button's width minus 4 pixels, so the client never scrolls the label and its artwork side to side.
+
+## Guild history layout
+
+### REQ-238
+**Event-driven.** WHEN a player runs `/guild history <player>`, THE SYSTEM SHALL show the player's name, the number of guilds joined, and one numbered line per guild with its name, join date and status, framed by rule lines instead of box-drawing characters.
