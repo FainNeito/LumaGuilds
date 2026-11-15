@@ -872,3 +872,8 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-249
 **Event-driven.** WHEN a player reviews a prestige before confirming it, THE SYSTEM SHALL list, on Java and Bedrock, what the prestige earns (tier badge, the kept reward and its effect, the home slot count before and after, the tier's perks, and, only where they apply, the kept member limit and Discord role on the first prestige, the exact XP carried over and starting level, member advancements, being first on the server, and how it is announced), what it costs (fee, level and XP reset, purchased rewards reset), and what stays, and SHALL say when it is the final prestige.
+
+## Main vault keeps earned rows
+
+### REQ-250
+**Ubiquitous.** THE SYSTEM SHALL never shrink a guild's main vault below the largest size it has earned, including after a prestige, while the second vault (REQ-248) still follows the guild's current level.
