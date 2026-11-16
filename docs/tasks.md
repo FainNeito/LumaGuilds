@@ -1501,3 +1501,9 @@ Decision (Fain, 2026-11-16): one theme per prestige, chosen on the prestige scre
 - [x] **PRESTIGE-MILESTONES** REQ-262. Milestones cards list every tier's rewards.
 - [ ] **HALL-TEST** On TEST: prestige with the theme step, Hall Display changes, Bedrock picks.
 - [ ] **HALL-STATUES** Build the Hall statues that wear these choices (after the TEST cost check).
+
+## Guild Advancements cards (REQ-263)
+
+- [x] **ADV-MOCKUP** Approved: Prestige and Guild Menus artifact, Guild Advancements screen.
+- [x] **ADV-CARDS** Tag: TDD. REQ-263. Replaces the inspector tabs and branch rows with cards; Combat milestones joins as the last category. Evidence: GuildAchievementsMenuTest.
+- [ ] **ADV-TEST** Check on TEST: categories, paging, Track/Untrack, tree link, Statistics → Achievements.
