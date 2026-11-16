@@ -928,3 +928,9 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-263
 **Ubiquitous.** THE SYSTEM SHALL show Guild Advancements as cards, four a page in two columns, each with its icon, title, progress, what to do and guild XP reward, with category buttons along the top (Foundations, Cooperation, Combat, Commerce, Reputation, then Combat milestones) and a detail page per advancement with Track or Untrack, keeping saved progress, the tracked goal, rewards and the advancement tree link; Statistics → Achievements SHALL open it on Combat milestones.
+
+### REQ-264
+**Event-driven.** WHEN a guild member chooses Preview in the world on the Hall Display, THE SYSTEM SHALL build a statue three blocks in front of them, seen only by them, wearing the guild's current choices (skin, tier armor with the chosen trim, plinth, nameplate, banner, trophy, spotlight, aura and sound), and SHALL remove it after 30 seconds, when they start another preview, when they leave, or when the plugin stops.
+
+### REQ-266
+**Ubiquitous.** THE SYSTEM SHALL read the database for the guild progression, Chronicle (including the prestige page) and Hall Display menus off the main server thread, and SHALL show the result only if the player is still online and on the same screen.
