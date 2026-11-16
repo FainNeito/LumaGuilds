@@ -912,3 +912,14 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-258
 **Ubiquitous.** THE SYSTEM SHALL show a guild's Market stalls in a 3-row Java menu with the stalls centred in the middle row (one in the centre slot, two either side of it) and Back in the bottom centre, name each stall in gold, non-italic text from its region id ("stall18" reads "Stall 18"), show rent as "every day" and the next rent as time left ("in 2d 4h", or "Rent due now"), show the grace line only during a grace period, and show a stall's members centred under it in a 6-row page titled with the stall's name.
+
+## Hall of Prestige themes
+
+### REQ-260
+**Event-driven.** WHEN a guild prestiges THE SYSTEM SHALL let the confirming member choose one Hall of Prestige theme the guild doesn't own (Gilded, Ember, Winged, Tidal, Radiant or Crowned) between choosing the reward to keep and confirming, pick it automatically when only one is left, list it in the confirmation summary, and grant it once the prestige applies, so a guild owns at most one theme per prestige; a pick not made then (staff grants, earlier prestiges) SHALL stay open in Hall Display.
+
+### REQ-261
+**Ubiquitous.** THE SYSTEM SHALL provide Hall Display, where every member can see what the guild's Hall statue wears and members with Manage Banner can choose open theme picks, set each of the ten cosmetic slots to any owned theme or the default, wear a whole owned theme at once, and choose which member's skin the statue wears (Bedrock: picks and whole themes), and SHALL delete a guild's themes and choices when it disbands.
+
+### REQ-262
+**Ubiquitous.** THE SYSTEM SHALL list on each Prestige milestones card everything that tier gives: its fee or that it is earned, a permanent home slot, one reward kept, a Hall theme, the first prestige's member cap and Discord role when those are on, and the second allied home, extra stall and second vault at their configured tiers.
