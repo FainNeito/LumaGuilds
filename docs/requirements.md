@@ -937,3 +937,9 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-265
 **Unwanted behaviour.** IF a player breaks a block that a player placed, THEN THE SYSTEM SHALL not award block-place guild XP for that player's next placement of the same material within 30 minutes, so placing and breaking the same block can't farm XP.
+
+### REQ-267
+**Ubiquitous.** WHEN a guild service, repository, placeholder or web handler turns an exception into a safe fallback, THE SYSTEM SHALL log it with its call site, at most once a minute per site with a count of repeats.
+
+### REQ-268
+**Unwanted behaviour.** IF the storage is MariaDB, THEN THE SYSTEM SHALL not run the SQLite membership_history DDL, so recording a guild join never fails on a syntax error.

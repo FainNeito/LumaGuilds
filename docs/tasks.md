@@ -1511,3 +1511,8 @@ Decision (Fain, 2026-11-16): one theme per prestige, chosen on the prestige scre
 - [ ] **ADV-TEST** Check on TEST: categories, paging, Track/Untrack, tree link, Statistics → Achievements.
 
 - [x] **XP-PLACE-LOOP** Tag: TDD. REQ-265. Evidence: PlaceRefundLedgerTest.
+
+## Audit fixes, 2026-11-16 (REQ-267, REQ-268)
+
+- [x] **AUDIT-LOG-SWALLOWED** REQ-267. SwallowedErrors on 44 catch sites (prestige, rewards, Chronicle, gold, banners, Vault payment, placeholders, web leaderboard). Evidence: SwallowedErrorsTest.
+- [x] **AUDIT-MARIA-MEMBERSHIP** Tag: TDD. REQ-268. Found by the MariaDB suite: GuildDisbandAtomicityTest failed on "Failed to create membership_history table". Evidence: on MariaDB GuildDisbandAtomicityTest now gets past membership_history; it then stops on the old MariaDB relations schema (guild_id/target_guild_id) that RelationRepositorySQLite can't read, which is left for the upstream sync decision.
