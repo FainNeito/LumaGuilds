@@ -185,6 +185,8 @@ tasks.register<Test>("mariaDbRewardTest") {
     useJUnitPlatform()
     filter {
         includeTestsMatching("*Reward*RepositorySQLTest")
+        includeTestsMatching("*GuildHomeAccessGrantRepositorySQLTest")
+        includeTestsMatching("*GuildOutpostCombinedAcceptanceTest")
         includeTestsMatching("*ExperienceBoostRepositorySQLTest")
         includeTestsMatching("*PrestigeRepositorySQLTest")
         includeTestsMatching("*PrestigeCreditLedgerSQLTest")
@@ -204,6 +206,7 @@ tasks.register<Test>("mariaDbRewardTest") {
         includeTestsMatching("*GuildOnboardingRepositorySQLTest")
         includeTestsMatching("*ChatPreferencesPersistenceTest")
         includeTestsMatching("*GuildDirectoryDetailsTest")
+        includeTestsMatching("*GuildRecruitmentAccessSQLTest")
         includeTestsMatching("*InviteBlockMigrationSQLTest")
         includeTestsMatching("*InviteBlockDurabilitySQLTest")
         includeTestsMatching("*QuestFixturePersistenceTest")

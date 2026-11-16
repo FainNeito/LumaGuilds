@@ -3,6 +3,7 @@ package net.lumalyte.lg.interaction.menus.guild
 import net.badgersmc.nexus.i18n.LangService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.lumalyte.lg.application.services.AdminOverrideService
 import net.lumalyte.lg.application.services.GuildService
 import net.lumalyte.lg.application.services.MemberService
 import net.lumalyte.lg.domain.achievements.AchievementRecord
@@ -28,6 +29,7 @@ internal class GuildAchievementsMenu(
     private val presenter: GuildDialogPresenter = GuildMenuDialog(),
     private var guildMilestones: Boolean = false,
     private val fromStatistics: Boolean = false,
+    private val adminOverrideService: AdminOverrideService? = null,
 ) : Menu, KoinComponent {
     private val runtime: GuildAchievementRuntime by inject()
     private val members: MemberService by inject()
@@ -183,7 +185,13 @@ internal class GuildAchievementsMenu(
     }
 
     private fun backLabel() = if (fromStatistics) lang.gui("achievements.back_statistics") else lang.gui("achievements.back")
-    private fun valid(token: Long) = player.isOnline && navigator.isNavigationCurrent(token) && members.getMember(player.uniqueId, guild.id) != null
+    private fun isMember() = members.getMember(player.uniqueId, guild.id) != null
+
+    private fun valid(token: Long): Boolean {
+        val navigationValid = player.isOnline && navigator.isNavigationCurrent(token)
+        val scopedMilestones = guildMilestones && adminOverrideService?.getViewedGuild(player.uniqueId) == guild.id
+        return navigationValid && (isMember() || scopedMilestones)
+    }
     private fun icon(node: GuildAchievement) = when (node.category) {
         "Combat" -> "lg_combat"
         "Commerce" -> "lg_bank"
