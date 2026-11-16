@@ -904,3 +904,6 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-259
 **Ubiquitous.** THE SYSTEM SHALL show on each XP source in the progression menu how much guild XP one action gives (read from the live source settings), what counts towards it in plain words, and the period used, cap and time until it resets.
+
+### REQ-256
+**Ubiquitous.** THE SYSTEM SHALL place every guild advancement in the advancement tree at least one grid cell away from every other advancement horizontally or vertically, so no two frames overlap.

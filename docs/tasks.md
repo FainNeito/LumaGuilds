@@ -1482,3 +1482,5 @@ Plan: `plans/2026-11-04-prestige-placeholders.md`.
 - [x] **XP-BREWING** Tag: TDD. REQ-255. BrewEvent marks what a stand brewed; taking anything else (water bottles, bought potions) earns nothing. Evidence: ProgressionEventListenerTest.
 - [x] **XP-POOLS** Tag: TDD. REQ-257. Mob kills now count every hostile mob except bosses and neutral mobs; block breaking adds logs, tuff, andesite, diorite, granite, sandstone, nether and end blocks. Servers with their own config.yml need the two lists copied in. Evidence: ChapterTwoTargetPoolsTest.
 - [x] **XP-TOOLTIPS** REQ-259. Mockup approved (XP sources screen). Each source shows XP per action, what counts and "Today: used / cap · resets in 9h 12m".
+
+- [x] **ADV-TREE-OVERLAP** Tag: TDD. REQ-256. The Mob Grinder rows sat 0.75 cells apart (and Smelting 0.5 below its neighbour), so frames overlapped in the Enthusia tab. Rows below them move down; GuildAchievementCatalogTest now fails on any frames closer than one cell.
