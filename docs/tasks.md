@@ -1532,3 +1532,5 @@ Decision (Fain, 2026-11-16): one theme per prestige, chosen on the prestige scre
 ## Upstream sync, 2026-11-16
 
 - [x] **SYNC-UPSTREAM-60** Merged BadgersMC/lumaguilds main (60 commits). Homes follow upstream: capacity is the base home plus one per prestige plus paid Outposts active in the current prestige, homes can be set anywhere, and saved homes over the cap stay saved but locked until an Outpost is bought again. This fork's ally homes, Quick Travel countdown, home cooldown and prestige perks sit on top; upstream's last-tick recheck runs through the fork's `startHomeTeleport`. Upstream's schema versions 50 and 51 (Outpost acquisitions, home access grants) are renumbered 53 and 54 because this fork already uses 50 to 52. Evidence: full suite.
+
+- [x] **STATS-ADVANCEMENTS** REQ-274. Statistics → Guild Advancements opens the combined menu; Bedrock statistics lead with advancement progress. Evidence: LocaleContractTest, statistics and achievements tests.
