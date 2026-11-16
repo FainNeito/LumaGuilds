@@ -1509,3 +1509,5 @@ Decision (Fain, 2026-11-16): one theme per prestige, chosen on the prestige scre
 - [x] **ADV-MOCKUP** Approved: Prestige and Guild Menus artifact, Guild Advancements screen.
 - [x] **ADV-CARDS** Tag: TDD. REQ-263. Replaces the inspector tabs and branch rows with cards; Combat milestones joins as the last category. Evidence: GuildAchievementsMenuTest.
 - [ ] **ADV-TEST** Check on TEST: categories, paging, Track/Untrack, tree link, Statistics → Achievements.
+
+- [x] **XP-PLACE-LOOP** Tag: TDD. REQ-265. Evidence: PlaceRefundLedgerTest.

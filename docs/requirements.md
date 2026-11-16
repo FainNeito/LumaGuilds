@@ -934,3 +934,6 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-266
 **Ubiquitous.** THE SYSTEM SHALL read the database for the guild progression, Chronicle (including the prestige page) and Hall Display menus off the main server thread, and SHALL show the result only if the player is still online and on the same screen.
+
+### REQ-265
+**Unwanted behaviour.** IF a player breaks a block that a player placed, THEN THE SYSTEM SHALL not award block-place guild XP for that player's next placement of the same material within 30 minutes, so placing and breaking the same block can't farm XP.
