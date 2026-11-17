@@ -1030,3 +1030,6 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-297
 **Event-driven.** WHEN a guild manager copies worn armor into the Hall Display and a piece has a custom resource-pack look (an equipment asset outside the minecraft namespace, such as the Crown of Sorrow), THE SYSTEM SHALL keep that look, and the statue SHALL wear it: on the model (through BetterModel's custom armor of the same name), on the plain figure, and in the menu.
+
+### REQ-298
+**Event-driven.** WHEN a guild first reaches a prestige tier, THE SYSTEM SHALL record that tier's Discord role for every member in the guild at that moment, permanently, and SHALL give each linked member only the role for their highest earned tier (taking away their lower prestige roles); members who link later SHALL receive theirs on linking. Prestiges earned before this feature SHALL be backfilled from prestige and membership history. WHERE an icon path is configured, THE SYSTEM SHALL set each prestige role's icon from the in-game badge when the role has none.
