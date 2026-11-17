@@ -1033,3 +1033,6 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-298
 **Event-driven.** WHEN a guild first reaches a prestige tier, THE SYSTEM SHALL record that tier's Discord role for every member in the guild at that moment, permanently, and SHALL give each linked member only the role for their highest earned tier (taking away their lower prestige roles); members who link later SHALL receive theirs on linking. Prestiges earned before this feature SHALL be backfilled from prestige and membership history. WHERE an icon path is configured, THE SYSTEM SHALL set each prestige role's icon from the in-game badge when the role has none.
+
+### REQ-299
+**Optional.** WHERE Discord guild roles are disabled and `discord.guild_roles.remove_on_disable` is set, THE SYSTEM SHALL, once Discord is ready, delete every Discord role recorded in this server's own guild-role records and forget those records, and SHALL never delete roles it has no record of.
