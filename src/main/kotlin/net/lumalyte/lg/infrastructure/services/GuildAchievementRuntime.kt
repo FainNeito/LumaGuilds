@@ -7,7 +7,6 @@ import net.lumalyte.lg.application.services.StallReadResult
 import net.lumalyte.lg.domain.achievements.*
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
-import org.bukkit.Statistic
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.plugin.java.JavaPlugin
@@ -21,7 +20,10 @@ internal class GuildAchievementRuntime(
     private val members: MemberRepository,
     private val progression: ProgressionRepository,
     private val stalls: GuildStallReadService = GuildStallReadClient(),
+    /** REQ-300: where each member's last known playtime is kept between restarts. */
+    playtimeStore: net.lumalyte.lg.domain.values.MemberPlaytimeStore = net.lumalyte.lg.domain.values.MemberPlaytimeStore.InMemory(),
 ) {
+    internal val playtime = GuildPlaytime(plugin, members, playtimeStore)
     private val key by lazy { NamespacedKey(plugin, "guild_achievements_v1") }
     val engine by lazy { GuildAchievementEngine(loadDefinitions()) }
     private val projection by lazy { GuildAchievementProjection(plugin, engine.definitions) }
@@ -33,6 +35,7 @@ internal class GuildAchievementRuntime(
 
     fun start() {
         projection.register()
+        playtime.start()
         plugin.server.pluginManager.registerEvents(GuildAchievementListener(this), plugin)
         runCatching { GuildAchievementCompanions(plugin, this).start() }
             .onFailure { plugin.logger.severe("Achievement companion state unavailable; core tracking remains active: ${it.javaClass.simpleName}") }
@@ -48,7 +51,7 @@ internal class GuildAchievementRuntime(
                     players.forEach { player ->
                         signal(player, "ROOT")
                         level?.let { signal(player, "GUILD_LEVEL_UP", it.toString()) }
-                        signal(player, "GUILD_COMBINED_PLAYTIME", amount = hours, absolute = true)
+                        hours?.let { signal(player, "GUILD_COMBINED_PLAYTIME", amount = it, absolute = true) }
                         read(player)?.let { projection.project(player, it) }
                     }
                 }
@@ -59,6 +62,7 @@ internal class GuildAchievementRuntime(
     fun stop() {
         Bukkit.getOnlinePlayers().filter { it.uniqueId in dirty }.forEach { flush(it) }
         projection.close()
+        playtime.stop()
     }
 
     fun guild(playerId: UUID): UUID? = members.getGuildsByPlayer(playerId).sortedBy { it.toString() }.firstOrNull()
@@ -73,6 +77,7 @@ internal class GuildAchievementRuntime(
     }
 
     fun initialize(player: Player) {
+        playtime.record(player)
         val guild = guild(player.uniqueId) ?: return
         read(player)?.let { record ->
             val pending = engine.pending(record)
@@ -80,7 +85,7 @@ internal class GuildAchievementRuntime(
         }
         signal(player, "ROOT")
         progression.getGuildProgression(guild)?.let { signal(player, "GUILD_LEVEL_UP", it.currentLevel.toString()) }
-        signal(player, "GUILD_COMBINED_PLAYTIME", amount = combinedHours(guild), absolute = true)
+        combinedHours(guild)?.let { signal(player, "GUILD_COMBINED_PLAYTIME", amount = it, absolute = true) }
         read(player)?.let { projection.project(player, it) }
         refreshStallOwnership(player, guild)
     }
@@ -197,14 +202,17 @@ internal class GuildAchievementRuntime(
     fun refreshProjection() { if (!projection.available) projection.register() }
 
     fun leave(player: Player) {
+        runCatching { playtime.record(player) }
         if (player.uniqueId in dirty) flush(player)
         records.remove(player.uniqueId)
         failed.remove(player.uniqueId)
     }
 
-    private fun combinedHours(guild: UUID): Int = (members.getByGuild(guild).sumOf {
-        Bukkit.getOfflinePlayer(it.playerId).getStatistic(Statistic.PLAY_ONE_MINUTE).toLong()
-    } / 72000L).coerceAtMost(1000L).toInt()
+    /** Null while some member's stored playtime is still being read (REQ-300). */
+    private fun combinedHours(guild: UUID): Int? = playtime.memberTicks(guild)?.let { ticks ->
+        (ticks.fold(0L) { total, t -> if (Long.MAX_VALUE - total < t) Long.MAX_VALUE else total + t } / 72000L)
+            .coerceAtMost(1000L).toInt()
+    }
 
     private fun write(player: Player, record: AchievementRecord) {
         records[player.uniqueId] = record

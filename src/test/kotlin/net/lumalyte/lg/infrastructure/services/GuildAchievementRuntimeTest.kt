@@ -129,4 +129,39 @@ internal class GuildAchievementRuntimeTest {
         assertEquals("invalid retained data", player.persistentDataContainer.get(key, PersistentDataType.STRING))
         verify(exactly = 0) { player.giveExp(any<Int>()) }
     }
+
+    @Test fun `combined playtime uses stored values for offline members and never reads their stats`() {
+        val server = MockBukkit.mock()
+        val plugin = spyk(MockBukkit.createMockPlugin("LumaGuilds"))
+        every { plugin.getResource("guild-achievements.json") } answers { javaClass.classLoader.getResourceAsStream("guild-achievements.json") }
+        // Bukkit.getPlayer returns the server's own player, so the statistic is set before spying.
+        val player = spyk(server.addPlayer().apply { setStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE, 72_000 * 400) })
+        every { player.isOnline } returns true
+        every { player.saveData() } just Runs
+        val guild = UUID.randomUUID()
+        val offline = UUID.randomUUID()
+        val leaver = UUID.randomUUID()
+        val roster = mutableSetOf(player.uniqueId, offline, leaver)
+        val members = mockk<MemberRepository>()
+        every { members.getGuildsByPlayer(player.uniqueId) } returns setOf(guild)
+        every { members.getByGuild(guild) } answers { roster.map {
+            net.lumalyte.lg.domain.entities.Member(it, guild, UUID.randomUUID(), java.time.Instant.EPOCH)
+        }.toSet() }
+        val progression = mockk<ProgressionRepository>()
+        every { progression.getGuildProgression(guild) } returns null
+        val stalls = mockk<net.lumalyte.lg.application.services.GuildStallReadService>()
+        every { stalls.read(any(), any()) } returns java.util.concurrent.CompletableFuture.completedFuture(
+            net.lumalyte.lg.application.services.StallReadResult.Unavailable)
+        val store = net.lumalyte.lg.domain.values.MemberPlaytimeStore.InMemory(
+            mutableMapOf(offline to 72_000L * 300, leaver to 72_000L * 200))
+        mockkStatic(org.bukkit.Bukkit::class)
+        val runtime = GuildAchievementRuntime(plugin, members, progression, stalls, playtimeStore = store)
+        val goal = runtime.engine.definitions.first { it.requirement == "GUILD_COMBINED_PLAYTIME" && it.goal == 1000 }
+        runtime.initialize(player)
+        assertEquals(900, runtime.read(player)!!.progress[goal.id])
+        roster -= leaver
+        assertEquals(72_000L * 700, runtime.playtime.memberTicks(guild)!!.sum())
+        verify(exactly = 0) { org.bukkit.Bukkit.getOfflinePlayer(any<UUID>()) }
+        assertEquals(72_000L * 400, store.loadAll()[player.uniqueId])
+    }
 }
