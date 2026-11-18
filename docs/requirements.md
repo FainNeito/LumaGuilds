@@ -1036,3 +1036,5 @@ Plan: `plans/2026-11-14-prestige-second-vault.md`.
 
 ### REQ-299
 **Optional.** WHERE Discord guild roles are disabled and `discord.guild_roles.remove_on_disable` is set, THE SYSTEM SHALL, once Discord is ready, delete every Discord role recorded in this server's own guild-role records and forget those records, and SHALL never delete roles it has no record of.
+### REQ-300
+**Ubiquitous.** THE SYSTEM SHALL work out a guild's combined playtime from each member's stored play ticks, reading online members live and storing a member's value when they join and when they leave, and SHALL NOT read an offline player's statistics while totalling a guild. A member with no stored value (for example every member on the first start after upgrading, or an offline player added to a guild) SHALL be read on the server thread by a backfill limited to about 2 ms and 4 players every 2 ticks, reading members a guild is waiting on first; until all of a guild's members are known, THE SYSTEM SHALL leave that guild's combined-playtime progress and payouts as they were.
